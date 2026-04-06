@@ -19,6 +19,12 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+/* Guidance Constants */
+#define MAX_PLAYER_LAT_ACCEL 7888.0f
+#define GUIDED_FUEL_TIME 2.5f
+#define AUTOPILOT_LAG 0.15f
+#define GRAVITY_COMP 1314.4f
+
 static void spawn_wave(Game* g);
 static float difficulty_enemy_hp_mul(int difficulty);
 static float difficulty_enemy_damage_mul(int difficulty);
@@ -152,7 +158,7 @@ static void spawn_particles(Game* g, Vec2 p, int count, Color color) {
     }
 }
 
-static void spawn_projectile(Game* g, Vec2 pos, Vec2 dir, int fromPlayer, float speed, float damage, float radius, float life) {
+static void spawn_projectile(Game* g, Vec2 pos, Vec2 dir, int fromPlayer, float speed, float damage, float radius, float life, GuidanceType guidance, int targetIdx, float maxLatAccel) {
     int i;
     for (i = 0; i < MAX_PROJECTILES; ++i) {
         Projectile* p = &g->projectiles[i];
@@ -164,6 +170,15 @@ static void spawn_projectile(Game* g, Vec2 pos, Vec2 dir, int fromPlayer, float 
             p->radius = radius;
             p->life = life;
             p->damage = damage;
+            
+            p->guidance = guidance;
+            p->targetIdx = targetIdx;
+            p->actualLatAccel = 0.0f;
+            p->fuelTimer = (guidance != GUIDANCE_NONE) ? GUIDED_FUEL_TIME : 0.0f;
+            p->prevDist = 99999.0f;
+            p->missed = 0;
+            p->sdTimer = 0.0f;
+            p->maxLatAccel = maxLatAccel;
             return;
         }
     }
@@ -191,6 +206,14 @@ static void fill_upgrade_option(UpgradeOption* o, UpgradeType type) {
         case UPGRADE_TIME:
             snprintf(o->label, sizeof(o->label), "+Time");
             snprintf(o->desc, sizeof(o->desc), "Add 18 seconds to timer");
+            break;
+        case UPGRADE_GUIDANCE_PP:
+            snprintf(o->label, sizeof(o->label), "Guidance PP");
+            snprintf(o->desc, sizeof(o->desc), "Unlock Proportional Navigation for right click");
+            break;
+        case UPGRADE_GUIDANCE_APNG:
+            snprintf(o->label, sizeof(o->label), "Guidance APNG");
+            snprintf(o->desc, sizeof(o->desc), "Unlock APN Guidance for right click");
             break;
         default:
             snprintf(o->label, sizeof(o->label), "Unknown");
@@ -237,6 +260,22 @@ static void apply_upgrade(Game* g, UpgradeType t) {
         case UPGRADE_TIME:
             g->timeLeft += 18.0f;
             break;
+        case UPGRADE_GUIDANCE_PP:
+            g->player.hasPP = 1;
+            g->player.maxGuidedAmmo += 10;
+            g->player.guidedAmmo += 10;
+            break;
+        case UPGRADE_GUIDANCE_APNG:
+            /* If they don't have PP, they get PP and APNG. If they have PP, they just get APNG. */
+            if (!g->player.hasPP) {
+                g->player.hasPP = 1;
+                g->player.maxGuidedAmmo += 10;
+                g->player.guidedAmmo += 10;
+            }
+            g->player.hasAPNG = 1;
+            g->player.maxGuidedAmmo += 10;
+            g->player.guidedAmmo += 10;
+            break;
         default:
             break;
     }
@@ -263,6 +302,12 @@ static void draw_upgrade_icon(UpgradeType t, float x, float y) {
             draw_circle(vec2(x, y), 13.0f, (Color){0.7f, 0.85f, 1.0f, 0.95f}, 16);
             draw_rect(x - 1.0f, y - 1.0f, 2.0f, 9.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
             draw_rect(x - 1.0f, y - 1.0f, 7.0f, 2.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
+            break;
+        case UPGRADE_GUIDANCE_PP:
+            draw_circle(vec2(x, y), 10.0f, (Color){0.2f, 0.9f, 1.0f, 0.9f}, 16);
+            break;
+        case UPGRADE_GUIDANCE_APNG:
+            draw_circle(vec2(x, y), 10.0f, (Color){0.9f, 0.2f, 1.0f, 0.9f}, 16);
             break;
         default:
             draw_circle(vec2(x, y), 12.0f, (Color){1.0f, 1.0f, 1.0f, 0.8f}, 12);
@@ -518,6 +563,14 @@ static void draw_enemy(Enemy* e) {
     } else if (e->type == ENEMY_SNIPER) {
         draw_diamond(p, e->size * 1.05f, (Color){1.0f, 0.62f + e->hitFlash * 0.25f, 0.24f, 1.0f});
         draw_triangle(vec2(p.x, p.y - e->size * 0.1f), e->size * 0.5f, (Color){1.0f, 0.95f, 0.6f, 0.9f});
+    } else if (e->type == ENEMY_DIAMOND) {
+        /* Square Diamond */
+        float s = e->size * 0.7f;
+        glPushMatrix();
+        glTranslatef(p.x, p.y, 0.0f);
+        glRotatef(45.0f, 0.0f, 0.0f, 1.0f);
+        draw_rect(-s, -s, s * 2.0f, s * 2.0f, (Color){0.2f, 0.8f, 1.0f, 1.0f});
+        glPopMatrix();
     } else {
         draw_circle(p, e->size, (Color){1.0f, 0.35f + e->hitFlash * 0.4f, 0.20f + e->hitFlash * 0.4f, 1.0f}, 20);
         draw_star(p, e->size * 0.55f, (Color){1.0f, 0.95f, 0.35f, 0.9f});
@@ -677,6 +730,11 @@ static void reset_player(Game* g) {
     g->player.velY = 0.0f;
     g->player.isOnGround = 1;
     g->player.jumpPressedTime = 0.0f;
+    
+    g->player.hasPP = 0;
+    g->player.hasAPNG = 0;
+    g->player.guidedAmmo = 0;
+    g->player.maxGuidedAmmo = 0;
 }
 
 void game_restart(Game* g) {
@@ -838,19 +896,69 @@ static void update_playing(Game* g, float dt) {
 
     g->player.fireCooldown -= dt;
 
+    /* Handle normal firing */
     if (g->input.mouseDown[0] && g->player.fireCooldown <= 0.0f) {
         Vec2 target = mouse_to_world(g);
         Vec2 dir = vec2_norm(vec2_sub(target, g->player.pos));
-        spawn_projectile(g, g->player.pos, dir, 1, g->player.projectileSpeed, g->player.damage, 6.0f, 2.5f);
+        spawn_projectile(g, g->player.pos, dir, 1, g->player.projectileSpeed, g->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
         spawn_particles(g, g->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
         g->player.fireCooldown = g->player.fireRate;
         audio_play_shoot();
+    }
+    
+    /* Handle right-click guided firing */
+    if (g->input.mouseDown[2] && g->player.fireCooldown <= 0.0f && g->player.guidedAmmo > 0) {
+        if (g->player.hasPP || g->player.hasAPNG) {
+            Vec2 target = mouse_to_world(g);
+            int bestTarget = -1;
+            float minD = 1000.0f;
+            for (i = 0; i < MAX_ENEMIES; ++i) {
+                if (g->enemies[i].active) {
+                    float d = vec2_len(vec2_sub(enemy_position(&g->enemies[i]), target));
+                    if (d < minD) { minD = d; bestTarget = i; }
+                }
+            }
+            if (bestTarget != -1) {
+                Vec2 dir = vec2_norm(vec2_sub(target, g->player.pos));
+                GuidanceType law = g->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
+                spawn_projectile(g, g->player.pos, dir, 1, g->player.projectileSpeed * 0.8f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, MAX_PLAYER_LAT_ACCEL);
+                g->player.guidedAmmo--;
+                g->player.fireCooldown = g->player.fireRate * 2.0f;
+                audio_play_shoot();
+            }
+        }
     }
 
     for (i = 0; i < MAX_PROJECTILES; ++i) {
         Projectile* p = &g->projectiles[i];
         int oi;
         if (!p->active) continue;
+
+        if (p->guidance != GUIDANCE_NONE) {
+            /* Guidance logic */
+            float speed = vec2_len(p->vel);
+            float gamma = atan2f(p->vel.y, p->vel.x);
+            float aCmd = 0.0f;
+            if (p->targetIdx != -1 && g->enemies[p->targetIdx].active) {
+                Enemy *e = &g->enemies[p->targetIdx];
+                Vec2 ep = enemy_position(e);
+                Vec2 dPos = vec2_sub(ep, p->pos);
+                float dist = vec2_len(dPos);
+                float los = atan2f(dPos.y, dPos.x);
+                
+                if (p->guidance == GUIDANCE_APNG) {
+                    float relV = vec2_len(vec2_sub(vec2(0,0), p->vel)); /* Simplification */
+                    float losRate = (dPos.x * p->vel.y - dPos.y * p->vel.x) / (dist * dist);
+                    aCmd = 3.5f * speed * losRate;
+                } else {
+                    float err = los - gamma;
+                    aCmd = 5.0f * speed * err;
+                }
+            }
+            p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / AUTOPILOT_LAG);
+            p->vel.x += (-p->actualLatAccel * sinf(gamma)) * dt;
+            p->vel.y += (p->actualLatAccel * cosf(gamma)) * dt;
+        }
 
         p->life -= dt;
         p->pos = vec2_add(p->pos, vec2_mul(p->vel, dt));
@@ -861,13 +969,8 @@ static void update_playing(Game* g, float dt) {
 
         for (oi = 0; oi < MAX_OBSTACLES && p->active; ++oi) {
             Obstacle* o = &g->obstacles[oi];
-            if (!o->active) {
-                continue;
-            }
-            if (circle_vs_aabb(p->pos, p->radius,
-                               vec2(o->x, o->y), vec2(o->x + o->w, o->y + o->h))) {
-                p->active = 0;
-            }
+            if (!o->active) continue;
+            if (circle_vs_aabb(p->pos, p->radius, vec2(o->x, o->y), vec2(o->x + o->w, o->y + o->h))) p->active = 0;
         }
     }
 
@@ -894,35 +997,43 @@ static void update_playing(Game* g, float dt) {
             Vec2 dirToPlayer = vec2_norm(vec2_sub(g->player.pos, ep));
             float enemyShotSpeed;
             float enemyShotDamage;
-            if (e->isBoss) {
+            
+            if (e->type == ENEMY_DIAMOND) {
+                if (e->burstCount > 0) {
+                    float apnFactor = 0.5f * (g->wave / 10.0f); /* Increasing G overload */
+                    if (apnFactor > 0.5f) apnFactor = 0.5f;
+                    
+                    spawn_projectile(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_APNG, -1, apnFactor * MAX_PLAYER_LAT_ACCEL);
+                    e->burstCount--;
+                    e->shootCooldown = 0.5f; /* Short gap between burst shots */
+                    if (e->burstCount == 0) {
+                        e->shootCooldown = randf(3.0f, 7.0f); /* Space between bursts */
+                        e->burstCount = 3;
+                    }
+                }
+            } else if (e->isBoss) {
                 Vec2 sideA = vec2_norm(vec2(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 Vec2 sideB = vec2_norm(vec2(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 enemyShotSpeed = 260.0f + g->wave * 18.0f;
                 enemyShotDamage = 9.5f + g->wave * 1.4f;
-                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f);
-                spawn_projectile(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f);
-                spawn_projectile(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f);
+                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
+                spawn_projectile(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                spawn_projectile(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = randf(0.8f, 1.8f) - g->wave * 0.05f;
             } else if (e->type == ENEMY_SNIPER) {
                 enemyShotSpeed = 330.0f + g->wave * 22.0f;
                 enemyShotDamage = 9.0f + g->wave * 1.6f;
-                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f);
+                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = randf(1.0f, 2.1f) - g->wave * 0.04f;
             } else if (e->type == ENEMY_TANK) {
                 enemyShotSpeed = 180.0f + g->wave * 14.0f;
                 enemyShotDamage = 11.0f + g->wave * 1.8f;
-                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f);
+                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = randf(1.8f, 3.2f) - g->wave * 0.03f;
             } else {
                 enemyShotSpeed = 220.0f + g->wave * 18.0f;
                 enemyShotDamage = 7.0f + g->wave * 1.4f;
-                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f);
-            }
-
-            if (e->isBoss) {
-                e->shootCooldown = randf(0.8f, 1.8f) - g->wave * 0.05f;
-            } else if (e->type == ENEMY_SNIPER) {
-                e->shootCooldown = randf(1.0f, 2.1f) - g->wave * 0.04f;
-            } else if (e->type == ENEMY_TANK) {
-                e->shootCooldown = randf(1.8f, 3.2f) - g->wave * 0.03f;
-            } else {
+                spawn_projectile(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
                 e->shootCooldown = randf(1.1f, 2.6f) - g->wave * 0.05f;
             }
 

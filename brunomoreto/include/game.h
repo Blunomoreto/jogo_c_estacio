@@ -29,6 +29,12 @@ typedef struct Player {
     float velY;              /* Vertical velocity (positive = falling) */
     int isOnGround;          /* 1 if player is touching ground */
     float jumpPressedTime;   /* Time space/W has been held (for variable jump) */
+    
+    /* Guidance Upgrades */
+    int hasPP;
+    int hasAPNG;
+    int guidedAmmo;
+    int maxGuidedAmmo;
 } Player;
 
 typedef struct Enemy {
@@ -45,6 +51,10 @@ typedef struct Enemy {
     float damage;
     float shootCooldown;
     float hitFlash;
+
+    /* Diamond Burst Behavior */
+    int burstCount;
+    float burstTimer;
 } Enemy;
 
 typedef struct Projectile {
@@ -55,6 +65,16 @@ typedef struct Projectile {
     float radius;
     float life;
     float damage;
+
+    /* Guidance Logic */
+    GuidanceType guidance;
+    int targetIdx;
+    float actualLatAccel;
+    float fuelTimer;
+    float prevDist;
+    int missed;
+    float sdTimer;
+    float maxLatAccel; /* Dynamic limit for enemies */
 } Projectile;
 
 typedef struct Particle {

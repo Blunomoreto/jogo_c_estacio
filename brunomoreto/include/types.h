@@ -30,13 +30,22 @@ typedef enum UpgradeType {
     UPGRADE_SPEED,
     UPGRADE_HEAL,
     UPGRADE_TIME,
+    UPGRADE_GUIDANCE_PP,
+    UPGRADE_GUIDANCE_APNG,
     UPGRADE_COUNT
 } UpgradeType;
 
 typedef enum EnemyType {
     ENEMY_STANDARD = 0,
     ENEMY_SNIPER,
-    ENEMY_TANK
+    ENEMY_TANK,
+    ENEMY_DIAMOND
 } EnemyType;
+
+typedef enum GuidanceType {
+    GUIDANCE_NONE = 0,
+    GUIDANCE_PP,
+    GUIDANCE_APNG
+} GuidanceType;
 
 #endif
