@@ -20,10 +20,12 @@
 #endif
 
 /* Guidance Constants */
-#define MAX_PLAYER_LAT_ACCEL 7888.0f
-#define GUIDED_FUEL_TIME 2.5f
+#define MAX_PLAYER_LAT_ACCEL 1800.0f  /* Adjusted to match the new speed and prevent overcorrection */
+#define INITIAL_PLAYER_LAT_ACCEL 800.0f  /* Base maneuverability */
+#define GUIDED_FUEL_TIME 2.0f
 #define AUTOPILOT_LAG 0.15f
-#define GRAVITY_COMP 1314.4f
+#define APN_GAIN 3.0f  /* Navigation constant for APNG */
+#define PP_GAIN 3.0f   /* Navigation constant for PP */
 
 static void spawn_wave(Game* g);
 static float difficulty_enemy_hp_mul(int difficulty);
@@ -132,9 +134,68 @@ static void draw_star(Vec2 p, float size, Color c) {
     glEnd();
 }
 
+static void draw_text_wrapped(float x, float y, const char* text, void* font, float r, float g, float b, float maxW) {
+    const unsigned char* p = (const unsigned char*)text;
+    float curX = x;
+    float curY = y;
+    char word[64];
+    int wordIdx = 0;
+    glColor3f(r, g, b);
+    
+    while (*p) {
+        if (*p == ' ' || *p == '\0') {
+            word[wordIdx] = '\0';
+            float wordW = 0;
+            for(int i=0; i<wordIdx; i++) wordW += glutBitmapWidth(font, word[i]);
+            
+            if (curX + wordW > x + maxW) {
+                curX = x;
+                curY += 15.0f; /* Line height */
+            }
+            
+            glRasterPos2f(curX, curY);
+            for(int i=0; i<wordIdx; i++) glutBitmapCharacter(font, word[i]);
+            curX += wordW + glutBitmapWidth(font, ' ');
+            wordIdx = 0;
+            if (*p == '\0') break;
+        } else {
+            if (wordIdx < 63) word[wordIdx++] = *p;
+        }
+        p++;
+    }
+    if (wordIdx > 0) {
+        word[wordIdx] = '\0';
+        glRasterPos2f(curX, curY);
+        for(int i=0; i<wordIdx; i++) glutBitmapCharacter(font, word[i]);
+    }
+}
+
 static Vec2 enemy_position(const Enemy* e) {
     return vec2(e->center.x + cosf(e->angle) * e->orbitRadius,
                 e->center.y + sinf(e->angle) * e->orbitRadius);
+}
+
+static Vec2 enemy_velocity(const Enemy* e) {
+    return vec2(-e->orbitRadius * e->angularSpeed * sinf(e->angle),
+                e->orbitRadius * e->angularSpeed * cosf(e->angle));
+}
+
+static Vec2 enemy_acceleration(const Enemy* e) {
+    float omega = e->angularSpeed;
+    return vec2(-e->orbitRadius * omega * omega * cosf(e->angle),
+                -e->orbitRadius * omega * omega * sinf(e->angle));
+}
+
+static void draw_pentagon(Vec2 p, float size, Color c) {
+    int i;
+    glColor4f(c.r, c.g, c.b, c.a);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(p.x, p.y);
+    for (i = 0; i <= 5; ++i) {
+        float a = (float)i / 5.0f * 2.0f * (float)M_PI - (float)M_PI * 0.5f;
+        glVertex2f(p.x + cosf(a) * size, p.y + sinf(a) * size);
+    }
+    glEnd();
 }
 
 static void spawn_particles(Game* g, Vec2 p, int count, Color color) {
@@ -163,6 +224,7 @@ static void spawn_projectile(Game* g, Vec2 pos, Vec2 dir, int fromPlayer, float 
     for (i = 0; i < MAX_PROJECTILES; ++i) {
         Projectile* p = &g->projectiles[i];
         if (!p->active) {
+            memset(p, 0, sizeof(*p));
             p->active = 1;
             p->fromPlayer = fromPlayer;
             p->pos = pos;
@@ -209,11 +271,19 @@ static void fill_upgrade_option(UpgradeOption* o, UpgradeType type) {
             break;
         case UPGRADE_GUIDANCE_PP:
             snprintf(o->label, sizeof(o->label), "Guidance PP");
-            snprintf(o->desc, sizeof(o->desc), "Unlock Proportional Navigation for right click");
+            snprintf(o->desc, sizeof(o->desc), "Unlock Pure Pursuit for right click. 10 missiles start.");
             break;
         case UPGRADE_GUIDANCE_APNG:
-            snprintf(o->label, sizeof(o->label), "Guidance APNG");
-            snprintf(o->desc, sizeof(o->desc), "Unlock APN Guidance for right click");
+            snprintf(o->label, sizeof(o->label), "Guidance APN");
+            snprintf(o->desc, sizeof(o->desc), "Unlock Augmented Proportional Navigation for right click. 10 missiles start.");
+            break;
+        case UPGRADE_AMMO:
+            snprintf(o->label, sizeof(o->label), "Ammo Pack");
+            snprintf(o->desc, sizeof(o->desc), "Increase max guided missiles by +8");
+            break;
+        case UPGRADE_OVERLOAD:
+            snprintf(o->label, sizeof(o->label), "Overload");
+            snprintf(o->desc, sizeof(o->desc), "Increase missile maneuverability (G-limit) by +25%%");
             break;
         default:
             snprintf(o->label, sizeof(o->label), "Unknown");
@@ -225,13 +295,21 @@ static void fill_upgrade_option(UpgradeOption* o, UpgradeType type) {
 static void roll_upgrades(Game* g) {
     int i;
     int used[UPGRADE_COUNT] = {0};
+    
+    if (g->player.hasPP) used[UPGRADE_GUIDANCE_PP] = 1;
+    if (g->player.hasAPNG) used[UPGRADE_GUIDANCE_APNG] = 1;
+
     for (i = 0; i < MAX_UPGRADE_OPTIONS; ++i) {
         UpgradeType t;
         int guard = 0;
         do {
             t = (UpgradeType)(rand() % UPGRADE_COUNT);
+            if (t == UPGRADE_GUIDANCE_APNG && !g->player.hasPP) t = UPGRADE_DAMAGE;
+            if ((t == UPGRADE_AMMO || t == UPGRADE_OVERLOAD) && (!g->player.hasPP && !g->player.hasAPNG)) {
+                t = UPGRADE_DAMAGE;
+            }
             guard++;
-        } while (used[t] && guard < 16);
+        } while (used[t] && guard < 32);
         used[t] = 1;
         fill_upgrade_option(&g->upgrades[i], t);
     }
@@ -263,18 +341,29 @@ static void apply_upgrade(Game* g, UpgradeType t) {
         case UPGRADE_GUIDANCE_PP:
             g->player.hasPP = 1;
             g->player.maxGuidedAmmo += 10;
-            g->player.guidedAmmo += 10;
+            g->player.guidedAmmo = g->player.maxGuidedAmmo;
+            if (g->player.maxLatAccel < 100.0f) g->player.maxLatAccel = MAX_PLAYER_LAT_ACCEL;
             break;
         case UPGRADE_GUIDANCE_APNG:
-            /* If they don't have PP, they get PP and APNG. If they have PP, they just get APNG. */
             if (!g->player.hasPP) {
                 g->player.hasPP = 1;
                 g->player.maxGuidedAmmo += 10;
-                g->player.guidedAmmo += 10;
             }
             g->player.hasAPNG = 1;
             g->player.maxGuidedAmmo += 10;
-            g->player.guidedAmmo += 10;
+            g->player.guidedAmmo = g->player.maxGuidedAmmo;
+            if (g->player.maxLatAccel < 100.0f) g->player.maxLatAccel = MAX_PLAYER_LAT_ACCEL;
+            break;
+        case UPGRADE_AMMO:
+            g->player.maxGuidedAmmo += 8;
+            g->player.guidedAmmo = g->player.maxGuidedAmmo;
+            break;
+        case UPGRADE_OVERLOAD:
+            if (g->player.hasAPNG) {
+                g->player.maxLatAccel *= 1.25f;
+            } else {
+                g->player.hp += 26.0f;
+            }
             break;
         default:
             break;
@@ -326,6 +415,8 @@ static void choose_upgrade_and_continue(Game* g, int idx) {
     g->upgradeFlash = 1.0f;
     audio_play_shoot();
 
+    g->player.guidedAmmo = g->player.maxGuidedAmmo;
+
     g->wave += 1;
     spawn_wave(g);
     g->screen = SCREEN_PLAYING;
@@ -343,7 +434,9 @@ static void clear_obstacles(Game* g) {
 
 static void setup_obstacles(Game* g) {
     int count;
-    int i;
+    int i, j;
+    int validPlacement;
+    int attempts;
 
     clear_obstacles(g);
     count = 2 + g->wave / 2;
@@ -356,11 +449,33 @@ static void setup_obstacles(Game* g) {
 
     for (i = 0; i < count; ++i) {
         Obstacle* o = &g->obstacles[i];
-        o->active = 1;
-        o->w = randf(100.0f, 220.0f);
-        o->h = randf(22.0f, 44.0f);
-        o->x = randf(40.0f, (float)g->width - o->w - 40.0f);
-        o->y = randf((float)g->height * 0.42f, (float)g->height * 0.72f);
+        
+        attempts = 0;
+        do {
+            validPlacement = 1;
+            o->active = 1;
+            o->w = randf(100.0f, 220.0f);
+            o->h = randf(22.0f, 44.0f);
+            o->x = randf(40.0f, (float)g->width - o->w - 40.0f);
+            o->y = randf((float)g->height * 0.45f, (float)g->height * 0.65f);
+            
+            for (j = 0; j < i; ++j) {
+                Obstacle* other = &g->obstacles[j];
+                if (!other->active) continue;
+                
+                if (!(o->x + o->w + 20.0f < other->x || o->x > other->x + other->w + 20.0f ||
+                      o->y + o->h + 20.0f < other->y || o->y > other->y + other->h + 20.0f)) {
+                    validPlacement = 0;
+                    break;
+                }
+            }
+            
+            attempts++;
+        } while (!validPlacement && attempts < 10);
+        
+        if (!validPlacement) {
+            o->active = 0;
+        }
     }
 }
 
@@ -390,9 +505,13 @@ static void spawn_wave(Game* g) {
         e->isBoss = (finalWave && i == 0);
         if (e->isBoss) {
             e->type = ENEMY_TANK;
-        } else if (g->wave >= 4 && (i % 5 == 0)) {
+        } else if (g->wave >= 3 && (i % 6 == 0)) {
+            e->type = ENEMY_PENTAGON;
+        } else if (g->wave >= 2 && (i % 5 == 0)) {
+            e->type = ENEMY_DIAMOND;
+        } else if (g->wave >= 4 && (i % 7 == 0)) {
             e->type = ENEMY_TANK;
-        } else if (g->wave >= 2 && (i % 3 == 0)) {
+        } else if (g->wave >= 1 && (i % 4 == 0)) {
             e->type = ENEMY_SNIPER;
         } else {
             e->type = ENEMY_STANDARD;
@@ -424,6 +543,17 @@ static void spawn_wave(Game* g) {
             e->shootCooldown = randf(0.6f, 1.4f);
             e->angularSpeed *= 1.2f;
             e->orbitRadius += 18.0f;
+        } else if (e->type == ENEMY_DIAMOND) {
+            e->size = randf(18.0f, 22.0f);
+            e->hp = 35.0f + g->wave * 10.0f;
+            e->damage = 15.0f + g->wave * 2.0f;
+            e->shootCooldown = randf(2.0f, 4.0f);
+            e->burstCount = 3;
+        } else if (e->type == ENEMY_PENTAGON) {
+            e->size = randf(20.0f, 25.0f);
+            e->hp = 45.0f + g->wave * 12.0f;
+            e->damage = 20.0f + g->wave * 2.5f;
+            e->shootCooldown = randf(3.0f, 5.0f);
         } else {
             e->size = randf(16.0f, 24.0f);
             e->hp = 26.0f + g->wave * 9.0f;
@@ -437,6 +567,9 @@ static void spawn_wave(Game* g) {
         e->damage *= dmgMul;
         e->shootCooldown *= fireMul;
         e->hitFlash = 0.0f;
+        
+        e->vel = vec2(0.0f, 0.0f);
+        e->accel = vec2(0.0f, 0.0f);
     }
 }
 
@@ -486,7 +619,7 @@ static void draw_background(Game* g) {
 
     /* Moon */
     draw_circle(vec2(g->width * 0.85f, g->height * 0.25f), 60.0f, (Color){0.95f, 0.95f, 0.90f, 0.8f}, 24);
-    draw_circle(vec2(g->width * 0.88f, g->height * 0.22f), 58.0f, (Color){0.04f, 0.06f, 0.11f, 0.9f}, 24); /* Shadow to crater */
+    draw_circle(vec2(g->width * 0.88f, g->height * 0.22f), 58.0f, (Color){0.04f, 0.06f, 0.11f, 0.9f}, 24);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     draw_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.03f, 0.02f, 0.07f, 0.40f});
@@ -519,29 +652,19 @@ static void draw_player(Game* g) {
     Vec2 p = g->player.pos;
     float size = g->player.size;
     
-    /* Head */
     draw_circle(vec2(p.x, p.y - size * 0.4f), size * 0.35f, (Color){0.95f, 0.85f, 0.70f, 1.0f}, 12);
     
-    /* Eyes */
     draw_circle(vec2(p.x - size * 0.12f, p.y - size * 0.5f), size * 0.08f, (Color){0.2f, 0.2f, 0.2f, 1.0f}, 8);
     draw_circle(vec2(p.x + size * 0.12f, p.y - size * 0.5f), size * 0.08f, (Color){0.2f, 0.2f, 0.2f, 1.0f}, 8);
     
-    /* Body */
     draw_rect(p.x - size * 0.22f, p.y - size * 0.08f, size * 0.44f, size * 0.35f, (Color){0.2f, 0.3f, 0.7f, 1.0f});
     
-    /* Left arm */
     draw_rect(p.x - size * 0.35f, p.y - size * 0.05f, size * 0.25f, size * 0.12f, (Color){0.95f, 0.85f, 0.70f, 1.0f});
-    
-    /* Right arm */
     draw_rect(p.x + size * 0.1f, p.y - size * 0.05f, size * 0.25f, size * 0.12f, (Color){0.95f, 0.85f, 0.70f, 1.0f});
     
-    /* Left leg */
     draw_rect(p.x - size * 0.12f, p.y + size * 0.28f, size * 0.15f, size * 0.25f, (Color){0.3f, 0.3f, 0.3f, 1.0f});
-    
-    /* Right leg */
     draw_rect(p.x + size * 0.07f, p.y + size * 0.28f, size * 0.15f, size * 0.25f, (Color){0.3f, 0.3f, 0.3f, 1.0f});
     
-    /* Jump effect - glow */
     if (!g->player.isOnGround) {
         draw_circle(p, size * 0.9f, (Color){0.3f, 0.9f, 1.0f, 0.2f}, 16);
     }
@@ -564,13 +687,17 @@ static void draw_enemy(Enemy* e) {
         draw_diamond(p, e->size * 1.05f, (Color){1.0f, 0.62f + e->hitFlash * 0.25f, 0.24f, 1.0f});
         draw_triangle(vec2(p.x, p.y - e->size * 0.1f), e->size * 0.5f, (Color){1.0f, 0.95f, 0.6f, 0.9f});
     } else if (e->type == ENEMY_DIAMOND) {
-        /* Square Diamond */
         float s = e->size * 0.7f;
+        draw_circle(p, e->size, (Color){1.0f, 0.45f + e->hitFlash * 0.25f, 0.15f, 1.0f}, 20);
         glPushMatrix();
         glTranslatef(p.x, p.y, 0.0f);
         glRotatef(45.0f, 0.0f, 0.0f, 1.0f);
-        draw_rect(-s, -s, s * 2.0f, s * 2.0f, (Color){0.2f, 0.8f, 1.0f, 1.0f});
+        draw_rect(-s, -s, s * 2.0f, s * 2.0f, (Color){1.0f, 0.65f, 0.15f, 0.8f});
         glPopMatrix();
+        draw_circle(p, e->size * 0.45f, (Color){1.0f, 0.8f, 0.2f, 0.85f}, 10);
+    } else if (e->type == ENEMY_PENTAGON) {
+        draw_pentagon(p, e->size, (Color){0.2f, 0.9f, 1.0f, 1.0f});
+        draw_circle(p, e->size * 0.45f, (Color){1.0f, 0.8f, 0.2f, 0.85f}, 10);
     } else {
         draw_circle(p, e->size, (Color){1.0f, 0.35f + e->hitFlash * 0.4f, 0.20f + e->hitFlash * 0.4f, 1.0f}, 20);
         draw_star(p, e->size * 0.55f, (Color){1.0f, 0.95f, 0.35f, 0.9f});
@@ -602,11 +729,40 @@ static void draw_projectiles(Game* g) {
             continue;
         }
 
-        draw_circle(p->pos, p->radius, p->fromPlayer ? (Color){0.3f, 0.95f, 1.0f, 0.9f} : (Color){1.0f, 0.4f, 0.2f, 0.9f}, 14);
+        if (p->guidance != GUIDANCE_NONE) {
+            float angle = atan2f(p->vel.y, p->vel.x) * 180.0f / (float)M_PI - 90.0f;
+            Color c;
+            if (p->missed) {
+                c = (Color){1.0f, 0.0f, 0.0f, 1.0f};
+            } else if (p->guidance == GUIDANCE_APNG) {
+                c = (Color){1.0f, 0.5f, 0.0f, 1.0f};
+            } else {
+                c = (Color){0.8f, 0.0f, 1.0f, 1.0f};
+            }
+            
+            glPushMatrix();
+            glTranslatef(p->pos.x, p->pos.y, 0.0f);
+            glRotatef(angle, 0.0f, 0.0f, 1.0f);
+            draw_triangle(vec2(0,0), p->radius * 1.4f, c);
+            glPopMatrix();
+            
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            draw_circle(p->pos, p->radius * 2.5f, (Color){c.r, c.g, c.b, 0.25f}, 12);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        } else {
+            Color projectileColor = p->fromPlayer ? 
+                (Color){0.3f, 0.95f, 1.0f, 0.9f} :
+                (Color){1.0f, 0.8f, 0.0f, 0.9f};
+            
+            draw_circle(p->pos, p->radius, projectileColor, 14);
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        draw_circle(p->pos, p->radius * 2.2f, p->fromPlayer ? (Color){0.3f, 0.85f, 1.0f, 0.28f} : (Color){1.0f, 0.3f, 0.2f, 0.24f}, 14);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            Color haloColor = p->fromPlayer ? 
+                (Color){0.3f, 0.85f, 1.0f, 0.28f} :
+                (Color){1.0f, 0.75f, 0.0f, 0.24f};
+            draw_circle(p->pos, p->radius * 2.2f, haloColor, 14);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
     }
 }
 
@@ -630,6 +786,12 @@ static void draw_hud(Game* g) {
 
     draw_rect(26.0f, 108.0f, 180.0f, 10.0f, (Color){0.2f, 0.2f, 0.2f, 0.9f});
     draw_rect(26.0f, 108.0f, 180.0f * (g->player.hp / g->player.maxHp), 10.0f, (Color){0.2f, 0.85f, 0.35f, 0.9f});
+
+    if (g->player.hasPP || g->player.hasAPNG) {
+        char ammo[32];
+        snprintf(ammo, sizeof(ammo), "Missiles: %d/%d", g->player.guidedAmmo, g->player.maxGuidedAmmo);
+        draw_text(220.0f, 118.0f, ammo, GLUT_BITMAP_HELVETICA_12, 1.0f, 0.6f, 0.2f);
+    }
 
     if (g->lastUpgradeTimer > 0.0f) {
         char msg[128];
@@ -717,6 +879,8 @@ static float difficulty_score_mul(int difficulty) {
 }
 
 static void reset_player(Game* g) {
+    memset(&g->player, 0, sizeof(g->player));
+    
     g->player.pos = vec2((float)g->width * 0.5f, GROUND_Y - 16.0f);
     g->player.size = 16.0f;
     g->player.hp = PLAYER_START_HP;
@@ -726,7 +890,6 @@ static void reset_player(Game* g) {
     g->player.fireRate = PLAYER_BASE_FIRE_RATE;
     g->player.fireCooldown = 0.0f;
     g->player.projectileSpeed = PLAYER_BASE_PROJECTILE_SPEED;
-    /* Physics */
     g->player.velY = 0.0f;
     g->player.isOnGround = 1;
     g->player.jumpPressedTime = 0.0f;
@@ -735,6 +898,7 @@ static void reset_player(Game* g) {
     g->player.hasAPNG = 0;
     g->player.guidedAmmo = 0;
     g->player.maxGuidedAmmo = 0;
+    g->player.maxLatAccel = INITIAL_PLAYER_LAT_ACCEL;
 }
 
 void game_restart(Game* g) {
@@ -814,7 +978,6 @@ static void update_playing(Game* g, float dt) {
     int tookHit = 0;
     float scoreMul = difficulty_score_mul(g->difficulty);
 
-    /* Horizontal movement only */
     float moveX = 0.0f;
     if (g->input.keys['a'] || g->input.keys['A'] || g->input.special[GLUT_KEY_LEFT]) {
         moveX -= 1.0f;
@@ -824,11 +987,9 @@ static void update_playing(Game* g, float dt) {
     }
     g->player.pos.x += moveX * g->player.speed * dt;
 
-    /* Boundary check horizontal */
     if (g->player.pos.x < g->player.size) g->player.pos.x = g->player.size;
     if (g->player.pos.x > g->width - g->player.size) g->player.pos.x = g->width - g->player.size;
 
-    /* Jumping with space or W */
     if (g->input.keys[' '] || g->input.keys['w'] || g->input.keys['W']) {
         if (g->player.isOnGround) {
             g->player.velY = -PLAYER_JUMP_FORCE;
@@ -837,19 +998,25 @@ static void update_playing(Game* g, float dt) {
         }
     }
 
-    /* Apply gravity */
     g->player.velY += GRAVITY * dt;
 
-    /* Cap falling speed */
     if (g->player.velY > 600.0f) g->player.velY = 600.0f;
 
-    /* Update vertical position */
     g->player.pos.y += g->player.velY * dt;
 
-    /* Ground collision */
+    {
+        static Vec2 prevP = {0,0};
+        static Vec2 prevV = {0,0};
+        if (prevP.x == 0 && prevP.y == 0) prevP = g->player.pos;
+        g->player.vel = vec2_mul(vec2_sub(g->player.pos, prevP), 1.0f/dt);
+        g->player.accel = vec2_mul(vec2_sub(g->player.vel, prevV), 1.0f/dt);
+        prevP = g->player.pos;
+        prevV = g->player.vel;
+    }
+
     g->player.isOnGround = 0;
     if (g->player.pos.y + g->player.size >= GROUND_Y) {
-        if (g->player.velY > 100.0f) {  /* Only play sound if falling from significant height */
+        if (g->player.velY > 100.0f) {
             audio_play_land();
         }
         g->player.pos.y = GROUND_Y - g->player.size;
@@ -857,13 +1024,11 @@ static void update_playing(Game* g, float dt) {
         g->player.isOnGround = 1;
     }
 
-    /* Ceiling collision */
     if (g->player.pos.y - g->player.size <= 20.0f) {
         g->player.pos.y = 20.0f + g->player.size;
         g->player.velY = 0.0f;
     }
 
-    /* Obstacle collision (platforms and walls) */
     {
         int oi;
         for (oi = 0; oi < MAX_OBSTACLES; ++oi) {
@@ -875,20 +1040,25 @@ static void update_playing(Game* g, float dt) {
                                vec2(o->x, o->y), vec2(o->x + o->w, o->y + o->h))) {
                 float cx = o->x + o->w * 0.5f;
                 float cy = o->y + o->h * 0.5f;
+                float dx = fabsf(g->player.pos.x - cx);
+                float dy = fabsf(g->player.pos.y - cy);
                 
-                /* Check if collision is from above (landing on platform) */
                 if (g->player.pos.y - g->player.size < cy && g->player.velY >= 0.0f) {
-                    if (g->player.velY > 50.0f) {  /* Only play sound if falling */
+                    if (g->player.velY > 50.0f) {
                         audio_play_land();
                     }
                     g->player.pos.y = o->y - g->player.size;
                     g->player.velY = 0.0f;
                     g->player.isOnGround = 1;
                 }
-                /* Horizontal collision */
-                else if (fabsf(g->player.pos.x - cx) > fabsf(g->player.pos.y - cy)) {
-                    if (g->player.pos.x < cx) g->player.pos.x = o->x - g->player.size;
-                    else g->player.pos.x = o->x + o->w + g->player.size;
+                else if (g->player.pos.y - g->player.size >= cy && dx > dy) {
+                    if (g->player.pos.x < cx) {
+                        g->player.pos.x = o->x - g->player.size - 5.0f;
+                    } else {
+                        g->player.pos.x = o->x + o->w + g->player.size + 5.0f;
+                    }
+                    if (g->player.pos.x < g->player.size) g->player.pos.x = g->player.size;
+                    if (g->player.pos.x > g->width - g->player.size) g->player.pos.x = g->width - g->player.size;
                 }
             }
         }
@@ -896,7 +1066,6 @@ static void update_playing(Game* g, float dt) {
 
     g->player.fireCooldown -= dt;
 
-    /* Handle normal firing */
     if (g->input.mouseDown[0] && g->player.fireCooldown <= 0.0f) {
         Vec2 target = mouse_to_world(g);
         Vec2 dir = vec2_norm(vec2_sub(target, g->player.pos));
@@ -906,7 +1075,6 @@ static void update_playing(Game* g, float dt) {
         audio_play_shoot();
     }
     
-    /* Handle right-click guided firing */
     if (g->input.mouseDown[2] && g->player.fireCooldown <= 0.0f && g->player.guidedAmmo > 0) {
         if (g->player.hasPP || g->player.hasAPNG) {
             Vec2 target = mouse_to_world(g);
@@ -921,7 +1089,8 @@ static void update_playing(Game* g, float dt) {
             if (bestTarget != -1) {
                 Vec2 dir = vec2_norm(vec2_sub(target, g->player.pos));
                 GuidanceType law = g->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
-                spawn_projectile(g, g->player.pos, dir, 1, g->player.projectileSpeed * 0.8f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, MAX_PLAYER_LAT_ACCEL);
+                /* 1.3x the player movement velocity to scale radius appropriately and avoid overcorrection */
+                spawn_projectile(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
                 g->player.guidedAmmo--;
                 g->player.fireCooldown = g->player.fireRate * 2.0f;
                 audio_play_shoot();
@@ -934,30 +1103,96 @@ static void update_playing(Game* g, float dt) {
         int oi;
         if (!p->active) continue;
 
+        if (p->guidance != GUIDANCE_NONE && p->missed) {
+            p->sdTimer -= dt;
+            if (p->sdTimer <= 0.0f) {
+                p->active = 0;
+            }
+            p->life -= dt;
+            p->pos = vec2_add(p->pos, vec2_mul(p->vel, dt));
+            continue; 
+        }
+
         if (p->guidance != GUIDANCE_NONE) {
-            /* Guidance logic */
             float speed = vec2_len(p->vel);
             float gamma = atan2f(p->vel.y, p->vel.x);
             float aCmd = 0.0f;
-            if (p->targetIdx != -1 && g->enemies[p->targetIdx].active) {
-                Enemy *e = &g->enemies[p->targetIdx];
-                Vec2 ep = enemy_position(e);
-                Vec2 dPos = vec2_sub(ep, p->pos);
+            Vec2 targetPos, targetVel = {0,0}, targetAccel = {0,0};
+            int targetValid = 0;
+
+            if (p->fromPlayer) {
+                if (p->targetIdx != -1 && g->enemies[p->targetIdx].active) {
+                    Enemy *e = &g->enemies[p->targetIdx];
+                    targetPos = enemy_position(e);
+                    targetVel = e->vel;
+                    targetAccel = e->accel;
+                    targetValid = 1;
+                }
+            } else {
+                targetPos = g->player.pos;
+                targetVel = g->player.vel;
+                targetAccel = g->player.accel;
+                targetValid = 1;
+            }
+
+            if (targetValid) {
+                Vec2 dPos = vec2_sub(targetPos, p->pos);
                 float dist = vec2_len(dPos);
                 float los = atan2f(dPos.y, dPos.x);
+                float losRate = (dPos.x * (targetVel.y - p->vel.y) - dPos.y * (targetVel.x - p->vel.x)) / (dist * dist);
                 
-                if (p->guidance == GUIDANCE_APNG) {
-                    float relV = vec2_len(vec2_sub(vec2(0,0), p->vel)); /* Simplification */
-                    float losRate = (dPos.x * p->vel.y - dPos.y * p->vel.x) / (dist * dist);
-                    aCmd = 3.5f * speed * losRate;
-                } else {
-                    float err = los - gamma;
-                    aCmd = 5.0f * speed * err;
+                /* Reverted to original self destruct implementation */
+                if (p->guidance == GUIDANCE_APNG && p->prevDist < 9999.0f && 
+                    dist > p->prevDist && dist < 250.0f && p->prevDist < 270.0f) {
+                    p->missed = 1;
+                    p->sdTimer = 0.2f;
+                }
+                
+                if (p->guidance == GUIDANCE_PP && !p->missed && p->prevDist < 9999.0f) {
+                    if (fabs(losRate) * speed > p->maxLatAccel && dist < 300.0f) {
+                        p->missed = 1;
+                        p->sdTimer = 0.2f;
+                    }
+                }
+                
+                p->prevDist = dist;
+                
+                if (!p->missed) {
+                    if (p->guidance == GUIDANCE_APNG) {
+                        Vec2 relV = vec2_sub(targetVel, p->vel);
+                        float Vc = -(dPos.x * relV.x + dPos.y * relV.y) / dist;
+                        float losRate_accel = (dPos.x * relV.y - dPos.y * relV.x) / (dist * dist);
+                        float a_t_perp = -targetAccel.x * sinf(los) + targetAccel.y * cosf(los);
+                        
+                        float N = APN_GAIN;
+                        aCmd = N * Vc * losRate_accel + (N * 0.5f) * a_t_perp;
+                    } else if (p->guidance == GUIDANCE_PP) {
+                        float err = los - gamma;
+                        while (err > (float)M_PI) err -= 2.0f * (float)M_PI;
+                        while (err < -(float)M_PI) err += 2.0f * (float)M_PI;
+                        
+                        aCmd = PP_GAIN * speed * err;
+                    }
+
+                    if (aCmd > p->maxLatAccel) aCmd = p->maxLatAccel;
+                    if (aCmd < -p->maxLatAccel) aCmd = -p->maxLatAccel;
+                    
+                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / AUTOPILOT_LAG);
                 }
             }
-            p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / AUTOPILOT_LAG);
-            p->vel.x += (-p->actualLatAccel * sinf(gamma)) * dt;
-            p->vel.y += (p->actualLatAccel * cosf(gamma)) * dt;
+
+            if (!p->missed) {
+                float a_x_lateral = -p->actualLatAccel * sinf(gamma);
+                float a_y_lateral = p->actualLatAccel * cosf(gamma);
+                
+                p->vel.x += a_x_lateral * dt;
+                p->vel.y += a_y_lateral * dt;
+                
+                float newSpeed = vec2_len(p->vel);
+                if (newSpeed > 0.001f) {
+                    p->vel = vec2_mul(p->vel, speed / newSpeed);
+                }
+            }
         }
 
         p->life -= dt;
@@ -985,6 +1220,21 @@ static void update_playing(Game* g, float dt) {
         if (e->hitFlash < 0.0f) e->hitFlash = 0.0f;
 
         ep = enemy_position(e);
+        
+        {
+            static Vec2 prevEnemyPos[MAX_ENEMIES] = {{0,0}};
+            static Vec2 prevEnemyVel[MAX_ENEMIES] = {{0,0}};
+            
+            if (prevEnemyPos[i].x == 0 && prevEnemyPos[i].y == 0) {
+                prevEnemyPos[i] = ep;
+            }
+            
+            e->vel = vec2_mul(vec2_sub(ep, prevEnemyPos[i]), 1.0f/dt);
+            e->accel = vec2_mul(vec2_sub(e->vel, prevEnemyVel[i]), 1.0f/dt);
+            
+            prevEnemyPos[i] = ep;
+            prevEnemyVel[i] = e->vel;
+        }
 
         if (circle_vs_circle(g->player.pos, g->player.size * 0.8f, ep, e->size)) {
             g->player.hp -= e->damage * dt;
@@ -1000,17 +1250,22 @@ static void update_playing(Game* g, float dt) {
             
             if (e->type == ENEMY_DIAMOND) {
                 if (e->burstCount > 0) {
-                    float apnFactor = 0.5f * (g->wave / 10.0f); /* Increasing G overload */
-                    if (apnFactor > 0.5f) apnFactor = 0.5f;
-                    
-                    spawn_projectile(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_APNG, -1, apnFactor * MAX_PLAYER_LAT_ACCEL);
+                    float ppOverload = MAX_PLAYER_LAT_ACCEL * 0.5f;
+                    spawn_projectile(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
                     e->burstCount--;
-                    e->shootCooldown = 0.5f; /* Short gap between burst shots */
+                    e->shootCooldown = 0.5f;
                     if (e->burstCount == 0) {
-                        e->shootCooldown = randf(3.0f, 7.0f); /* Space between bursts */
+                        e->shootCooldown = randf(3.0f, 7.0f);
                         e->burstCount = 3;
                     }
+                } else {
+                    e->shootCooldown = randf(3.0f, 7.0f);
+                    e->burstCount = 3;
                 }
+            } else if (e->type == ENEMY_PENTAGON) {
+                float apnOverload = MAX_PLAYER_LAT_ACCEL * 1.0f;
+                spawn_projectile(g, ep, dirToPlayer, 0, 250.0f + g->wave * 15.0f, 30.0f + g->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
+                e->shootCooldown = randf(2.5f, 4.0f);
             } else if (e->isBoss) {
                 Vec2 sideA = vec2_norm(vec2(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 Vec2 sideB = vec2_norm(vec2(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
@@ -1952,7 +2207,7 @@ void game_render(Game* g) {
                       (Color){0.14f + 0.06f * upgradeHoverAnim[i], 0.20f + i * 0.07f + 0.06f * upgradeHoverAnim[i], 0.45f + 0.10f * upgradeHoverAnim[i], 0.92f + 0.04f * upgradeHoverAnim[i]});
             draw_upgrade_icon(g->upgrades[i].type, bx + cardW - 25.0f * uiScale, by + cardH - 26.0f * uiScale);
             draw_text(bx + 12.0f * uiScale, by + 34.0f * uiScale, g->upgrades[i].label, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
-            draw_text(bx + 12.0f * uiScale, by + 62.0f * uiScale, g->upgrades[i].desc, GLUT_BITMAP_HELVETICA_12, 0.88f, 0.95f, 1.0f);
+            draw_text_wrapped(bx + 12.0f * uiScale, by + 62.0f * uiScale, g->upgrades[i].desc, GLUT_BITMAP_HELVETICA_12, 0.88f, 0.95f, 1.0f, cardW - 32.0f * uiScale);
             {
                 char idx[8];
                 snprintf(idx, sizeof(idx), "[%d]", i + 1);
@@ -2042,7 +2297,3 @@ void game_begin_frame(Game* g) {
     memset(g->input.keysPressed, 0, sizeof(g->input.keysPressed));
     memset(g->input.mousePressed, 0, sizeof(g->input.mousePressed));
 }
-
-
-
-

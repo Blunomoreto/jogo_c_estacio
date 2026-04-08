@@ -25,16 +25,19 @@ typedef struct Player {
     float fireRate;
     float fireCooldown;
     float projectileSpeed;
-    /* Platformer physics */
+    /* Physics */
     float velY;              /* Vertical velocity (positive = falling) */
     int isOnGround;          /* 1 if player is touching ground */
     float jumpPressedTime;   /* Time space/W has been held (for variable jump) */
-    
+    Vec2 vel;                /* Integrated velocity for APN */
+    Vec2 accel;              /* Integrated acceleration for APN */
+
     /* Guidance Upgrades */
     int hasPP;
     int hasAPNG;
     int guidedAmmo;
     int maxGuidedAmmo;
+    float maxLatAccel;
 } Player;
 
 typedef struct Enemy {
@@ -55,6 +58,10 @@ typedef struct Enemy {
     /* Diamond Burst Behavior */
     int burstCount;
     float burstTimer;
+    
+    /* Velocity and acceleration tracking for accurate guidance calculations */
+    Vec2 vel;
+    Vec2 accel;
 } Enemy;
 
 typedef struct Projectile {

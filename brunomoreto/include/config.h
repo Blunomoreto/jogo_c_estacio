@@ -16,7 +16,7 @@
 #define PLAYER_START_HP 100.0f
 #define PLAYER_BASE_SPEED 320.0f
 #define PLAYER_BASE_DAMAGE 16.0f
-#define PLAYER_BASE_FIRE_RATE 0.25f
+#define PLAYER_BASE_FIRE_RATE 0.357f  /* ~0.7x of 0.25f, slowed down */
 #define PLAYER_BASE_PROJECTILE_SPEED 560.0f
 
 /* Gravity and jumping */

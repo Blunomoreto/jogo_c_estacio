@@ -32,6 +32,8 @@ typedef enum UpgradeType {
     UPGRADE_TIME,
     UPGRADE_GUIDANCE_PP,
     UPGRADE_GUIDANCE_APNG,
+    UPGRADE_AMMO,
+    UPGRADE_OVERLOAD,
     UPGRADE_COUNT
 } UpgradeType;
 
@@ -39,7 +41,8 @@ typedef enum EnemyType {
     ENEMY_STANDARD = 0,
     ENEMY_SNIPER,
     ENEMY_TANK,
-    ENEMY_DIAMOND
+    ENEMY_DIAMOND,
+    ENEMY_PENTAGON
 } EnemyType;
 
 typedef enum GuidanceType {

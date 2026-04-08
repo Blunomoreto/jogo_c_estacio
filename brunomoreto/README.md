@@ -80,55 +80,53 @@ Sem assets, o jogo continua funcional com fallback visual/silencioso.
 
 ## Matriz de conformidade (JSON de requisitos)
 
-| Requisito | Status | Evidência no jogo |
-|---|---|---|
-| Linguagem C | ✅ | Projeto completo em C estruturado |
-| OpenGL + GLUT | ✅ | Renderização, input e loop via GLUT/OpenGL |
-| Mínimo 5 figuras | ✅ | Círculo, retângulo, triângulo, losango, estrela |
-| Mínimo 3 efeitos | ✅ | Brilho aditivo, transparência, parallax/partículas |
-| Tempo | ✅ | `timeLeft` no HUD e derrota por tempo |
-| Pontuação | ✅ | `score` por sobrevivência e eliminações |
-| Colisão | ✅ | Círculo-círculo e círculo-AABB (inimigos/projéteis/cenário) |
-| Animação | ✅ | Pulso do player, órbita inimiga, partículas |
-| Teclado + mouse | ✅ | Movimento, menu, opções, tiro, seleção |
-| Menu inicial | ✅ | Tela inicial com Start/Options/Scoreboard |
-| Pausa | ✅ | `P` ou `ESC` |
-| Vitória/derrota | ✅ | Telas finais com fluxo de save |
-| Áudio | ✅ | BGM + SFX com toggle de áudio |
-| Imagens | ✅ | Textura de fundo PPM opcional |
-| Persistência | ✅ | `stats.dat`, `scoreboard.dat`, `settings.dat` |
-| Screenshot nativa | ✅ | `F12` com `glReadPixels` para `screenshots/*.ppm` |
-| Histórico local | ✅ | Ranking completo paginado + limpar histórico |
+| Requisito         | Status | Evidência no jogo                                           |
+| Linguagem C       | ✅       | Projeto completo em C estruturado                           |
+| OpenGL + GLUT     | ✅       | Renderização, input e loop via GLUT/OpenGL                  |
+| Mínimo 5 figuras  | ✅       | Círculo, retângulo, triângulo, losango, estrela             |
+| Mínimo 3 efeitos  | ✅       | Brilho aditivo, transparência, parallax/partículas          |
+| Tempo             | ✅       | `timeLeft` no HUD e derrota por tempo                       |
+| Pontuação         | ✅       | `score` por sobrevivência e eliminações                     |
+| Colisão           | ✅       | Círculo-círculo e círculo-AABB (inimigos/projéteis/cenário) |
+| Animação          | ✅       | Pulso do player, órbita inimiga, partículas                 |
+| Teclado + mouse   | ✅       | Movimento, menu, opções, tiro, seleção                      |
+| Menu inicial      | ✅       | Tela inicial com Start/Options/Scoreboard                   |
+| Pausa             | ✅       | `P` ou `ESC`                                                |
+| Vitória/derrota   | ✅       | Telas finais com fluxo de save                              |
+| Áudio             | ✅       | BGM + SFX com toggle de áudio                               |
+| Imagens           | ✅       | Textura de fundo PPM opcional                               |
+| Persistência      | ✅       | `stats.dat`, `scoreboard.dat`, `settings.dat`               |
+| Screenshot nativa | ✅       | `F12` com `glReadPixels` para `screenshots/*.ppm`           |
+| Histórico local   | ✅       | Ranking completo paginado + limpar histórico                |
 
 ## Presets de balanceamento (dificuldade)
 
-| Preset | HP inimigo | Dano inimigo | Cadência inimiga | Tempo inicial | Waves p/ vitória | Multiplicador de score |
-|---|---:|---:|---:|---:|---:|---:|
-| EASY | 0.86x | 0.82x | 1.16x (mais lenta) | +40s | -1 | 0.95x |
-| NORMAL | 1.00x | 1.00x | 1.00x | base | base | 1.00x |
-| HARD | 1.25x | 1.24x | 0.84x (mais rápida) | -25s | +1 | 1.15x |
+| Preset | HP inimigo | Dano inimigo | Cadência inimiga    | Tempo inicial | Waves p/ vitória | Multiplicador de score |
+| EASY   | 0.86x      | 0.82x        | 1.16x (mais lenta)  | +40s          | -1               | 0.95x                  |
+| NORMAL | 1.00x      | 1.00x        | 1.00x               | base          | base             | 1.00x                  |
+| HARD   | 1.25x      | 1.24x        | 0.84x (mais rápida) | -25s          | +1               | 1.15x                  |
 
 ## Roteiro de demonstração (5 minutos)
 
 1. **00:00–00:40** — Menu inicial
-	- Mostrar `START`, `OPTIONS`, `SCOREBOARD`.
+Mostrar `START`, `OPTIONS`, `SCOREBOARD`.
 
 2. **00:40–01:20** — Configuração
-	- Entrar em `OPTIONS` e alternar áudio + dificuldade.
-	- Voltar ao menu e destacar persistência das configurações.
+Entrar em `OPTIONS` e alternar áudio + dificuldade.
+Voltar ao menu e destacar persistência das configurações.
 
 3. **01:20–03:20** — Gameplay principal
-	- Movimentar com teclado e mirar/atirar com mouse.
-	- Mostrar colisões (inimigo/projétil/cenário), HUD, pontuação e tempo.
-	- Abrir tela de upgrades, selecionar upgrade e usar reroll.
+Movimentar com teclado e mirar/atirar com mouse.
+Mostrar colisões (inimigo/projétil/cenário), HUD, pontuação e tempo.
+Abrir tela de upgrades, selecionar upgrade e usar reroll.
 
 4. **03:20–04:20** — Efeitos e extras
-	- Destacar brilho, transparência, partículas e animações.
-	- Tirar screenshot com `F12` e mostrar notificação.
+Destacar brilho, transparência, partículas e animações.
+Tirar screenshot com `F12` e mostrar notificação.
 
 5. **04:20–05:00** — Encerramento de run
-	- Mostrar vitória/derrota, salvar nome/pontuação.
-	- Abrir ranking completo com paginação.
+Mostrar vitória/derrota, salvar nome/pontuação.
+Abrir ranking completo com paginação.
 
 ## Notas de UI/UX (mar/2026)
 
