@@ -2,6 +2,16 @@
 
 Jogo 2D platformer com ação em C estruturado (sem OO), onde você controla um humano em um cenário extraterrestre com gravidade e mecânicas de pulo, survivalidade com upgrades.
 
+## Estrutura do repositório
+
+O repositório não deve conter conteúdos de terceiros, estes serão baixados e instalados a partir de scripts de setup.
+
+A pasta scripts contém os scripts de instalação e compilação utilizados para construir o projeto.
+
+A pasta `src` contém os arquivos críticos de execução.
+
+A raíz do repositório contém apenas arquivos instrucionais e de setup.
+
 ## Requisitos atendidos
 
 - Linguagem: C
