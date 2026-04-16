@@ -1573,7 +1573,7 @@ void game_on_special_down(Game* g, int key, int x, int y) {
         struct tm* tmv = localtime(&t);
         char filename[128];
 
-        snprintf(filename, sizeof(filename), "screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
+        snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
                  tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
                  tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
         if (screenshot_capture_ppm(filename, g->width, g->height)) {
