@@ -8,22 +8,28 @@
 
 static int s_audioEnabled = 1;
 
-void audio_init(void) {
+void audio_init(void)
+{
 }
 
-void audio_set_enabled(int enabled) {
+void audio_set_enabled(int enabled)
+{
     s_audioEnabled = enabled ? 1 : 0;
-    if (!s_audioEnabled) {
+    if (!s_audioEnabled)
+    {
         audio_stop_bgm();
     }
 }
 
-int audio_is_enabled(void) {
+int audio_is_enabled(void)
+{
     return s_audioEnabled;
 }
 
-void audio_play_bgm(void) {
-    if (!s_audioEnabled) {
+void audio_play_bgm(void)
+{
+    if (!s_audioEnabled)
+    {
         return;
     }
 #ifdef _WIN32
@@ -31,14 +37,17 @@ void audio_play_bgm(void) {
 #endif
 }
 
-void audio_stop_bgm(void) {
+void audio_stop_bgm(void)
+{
 #ifdef _WIN32
     PlaySoundA(NULL, NULL, 0);
 #endif
 }
 
-void audio_play_shoot(void) {
-    if (!s_audioEnabled) {
+void audio_play_shoot(void)
+{
+    if (!s_audioEnabled)
+    {
         return;
     }
 #ifdef _WIN32
@@ -46,8 +55,10 @@ void audio_play_shoot(void) {
 #endif
 }
 
-void audio_play_hit(void) {
-    if (!s_audioEnabled) {
+void audio_play_hit(void)
+{
+    if (!s_audioEnabled)
+    {
         return;
     }
 #ifdef _WIN32
@@ -55,8 +66,10 @@ void audio_play_hit(void) {
 #endif
 }
 
-void audio_play_jump(void) {
-    if (!s_audioEnabled) {
+void audio_play_jump(void)
+{
+    if (!s_audioEnabled)
+    {
         return;
     }
 #ifdef _WIN32
@@ -64,8 +77,10 @@ void audio_play_jump(void) {
 #endif
 }
 
-void audio_play_land(void) {
-    if (!s_audioEnabled) {
+void audio_play_land(void)
+{
+    if (!s_audioEnabled)
+    {
         return;
     }
 #ifdef _WIN32

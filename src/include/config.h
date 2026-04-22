@@ -16,19 +16,17 @@
 #define PLAYER_START_HP 100.0f
 #define PLAYER_BASE_SPEED 320.0f
 #define PLAYER_BASE_DAMAGE 16.0f
-#define PLAYER_BASE_FIRE_RATE 0.357f  /* ~0.7x of 0.25f, slowed down */
+#define PLAYER_BASE_FIRE_RATE 0.357f
 #define PLAYER_BASE_PROJECTILE_SPEED 560.0f
 
-/* Gravity and jumping */
-#define GRAVITY 800.0f                  /* pixels/s^2 */
-#define PLAYER_JUMP_FORCE 400.0f        /* pixels/s (upward velocity) */
-#define PLAYER_MAX_JUMP_HEIGHT 32.0f    /* 2x player size (default player size 16) */
-#define GROUND_Y 550.0f                 /* Y coordinate of the ground (measured from top) */
+#define GRAVITY 800.0f
+#define PLAYER_JUMP_FORCE 400.0f
+#define PLAYER_MAX_JUMP_HEIGHT 32.0f
+#define GROUND_Y 550.0f
 
 #define RUN_TIME_LIMIT 180.0f
 #define WAVES_TO_WIN 6
 
-/* Difficulty presets: EASY(0), NORMAL(1), HARD(2) */
 #define DIFF_EASY_ENEMY_HP_MUL 0.86f
 #define DIFF_NORMAL_ENEMY_HP_MUL 1.00f
 #define DIFF_HARD_ENEMY_HP_MUL 1.25f

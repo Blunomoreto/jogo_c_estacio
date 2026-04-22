@@ -1,19 +1,22 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-typedef struct Vec2 {
+typedef struct Vec2
+{
     float x;
     float y;
 } Vec2;
 
-typedef struct Color {
+typedef struct Color
+{
     float r;
     float g;
     float b;
     float a;
 } Color;
 
-typedef enum GameScreen {
+typedef enum GameScreen
+{
     SCREEN_MENU = 0,
     SCREEN_OPTIONS,
     SCREEN_SCORES,
@@ -24,7 +27,8 @@ typedef enum GameScreen {
     SCREEN_LOSE
 } GameScreen;
 
-typedef enum UpgradeType {
+typedef enum UpgradeType
+{
     UPGRADE_DAMAGE = 0,
     UPGRADE_FIRE_RATE,
     UPGRADE_SPEED,
@@ -37,7 +41,8 @@ typedef enum UpgradeType {
     UPGRADE_COUNT
 } UpgradeType;
 
-typedef enum EnemyType {
+typedef enum EnemyType
+{
     ENEMY_STANDARD = 0,
     ENEMY_SNIPER,
     ENEMY_TANK,
@@ -45,7 +50,8 @@ typedef enum EnemyType {
     ENEMY_PENTAGON
 } EnemyType;
 
-typedef enum GuidanceType {
+typedef enum GuidanceType
+{
     GUIDANCE_NONE = 0,
     GUIDANCE_PP,
     GUIDANCE_APNG

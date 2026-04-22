@@ -5,7 +5,8 @@
 #include "persistence.h"
 #include "types.h"
 
-typedef struct InputState {
+typedef struct InputState
+{
     unsigned char keys[256];
     unsigned char keysPressed[256];
     unsigned char special[256];
@@ -15,7 +16,8 @@ typedef struct InputState {
     int mouseY;
 } InputState;
 
-typedef struct Player {
+typedef struct Player
+{
     Vec2 pos;
     float size;
     float hp;
@@ -24,15 +26,14 @@ typedef struct Player {
     float damage;
     float fireRate;
     float fireCooldown;
-    float projectileSpeed;
-    /* Physics */
-    float velY;              /* Vertical velocity (positive = falling) */
-    int isOnGround;          /* 1 if player is touching ground */
-    float jumpPressedTime;   /* Time space/W has been held (for variable jump) */
-    Vec2 vel;                /* Integrated velocity for APN */
-    Vec2 accel;              /* Integrated acceleration for APN */
 
-    /* Guidance Upgrades */
+    float projectileSpeed;
+    float velY;
+    int isOnGround;
+    float jumpPressedTime;
+    Vec2 vel;
+    Vec2 accel;
+
     int hasPP;
     int hasAPNG;
     int guidedAmmo;
@@ -40,7 +41,8 @@ typedef struct Player {
     float maxLatAccel;
 } Player;
 
-typedef struct Enemy {
+typedef struct Enemy
+{
     int active;
     int isBoss;
     EnemyType type;
@@ -55,16 +57,15 @@ typedef struct Enemy {
     float shootCooldown;
     float hitFlash;
 
-    /* Diamond Burst Behavior */
     int burstCount;
     float burstTimer;
-    
-    /* Velocity and acceleration tracking for accurate guidance calculations */
+
     Vec2 vel;
     Vec2 accel;
 } Enemy;
 
-typedef struct Projectile {
+typedef struct Projectile
+{
     int active;
     int fromPlayer;
     Vec2 pos;
@@ -73,7 +74,6 @@ typedef struct Projectile {
     float life;
     float damage;
 
-    /* Guidance Logic */
     GuidanceType guidance;
     int targetIdx;
     float actualLatAccel;
@@ -81,10 +81,11 @@ typedef struct Projectile {
     float prevDist;
     int missed;
     float sdTimer;
-    float maxLatAccel; /* Dynamic limit for enemies */
+    float maxLatAccel;
 } Projectile;
 
-typedef struct Particle {
+typedef struct Particle
+{
     int active;
     Vec2 pos;
     Vec2 vel;
@@ -93,7 +94,8 @@ typedef struct Particle {
     Color color;
 } Particle;
 
-typedef struct Obstacle {
+typedef struct Obstacle
+{
     int active;
     float x;
     float y;
@@ -101,13 +103,15 @@ typedef struct Obstacle {
     float h;
 } Obstacle;
 
-typedef struct UpgradeOption {
+typedef struct UpgradeOption
+{
     UpgradeType type;
     char label[64];
     char desc[96];
 } UpgradeOption;
 
-typedef struct Game {
+typedef struct Game
+{
     GameScreen screen;
     InputState input;
 
@@ -161,19 +165,18 @@ typedef struct Game {
     int bgTextureLoaded;
 } Game;
 
-void game_init(Game* g, int width, int height);
-void game_update(Game* g, float dt);
-void game_render(Game* g);
-void game_restart(Game* g);
+void game_init(Game *g, int width, int height);
+void game_update(Game *g, float dt);
+void game_render(Game *g);
+void game_restart(Game *g);
 
-void game_on_key_down(Game* g, unsigned char key, int x, int y);
-void game_on_key_up(Game* g, unsigned char key, int x, int y);
-void game_on_special_down(Game* g, int key, int x, int y);
-void game_on_special_up(Game* g, int key, int x, int y);
-void game_on_mouse(Game* g, int button, int state, int x, int y);
-void game_on_mouse_move(Game* g, int x, int y);
+void game_on_key_down(Game *g, unsigned char key, int x, int y);
+void game_on_key_up(Game *g, unsigned char key, int x, int y);
+void game_on_special_down(Game *g, int key, int x, int y);
+void game_on_special_up(Game *g, int key, int x, int y);
+void game_on_mouse(Game *g, int button, int state, int x, int y);
+void game_on_mouse_move(Game *g, int x, int y);
 
-void game_begin_frame(Game* g);
+void game_begin_frame(Game *g);
 
 #endif
-
