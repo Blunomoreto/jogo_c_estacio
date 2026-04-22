@@ -28,6 +28,7 @@ Write-Host "[2/2] Compilando jogo..."
     -I"$includeDir" `
     -I"$glutInclude" `
     (Join-Path $ProjectRoot "lib\main.c") `
+    (Join-Path $ProjectRoot "lib\setup_folders.c") `
     (Join-Path $ProjectRoot "lib\game.c") `
     (Join-Path $ProjectRoot "lib\collision.c") `
     (Join-Path $ProjectRoot "lib\persistence.c") `

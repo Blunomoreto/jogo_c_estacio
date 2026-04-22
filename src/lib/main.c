@@ -1,5 +1,6 @@
 #include "config.h"
 #include "game.h"
+#include "setup_folders.h"
 
 #include <GL/glut.h>
 
@@ -73,6 +74,7 @@ static void motion_cb(int x, int y)
 
 int main(int argc, char **argv)
 {
+    setup_folders();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);

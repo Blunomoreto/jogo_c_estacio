@@ -16,20 +16,13 @@ Como o jogo utiliza um sistema de coordenadas isso evita problemas na construç�
 ### Plano de fundo
 
 O plano de fundo muda conforme a resolução da janela é alterada (comportamento esperado?)
+O arquivo não é salvo na pasta images durante inicialização (comportamento esperado?)
 
 ### Keybinds no menu
 
 Atualmente os itens do menu possuem keybinds para ativação (comportamento esperado?)
 
 ## Back
-
-### Suporte a outras plataformas
-
-Outras plataformas como linux ou mac não utilizam powershell, logo o script .ps1 não funcionará como esperado, é necessário criar scripts de instalação para estes sistemas. (OBS: NÃO É NECESSÁRIO, PODE SER LISTADO COMO FEITO APENAS PARA WINDOWS)
-
-### Criação de arquivos internos automáticamente
-
-Arquivos dentro da pasta `data` devem ser criado automáticamente durante a inicialização se não existirem.
 
 ### Melhoria nos projéteis guiados
 

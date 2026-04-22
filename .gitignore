@@ -1,5 +1,6 @@
 # Utilizado para definir pastas e arquivos que não serão replicados no github.
 
+*/assets
 */build
 */third_party
 
