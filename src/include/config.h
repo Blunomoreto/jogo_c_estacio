@@ -51,8 +51,14 @@
 #define DIFF_NORMAL_SCORE_MUL 1.00f
 #define DIFF_HARD_SCORE_MUL 1.15f
 
-#define DATA_FILE "assets/data/scoreboard.dat"
+#define ASSETS_FOLDER "assets/"
+
+#define DATA_FOLDER "assets/data/"
+#define SCOREBOARD_FILE "assets/data/scoreboard.dat"
 #define STATS_FILE "assets/data/stats.dat"
 #define SETTINGS_FILE "assets/data/settings.dat"
+
+#define IMAGES_FOLDER "assets/images/"
+#define SCREENSHOTS_FOLDER "assets/screenshots/"
 
 #endif

@@ -35,7 +35,7 @@ void persistence_save_stats(int highScore, int maxWave)
 
 void persistence_append_score(const char *name, int score, int wave)
 {
-    FILE *f = fopen(DATA_FILE, "a");
+    FILE *f = fopen(SCOREBOARD_FILE, "a");
     if (!f)
     {
         return;
@@ -46,7 +46,7 @@ void persistence_append_score(const char *name, int score, int wave)
 
 int persistence_load_top_scores(ScoreEntry *outEntries, int maxEntries)
 {
-    FILE *f = fopen(DATA_FILE, "r");
+    FILE *f = fopen(SCOREBOARD_FILE, "r");
     char line[160];
     int count = 0;
 
@@ -106,7 +106,7 @@ int persistence_load_top_scores(ScoreEntry *outEntries, int maxEntries)
 
 int persistence_load_scores(ScoreEntry *outEntries, int maxEntries)
 {
-    FILE *f = fopen(DATA_FILE, "r");
+    FILE *f = fopen(SCOREBOARD_FILE, "r");
     char line[160];
     int count = 0;
 
@@ -166,7 +166,7 @@ int persistence_load_scores(ScoreEntry *outEntries, int maxEntries)
 
 void persistence_clear_scores(void)
 {
-    FILE *f = fopen(DATA_FILE, "w");
+    FILE *f = fopen(SCOREBOARD_FILE, "w");
     if (!f)
     {
         return;

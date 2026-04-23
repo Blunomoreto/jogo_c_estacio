@@ -1,6 +1,6 @@
 #include "config.h"
 #include "game.h"
-#include "setup_folders.h"
+#include "folders.h"
 
 #include <GL/glut.h>
 

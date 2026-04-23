@@ -28,13 +28,16 @@ Write-Host "[2/2] Compilando jogo..."
     -I"$includeDir" `
     -I"$glutInclude" `
     (Join-Path $ProjectRoot "lib\main.c") `
-    (Join-Path $ProjectRoot "lib\setup_folders.c") `
+
     (Join-Path $ProjectRoot "lib\game.c") `
     (Join-Path $ProjectRoot "lib\collision.c") `
     (Join-Path $ProjectRoot "lib\persistence.c") `
     (Join-Path $ProjectRoot "lib\audio_winmm.c") `
     (Join-Path $ProjectRoot "lib\screenshot.c") `
     (Join-Path $ProjectRoot "lib\image.c") `
+
+
+    (Join-Path $ProjectRoot "lib\setup\folders.c") `
     -L"$glutLib" `
     -o "$outExe" `
     -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
