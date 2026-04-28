@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int skip_comments(FILE *f)
+static int image_skip_comments(FILE *f)
 {
     int c = fgetc(f);
     while (c == '#')
@@ -44,17 +44,17 @@ unsigned int image_load_texture_ppm(const char *path, int *ok)
         return 0;
     }
 
-    if (!skip_comments(f) || fscanf(f, "%d", &width) != 1)
+    if (!image_skip_comments(f) || fscanf(f, "%d", &width) != 1)
     {
         fclose(f);
         return 0;
     }
-    if (!skip_comments(f) || fscanf(f, "%d", &height) != 1)
+    if (!image_skip_comments(f) || fscanf(f, "%d", &height) != 1)
     {
         fclose(f);
         return 0;
     }
-    if (!skip_comments(f) || fscanf(f, "%d", &maxval) != 1 || maxval != 255)
+    if (!image_skip_comments(f) || fscanf(f, "%d", &maxval) != 1 || maxval != 255)
     {
         fclose(f);
         return 0;

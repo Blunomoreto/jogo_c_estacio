@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "config.h"
+
 typedef struct Vec2
 {
     float x;
@@ -56,5 +58,172 @@ typedef enum GuidanceType
     GUIDANCE_PP,
     GUIDANCE_APNG
 } GuidanceType;
+
+typedef struct ScoreEntry
+{
+    char name[24];
+    int score;
+    int wave;
+} ScoreEntry;
+
+typedef struct InputState
+{
+    unsigned char keys[256];
+    unsigned char keysPressed[256];
+    unsigned char special[256];
+    unsigned char mouseDown[3];
+    unsigned char mousePressed[3];
+    int mouseX;
+    int mouseY;
+} InputState;
+
+typedef struct Player
+{
+    Vec2 pos;
+    float size;
+    float hp;
+    float maxHp;
+    float speed;
+    float damage;
+    float fireRate;
+    float fireCooldown;
+
+    float projectileSpeed;
+    float velY;
+    int isOnGround;
+    float jumpPressedTime;
+    Vec2 vel;
+    Vec2 accel;
+
+    int hasPP;
+    int hasAPNG;
+    int guidedAmmo;
+    int maxGuidedAmmo;
+    float maxLatAccel;
+} Player;
+
+typedef struct Enemy
+{
+    int active;
+    int isBoss;
+    EnemyType type;
+    Vec2 center;
+    float orbitRadius;
+    float angle;
+    float angularSpeed;
+    float size;
+    float hp;
+    float maxHp;
+    float damage;
+    float shootCooldown;
+    float hitFlash;
+
+    int burstCount;
+    float burstTimer;
+
+    Vec2 vel;
+    Vec2 accel;
+} Enemy;
+
+typedef struct Projectile
+{
+    int active;
+    int fromPlayer;
+    Vec2 pos;
+    Vec2 vel;
+    float radius;
+    float life;
+    float damage;
+
+    GuidanceType guidance;
+    int targetIdx;
+    float actualLatAccel;
+    float fuelTimer;
+    float prevDist;
+    int missed;
+    float sdTimer;
+    float maxLatAccel;
+} Projectile;
+
+typedef struct Particle
+{
+    int active;
+    Vec2 pos;
+    Vec2 vel;
+    float size;
+    float life;
+    Color color;
+} Particle;
+
+typedef struct Obstacle
+{
+    int active;
+    float x;
+    float y;
+    float w;
+    float h;
+} Obstacle;
+
+typedef struct UpgradeOption
+{
+    UpgradeType type;
+    char label[64];
+    char desc[96];
+} UpgradeOption;
+
+typedef struct Game
+{
+    GameScreen screen;
+    InputState input;
+
+    int width;
+    int height;
+
+    int running;
+    int lastTicks;
+    float deltaTime;
+
+    Player player;
+    Enemy enemies[MAX_ENEMIES];
+    Projectile projectiles[MAX_PROJECTILES];
+    Particle particles[MAX_PARTICLES];
+    Obstacle obstacles[MAX_OBSTACLES];
+
+    int wave;
+    int enemiesRemaining;
+    int wavesToWin;
+
+    float timeLeft;
+    float elapsed;
+    int score;
+    int gold;
+    float damageFlash;
+    float upgradeFlash;
+    int upgradeHover;
+    char lastUpgrade[64];
+    float lastUpgradeTimer;
+    char toastMessage[128];
+    float toastTimer;
+    int audioEnabled;
+    int difficulty;
+
+    UpgradeOption upgrades[MAX_UPGRADE_OPTIONS];
+
+    int highScore;
+    int maxWaveEver;
+    ScoreEntry topScores[5];
+    int topScoreCount;
+    ScoreEntry allScores[64];
+    int allScoreCount;
+    int scorePage;
+    int scorePageSize;
+
+    char playerName[24];
+    int enteringName;
+    int nameSaved;
+
+    unsigned int bgTexture;
+    int bgTextureLoaded;
+} Game;
 
 #endif

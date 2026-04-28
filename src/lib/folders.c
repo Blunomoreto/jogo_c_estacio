@@ -1,5 +1,4 @@
 #include "config.h"
-
 #include "folders.h"
 
 #include <stdio.h>
@@ -8,7 +7,7 @@
 
 struct stat status = {0};
 
-void setup_folders(void)
+void folders_setup(void)
 {
     if (stat(ASSETS_FOLDER, &status) == -1)
     {

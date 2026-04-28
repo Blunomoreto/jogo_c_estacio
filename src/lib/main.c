@@ -6,12 +6,12 @@
 
 static Game g_game;
 
-static void display_cb(void)
+static void main_display_cb(void)
 {
     game_render(&g_game);
 }
 
-static void reshape_cb(int w, int h)
+static void main_reshape_cb(int w, int h)
 {
     if (h <= 0)
     {
@@ -22,7 +22,7 @@ static void reshape_cb(int w, int h)
     glViewport(0, 0, w, h);
 }
 
-static void timer_cb(int value)
+static void main_timer_cb(int value)
 {
     int ticks = glutGet(GLUT_ELAPSED_TIME);
     float dt = (float)(ticks - g_game.lastTicks) / 1000.0f;
@@ -39,42 +39,42 @@ static void timer_cb(int value)
     game_update(&g_game, dt);
     game_begin_frame(&g_game);
     glutPostRedisplay();
-    glutTimerFunc(TARGET_FRAME_MS, timer_cb, value + 1);
+    glutTimerFunc(TARGET_FRAME_MS, main_timer_cb, value + 1);
 }
 
-static void keyboard_down_cb(unsigned char key, int x, int y)
+static void main_keyboard_down_cb(unsigned char key, int x, int y)
 {
     game_on_key_down(&g_game, key, x, y);
 }
 
-static void keyboard_up_cb(unsigned char key, int x, int y)
+static void main_keyboard_up_cb(unsigned char key, int x, int y)
 {
     game_on_key_up(&g_game, key, x, y);
 }
 
-static void special_down_cb(int key, int x, int y)
+static void main_special_down_cb(int key, int x, int y)
 {
     game_on_special_down(&g_game, key, x, y);
 }
 
-static void special_up_cb(int key, int x, int y)
+static void main_special_up_cb(int key, int x, int y)
 {
     game_on_special_up(&g_game, key, x, y);
 }
 
-static void mouse_cb(int button, int state, int x, int y)
+static void main_mouse_cb(int button, int state, int x, int y)
 {
     game_on_mouse(&g_game, button, state, x, y);
 }
 
-static void motion_cb(int x, int y)
+static void main_motion_cb(int x, int y)
 {
     game_on_mouse_move(&g_game, x, y);
 }
 
 int main(int argc, char **argv)
 {
-    setup_folders();
+    folders_setup();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -83,16 +83,16 @@ int main(int argc, char **argv)
     game_init(&g_game, WINDOW_WIDTH, WINDOW_HEIGHT);
     g_game.lastTicks = glutGet(GLUT_ELAPSED_TIME);
 
-    glutDisplayFunc(display_cb);
-    glutReshapeFunc(reshape_cb);
-    glutKeyboardFunc(keyboard_down_cb);
-    glutKeyboardUpFunc(keyboard_up_cb);
-    glutSpecialFunc(special_down_cb);
-    glutSpecialUpFunc(special_up_cb);
-    glutMouseFunc(mouse_cb);
-    glutMotionFunc(motion_cb);
-    glutPassiveMotionFunc(motion_cb);
-    glutTimerFunc(TARGET_FRAME_MS, timer_cb, 0);
+    glutDisplayFunc(main_display_cb);
+    glutReshapeFunc(main_reshape_cb);
+    glutKeyboardFunc(main_keyboard_down_cb);
+    glutKeyboardUpFunc(main_keyboard_up_cb);
+    glutSpecialFunc(main_special_down_cb);
+    glutSpecialUpFunc(main_special_up_cb);
+    glutMouseFunc(main_mouse_cb);
+    glutMotionFunc(main_motion_cb);
+    glutPassiveMotionFunc(main_motion_cb);
+    glutTimerFunc(TARGET_FRAME_MS, main_timer_cb, 0);
 
     glutMainLoop();
     return 0;

@@ -29,9 +29,17 @@ Write-Host "[2/2] Compilando jogo..."
     -I"$glutInclude" `
     (Join-Path $ProjectRoot "lib\main.c") `
     (Join-Path $ProjectRoot "lib\game.c") `
+    (Join-Path $ProjectRoot "lib\maths.c") `
+    (Join-Path $ProjectRoot "lib\render.c") `
+    (Join-Path $ProjectRoot "lib\enemy.c") `
+    (Join-Path $ProjectRoot "lib\particles.c") `
+    (Join-Path $ProjectRoot "lib\projectiles.c") `
+    (Join-Path $ProjectRoot "lib\upgrades.c") `
+    (Join-Path $ProjectRoot "lib\world.c") `
+    (Join-Path $ProjectRoot "lib\ui.c") `
     (Join-Path $ProjectRoot "lib\collision.c") `
     (Join-Path $ProjectRoot "lib\persistence.c") `
-    (Join-Path $ProjectRoot "lib\audio_winmm.c") `
+    (Join-Path $ProjectRoot "lib\audio.c") `
     (Join-Path $ProjectRoot "lib\screenshot.c") `
     (Join-Path $ProjectRoot "lib\image.c") `
     (Join-Path $ProjectRoot "lib\folders.c") `

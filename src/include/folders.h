@@ -1,6 +1,6 @@
 #ifndef FOLDERS_H
 #define FOLDERS_H
 
-void setup_folders(void);
+void folders_setup(void);
 
 #endif

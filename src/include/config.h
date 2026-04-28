@@ -51,6 +51,19 @@
 #define DIFF_NORMAL_SCORE_MUL 1.00f
 #define DIFF_HARD_SCORE_MUL 1.15f
 
+#define MAX_PLAYER_LAT_ACCEL 1800.0f
+#define INITIAL_PLAYER_LAT_ACCEL 800.0f
+
+#define AUTOPILOT_LAG 0.15f
+#define APN_GAIN 3.0f
+#define PP_GAIN 3.0f
+
+#define GUIDED_FUEL_TIME 2.0f
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define ASSETS_FOLDER "assets/"
 
 #define DATA_FOLDER "assets/data/"

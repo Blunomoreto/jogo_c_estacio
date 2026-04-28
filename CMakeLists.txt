@@ -9,11 +9,20 @@ include_directories(include)
 set(SOURCES
     src/lib/main.c
     src/lib/game.c
+    src/lib/maths.c
+    src/lib/render.c
+    src/lib/enemy.c
+    src/lib/particles.c
+    src/lib/projectiles.c
+    src/lib/upgrades.c
+    src/lib/world.c
+    src/lib/ui.c
     src/lib/collision.c
     src/lib/persistence.c
-    src/lib/audio_winmm.c
+    src/lib/audio.c
     src/lib/screenshot.c
     src/lib/image.c
+    src/lib/folders.c
 )
 
 add_executable(orbit_siege ${SOURCES})
