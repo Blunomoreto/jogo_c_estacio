@@ -1,15 +1,15 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-void audio_init(void);
-void audio_set_enabled(int enabled);
-void audio_play_bgm(void);
-void audio_stop_bgm(void);
-void audio_play_shoot(void);
-void audio_play_hit(void);
-void audio_play_jump(void);
-void audio_play_land(void);
+void audio_inicializar(void);
+void audio_definir_ativacao(int enabled);
+void audio_tocar_musica(void);
+void audio_parar_musica(void);
+void audio_tocar_som_tiro_disparo(void);
+void audio_tocar_som_tiro_atingido(void);
+void audio_tocar_som_pulo_inicio(void);
+void audio_tocar_som_pulo_fim(void);
 
-int audio_is_enabled(void);
+int audio_esta_ativado(void);
 
 #endif

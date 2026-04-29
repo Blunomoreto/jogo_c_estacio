@@ -8,25 +8,25 @@
 
 static int s_audioEnabled = 1;
 
-void audio_init(void)
+void audio_inicializar(void)
 {
 }
 
-void audio_set_enabled(int enabled)
+void audio_definir_ativacao(int enabled)
 {
     s_audioEnabled = enabled ? 1 : 0;
     if (!s_audioEnabled)
     {
-        audio_stop_bgm();
+        audio_parar_musica();
     }
 }
 
-int audio_is_enabled(void)
+int audio_esta_ativado(void)
 {
     return s_audioEnabled;
 }
 
-void audio_play_bgm(void)
+void audio_tocar_musica(void)
 {
     if (!s_audioEnabled)
     {
@@ -37,14 +37,14 @@ void audio_play_bgm(void)
 #endif
 }
 
-void audio_stop_bgm(void)
+void audio_parar_musica(void)
 {
 #ifdef _WIN32
     PlaySoundA(NULL, NULL, 0);
 #endif
 }
 
-void audio_play_shoot(void)
+void audio_tocar_som_tiro_disparo(void)
 {
     if (!s_audioEnabled)
     {
@@ -55,7 +55,7 @@ void audio_play_shoot(void)
 #endif
 }
 
-void audio_play_hit(void)
+void audio_tocar_som_tiro_atingido(void)
 {
     if (!s_audioEnabled)
     {
@@ -66,7 +66,7 @@ void audio_play_hit(void)
 #endif
 }
 
-void audio_play_jump(void)
+void audio_tocar_som_pulo_inicio(void)
 {
     if (!s_audioEnabled)
     {
@@ -77,7 +77,7 @@ void audio_play_jump(void)
 #endif
 }
 
-void audio_play_land(void)
+void audio_tocar_som_pulo_fim(void)
 {
     if (!s_audioEnabled)
     {

@@ -28,21 +28,21 @@ Write-Host "[2/2] Compilando jogo..."
     -I"$includeDir" `
     -I"$glutInclude" `
     (Join-Path $ProjectRoot "lib\main.c") `
-    (Join-Path $ProjectRoot "lib\game.c") `
-    (Join-Path $ProjectRoot "lib\maths.c") `
-    (Join-Path $ProjectRoot "lib\render.c") `
-    (Join-Path $ProjectRoot "lib\enemy.c") `
-    (Join-Path $ProjectRoot "lib\particles.c") `
-    (Join-Path $ProjectRoot "lib\projectiles.c") `
-    (Join-Path $ProjectRoot "lib\upgrades.c") `
-    (Join-Path $ProjectRoot "lib\world.c") `
-    (Join-Path $ProjectRoot "lib\ui.c") `
-    (Join-Path $ProjectRoot "lib\collision.c") `
-    (Join-Path $ProjectRoot "lib\persistence.c") `
+    (Join-Path $ProjectRoot "lib\jogo.c") `
+    (Join-Path $ProjectRoot "lib\matematica.c") `
+    (Join-Path $ProjectRoot "lib\renderizar.c") `
+    (Join-Path $ProjectRoot "lib\inimigo.c") `
+    (Join-Path $ProjectRoot "lib\particulas.c") `
+    (Join-Path $ProjectRoot "lib\projeteis.c") `
+    (Join-Path $ProjectRoot "lib\melhorias.c") `
+    (Join-Path $ProjectRoot "lib\cenario.c") `
+    (Join-Path $ProjectRoot "lib\interface.c") `
+    (Join-Path $ProjectRoot "lib\colisao.c") `
+    (Join-Path $ProjectRoot "lib\persistencia.c") `
     (Join-Path $ProjectRoot "lib\audio.c") `
-    (Join-Path $ProjectRoot "lib\screenshot.c") `
-    (Join-Path $ProjectRoot "lib\image.c") `
-    (Join-Path $ProjectRoot "lib\folders.c") `
+    (Join-Path $ProjectRoot "lib\print.c") `
+    (Join-Path $ProjectRoot "lib\imagem.c") `
+    (Join-Path $ProjectRoot "lib\pastas.c") `
     -L"$glutLib" `
     -o "$outExe" `
     -lopengl32 -lglu32 -lfreeglut -lwinmm -lm

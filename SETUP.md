@@ -59,7 +59,7 @@ Esse script:
 ### 4.2 Compilação manual (alternativa)
 
 powershell
-gcc -Iinclude -Ithird_party\freeglut\freeglut\include src\lib\main.c src\lib\game.c src\lib\collision.c src\lib\persistence.c src\lib\audio_winmm.c src\lib\screenshot.c src\lib\image.c -Lthird_party\freeglut\freeglut\lib\x64 -o orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
+gcc -Iinclude -Ithird_party\freeglut\freeglut\include src\lib\main.c src\lib\jogo.c src\lib\colisao.c src\lib\persistencia.c src\lib\audio_winmm.c src\lib\print.c src\lib\imagem.c -Lthird_party\freeglut\freeglut\lib\x64 -o orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
 Copy-Item -Force third_party\freeglut\freeglut\bin\x64\freeglut.dll .\freeglut.dll
 
 Se quiser usar CMake + MinGW Makefiles:

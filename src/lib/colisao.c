@@ -1,13 +1,13 @@
-#include "collision.h"
-#include "maths.h"
+#include "colisao.h"
+#include "matematica.h"
 
-int collision_circle_vs_circle(Vec2 a, float ra, Vec2 b, float rb)
+int colisao_circulo_vs_circulo(Vetor2D a, float ra, Vetor2D b, float rb)
 {
     const float r = ra + rb;
-    return maths_vec2_distance_sq(a, b) <= r * r;
+    return matematica_vetor2d_distance_sq(a, b) <= r * r;
 }
 
-int collision_circle_vs_aabb(Vec2 c, float r, Vec2 bmin, Vec2 bmax)
+int colisao_circulo_vs_retangulo(Vetor2D c, float r, Vetor2D bmin, Vetor2D bmax)
 {
     float closestX = c.x;
     float closestY = c.y;
@@ -28,7 +28,7 @@ int collision_circle_vs_aabb(Vec2 c, float r, Vec2 bmin, Vec2 bmax)
     return (dx * dx + dy * dy) <= r * r;
 }
 
-int collision_inside_rect(float x, float y, float rx, float ry, float rw, float rh)
+int colisao_dentro_do_retangulo(float x, float y, float rx, float ry, float rw, float rh)
 {
     return x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
 }

@@ -1,4 +1,4 @@
-#include "image.h"
+#include "imagem.h"
 
 #include <GL/glut.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@ static int image_skip_comments(FILE *f)
     return c != EOF;
 }
 
-unsigned int image_load_texture_ppm(const char *path, int *ok)
+unsigned int imagem_carregar_ppm(const char *path, int *ok)
 {
     FILE *f = fopen(path, "rb");
     char magic[3] = {0};

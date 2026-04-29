@@ -1,18 +1,18 @@
-#include "game.h"
+#include "jogo.h"
 #include "audio.h"
-#include "collision.h"
-#include "config.h"
-#include "enemy.h"
-#include "image.h"
-#include "maths.h"
-#include "particles.h"
-#include "persistence.h"
-#include "projectiles.h"
-#include "render.h"
-#include "screenshot.h"
-#include "ui.h"
-#include "upgrades.h"
-#include "world.h"
+#include "colisao.h"
+#include "configuracao.h"
+#include "inimigo.h"
+#include "imagem.h"
+#include "matematica.h"
+#include "particulas.h"
+#include "persistencia.h"
+#include "projeteis.h"
+#include "renderizar.h"
+#include "print.h"
+#include "interface.h"
+#include "melhorias.h"
+#include "cenario.h"
 
 #include <GL/glut.h>
 #include <ctype.h>
@@ -26,15 +26,15 @@ static void game_reset_player(Game *g)
 {
     memset(&g->player, 0, sizeof(g->player));
 
-    g->player.pos = maths_vec2((float)g->width * 0.5f, GROUND_Y - 16.0f);
+    g->player.pos = matematica_vetor2d((float)g->width * 0.5f, ALTURA_CHAO - 16.0f);
     g->player.size = 16.0f;
-    g->player.hp = PLAYER_START_HP;
-    g->player.maxHp = PLAYER_START_HP;
-    g->player.speed = PLAYER_BASE_SPEED;
-    g->player.damage = PLAYER_BASE_DAMAGE;
-    g->player.fireRate = PLAYER_BASE_FIRE_RATE;
+    g->player.hp = JOGADOR_INICIAL_VIDA;
+    g->player.maxHp = JOGADOR_INICIAL_VIDA;
+    g->player.speed = JOGADOR_INICIAL_VELOCIDADE;
+    g->player.damage = JOGADOR_INICIAL_DANO;
+    g->player.fireRate = JOGADOR_INICIAL_TAXA_DISPARO;
     g->player.fireCooldown = 0.0f;
-    g->player.projectileSpeed = PLAYER_BASE_PROJECTILE_SPEED;
+    g->player.projectileSpeed = JOGADOR_INICIAL_VELOCIDADE_PROJETIL;
     g->player.velY = 0.0f;
     g->player.isOnGround = 1;
     g->player.jumpPressedTime = 0.0f;
@@ -43,18 +43,18 @@ static void game_reset_player(Game *g)
     g->player.hasAPNG = 0;
     g->player.guidedAmmo = 0;
     g->player.maxGuidedAmmo = 0;
-    g->player.maxLatAccel = INITIAL_PLAYER_LAT_ACCEL;
+    g->player.maxLatAccel = JOGADOR_INICIAL_ACELERACAO_LATERAL;
 }
 
-void game_restart(Game *g)
+void jogo_reiniciar(Game *g)
 {
     game_reset_player(g);
-    world_clear_entities(g);
+    cenario_limpar_entidades(g);
 
     g->wave = 1;
-    g->wavesToWin = enemy_waves_to_win(g->difficulty);
+    g->wavesToWin = inimigo_ondas_vitoria(g->difficulty);
     g->enemiesRemaining = 0;
-    g->timeLeft = enemy_time_start(g->difficulty);
+    g->timeLeft = inimigo_tempo_inicio(g->difficulty);
     g->elapsed = 0.0f;
     g->score = 0;
     g->gold = 0;
@@ -72,11 +72,11 @@ void game_restart(Game *g)
     memset(g->playerName, 0, sizeof(g->playerName));
     snprintf(g->playerName, sizeof(g->playerName), "Player");
 
-    world_spawn_wave(g);
-    audio_play_bgm();
+    cenario_criar_onda(g);
+    audio_tocar_musica();
 }
 
-void game_init(Game *g, int width, int height)
+void jogo_iniciar(Game *g, int width, int height)
 {
     memset(g, 0, sizeof(*g));
     srand((unsigned int)time(NULL));
@@ -94,21 +94,21 @@ void game_init(Game *g, int width, int height)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    persistence_load_stats(&g->highScore, &g->maxWaveEver);
-    persistence_load_settings(&g->audioEnabled, &g->difficulty);
-    ui_refresh_top_scores(g);
-    ui_refresh_all_scores(g);
+    persistencia_carregar_stats(&g->highScore, &g->maxWaveEver);
+    persistencia_carregar_configuracoes(&g->audioEnabled, &g->difficulty);
+    interface_refrescar_pontuacoes_maximas(g);
+    interface_refrescar_pontuacoes(g);
 
-    g->bgTexture = image_load_texture_ppm("assets/images/background.ppm", &g->bgTextureLoaded);
-    audio_init();
-    audio_set_enabled(g->audioEnabled);
+    g->bgTexture = imagem_carregar_ppm("assets/images/background.ppm", &g->bgTextureLoaded);
+    audio_inicializar();
+    audio_definir_ativacao(g->audioEnabled);
 }
 
-static void game_update_playing(Game *g, float dt)
+static void jogo_atualizar_playing(Game *g, float dt)
 {
     int i;
     int tookHit = 0;
-    float scoreMul = enemy_score_mul(g->difficulty);
+    float scoreMul = inimigo_multiplicador_pontos(g->difficulty);
 
     float moveX = 0.0f;
     if (g->input.keys['a'] || g->input.keys['A'] || g->input.special[GLUT_KEY_LEFT])
@@ -130,13 +130,13 @@ static void game_update_playing(Game *g, float dt)
     {
         if (g->player.isOnGround)
         {
-            g->player.velY = -PLAYER_JUMP_FORCE;
+            g->player.velY = -JOGADOR_FORCA_PULO;
             g->player.isOnGround = 0;
-            audio_play_jump();
+            audio_tocar_som_pulo_inicio();
         }
     }
 
-    g->player.velY += GRAVITY * dt;
+    g->player.velY += GRAVIDADE * dt;
 
     if (g->player.velY > 600.0f)
         g->player.velY = 600.0f;
@@ -144,24 +144,24 @@ static void game_update_playing(Game *g, float dt)
     g->player.pos.y += g->player.velY * dt;
 
     {
-        static Vec2 prevP = {0, 0};
-        static Vec2 prevV = {0, 0};
+        static Vetor2D prevP = {0, 0};
+        static Vetor2D prevV = {0, 0};
         if (prevP.x == 0 && prevP.y == 0)
             prevP = g->player.pos;
-        g->player.vel = maths_vec2_mul(maths_vec2_sub(g->player.pos, prevP), 1.0f / dt);
-        g->player.accel = maths_vec2_mul(maths_vec2_sub(g->player.vel, prevV), 1.0f / dt);
+        g->player.vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(g->player.pos, prevP), 1.0f / dt);
+        g->player.accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(g->player.vel, prevV), 1.0f / dt);
         prevP = g->player.pos;
         prevV = g->player.vel;
     }
 
     g->player.isOnGround = 0;
-    if (g->player.pos.y + g->player.size >= GROUND_Y)
+    if (g->player.pos.y + g->player.size >= ALTURA_CHAO)
     {
         if (g->player.velY > 100.0f)
         {
-            audio_play_land();
+            audio_tocar_som_pulo_fim();
         }
-        g->player.pos.y = GROUND_Y - g->player.size;
+        g->player.pos.y = ALTURA_CHAO - g->player.size;
         g->player.velY = 0.0f;
         g->player.isOnGround = 1;
     }
@@ -174,15 +174,15 @@ static void game_update_playing(Game *g, float dt)
 
     {
         int oi;
-        for (oi = 0; oi < MAX_OBSTACLES; ++oi)
+        for (oi = 0; oi < MAXIMO_PLATAFORMAS; ++oi)
         {
             Obstacle *o = &g->obstacles[oi];
             if (!o->active)
             {
                 continue;
             }
-            if (collision_circle_vs_aabb(g->player.pos, g->player.size,
-                                         maths_vec2(o->x, o->y), maths_vec2(o->x + o->w, o->y + o->h)))
+            if (colisao_circulo_vs_retangulo(g->player.pos, g->player.size,
+                                         matematica_vetor2d(o->x, o->y), matematica_vetor2d(o->x + o->w, o->y + o->h)))
             {
                 float cx = o->x + o->w * 0.5f;
                 float cy = o->y + o->h * 0.5f;
@@ -193,7 +193,7 @@ static void game_update_playing(Game *g, float dt)
                 {
                     if (g->player.velY > 50.0f)
                     {
-                        audio_play_land();
+                        audio_tocar_som_pulo_fim();
                     }
                     g->player.pos.y = o->y - g->player.size;
                     g->player.velY = 0.0f;
@@ -222,26 +222,26 @@ static void game_update_playing(Game *g, float dt)
 
     if (g->input.mouseDown[0] && g->player.fireCooldown <= 0.0f)
     {
-        Vec2 target = enemy_mouse_to_world(g);
-        Vec2 dir = maths_vec2_norm(maths_vec2_sub(target, g->player.pos));
-        projectiles_spawn(g, g->player.pos, dir, 1, g->player.projectileSpeed, g->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
-        particles_spawn(g, g->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
+        Vetor2D target = matematica_mouse_para_mundo(g);
+        Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, g->player.pos));
+        projeteis_criar(g, g->player.pos, dir, 1, g->player.projectileSpeed, g->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
+        particulas_criar(g, g->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
         g->player.fireCooldown = g->player.fireRate;
-        audio_play_shoot();
+        audio_tocar_som_tiro_disparo();
     }
 
     if (g->input.mouseDown[2] && g->player.fireCooldown <= 0.0f && g->player.guidedAmmo > 0)
     {
         if (g->player.hasPP || g->player.hasAPNG)
         {
-            Vec2 target = enemy_mouse_to_world(g);
+            Vetor2D target = matematica_mouse_para_mundo(g);
             int bestTarget = -1;
             float minD = 1000.0f;
-            for (i = 0; i < MAX_ENEMIES; ++i)
+            for (i = 0; i < MAXIMO_INIMIGOS; ++i)
             {
                 if (g->enemies[i].active)
                 {
-                    float d = maths_vec2_len(maths_vec2_sub(enemy_position(&g->enemies[i]), target));
+                    float d = matematica_vetor2d_len(matematica_vetor2d_subtracao(inimigo_posicao(&g->enemies[i]), target));
                     if (d < minD)
                     {
                         minD = d;
@@ -251,18 +251,18 @@ static void game_update_playing(Game *g, float dt)
             }
             if (bestTarget != -1)
             {
-                Vec2 dir = maths_vec2_norm(maths_vec2_sub(target, g->player.pos));
+                Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, g->player.pos));
                 GuidanceType law = g->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
 
-                projectiles_spawn(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
+                projeteis_criar(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
                 g->player.guidedAmmo--;
                 g->player.fireCooldown = g->player.fireRate * 2.0f;
-                audio_play_shoot();
+                audio_tocar_som_tiro_disparo();
             }
         }
     }
 
-    for (i = 0; i < MAX_PROJECTILES; ++i)
+    for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
         Projectile *p = &g->projectiles[i];
         int oi;
@@ -277,16 +277,16 @@ static void game_update_playing(Game *g, float dt)
                 p->active = 0;
             }
             p->life -= dt;
-            p->pos = maths_vec2_add(p->pos, maths_vec2_mul(p->vel, dt));
+            p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, dt));
             continue;
         }
 
         if (p->guidance != GUIDANCE_NONE)
         {
-            float speed = maths_vec2_len(p->vel);
+            float speed = matematica_vetor2d_len(p->vel);
             float gamma = atan2f(p->vel.y, p->vel.x);
             float aCmd = 0.0f;
-            Vec2 targetPos, targetVel = {0, 0}, targetAccel = {0, 0};
+            Vetor2D targetPos, targetVel = {0, 0}, targetAccel = {0, 0};
             int targetValid = 0;
 
             if (p->fromPlayer)
@@ -294,7 +294,7 @@ static void game_update_playing(Game *g, float dt)
                 if (p->targetIdx != -1 && g->enemies[p->targetIdx].active)
                 {
                     Enemy *e = &g->enemies[p->targetIdx];
-                    targetPos = enemy_position(e);
+                    targetPos = inimigo_posicao(e);
                     targetVel = e->vel;
                     targetAccel = e->accel;
                     targetValid = 1;
@@ -310,8 +310,8 @@ static void game_update_playing(Game *g, float dt)
 
             if (targetValid)
             {
-                Vec2 dPos = maths_vec2_sub(targetPos, p->pos);
-                float dist = maths_vec2_len(dPos);
+                Vetor2D dPos = matematica_vetor2d_subtracao(targetPos, p->pos);
+                float dist = matematica_vetor2d_len(dPos);
                 float los = atan2f(dPos.y, dPos.x);
                 float losRate = (dPos.x * (targetVel.y - p->vel.y) - dPos.y * (targetVel.x - p->vel.x)) / (dist * dist);
 
@@ -337,12 +337,12 @@ static void game_update_playing(Game *g, float dt)
                 {
                     if (p->guidance == GUIDANCE_APNG)
                     {
-                        Vec2 relV = maths_vec2_sub(targetVel, p->vel);
+                        Vetor2D relV = matematica_vetor2d_subtracao(targetVel, p->vel);
                         float Vc = -(dPos.x * relV.x + dPos.y * relV.y) / dist;
                         float losRate_accel = (dPos.x * relV.y - dPos.y * relV.x) / (dist * dist);
                         float a_t_perp = -targetAccel.x * sinf(los) + targetAccel.y * cosf(los);
 
-                        float N = APN_GAIN;
+                        float N = MISSIL_GUIANCA_APN_GANHO;
                         aCmd = N * Vc * losRate_accel + (N * 0.5f) * a_t_perp;
                     }
                     else if (p->guidance == GUIDANCE_PP)
@@ -353,7 +353,7 @@ static void game_update_playing(Game *g, float dt)
                         while (err < -(float)M_PI)
                             err += 2.0f * (float)M_PI;
 
-                        aCmd = PP_GAIN * speed * err;
+                        aCmd = MISSIL_GUIANCA_PP_GANHO * speed * err;
                     }
 
                     if (aCmd > p->maxLatAccel)
@@ -361,7 +361,7 @@ static void game_update_playing(Game *g, float dt)
                     if (aCmd < -p->maxLatAccel)
                         aCmd = -p->maxLatAccel;
 
-                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / AUTOPILOT_LAG);
+                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / MISSIL_GUIANCA_LAG);
                 }
             }
 
@@ -373,37 +373,37 @@ static void game_update_playing(Game *g, float dt)
                 p->vel.x += a_x_lateral * dt;
                 p->vel.y += a_y_lateral * dt;
 
-                float newSpeed = maths_vec2_len(p->vel);
+                float newSpeed = matematica_vetor2d_len(p->vel);
                 if (newSpeed > 0.001f)
                 {
-                    p->vel = maths_vec2_mul(p->vel, speed / newSpeed);
+                    p->vel = matematica_vetor2d_multiplicacao(p->vel, speed / newSpeed);
                 }
             }
         }
 
         p->life -= dt;
-        p->pos = maths_vec2_add(p->pos, maths_vec2_mul(p->vel, dt));
+        p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, dt));
 
         if (p->life <= 0.0f || p->pos.x < -20.0f || p->pos.x > g->width + 20.0f || p->pos.y < -20.0f || p->pos.y > g->height + 20.0f)
         {
             p->active = 0;
         }
 
-        for (oi = 0; oi < MAX_OBSTACLES && p->active; ++oi)
+        for (oi = 0; oi < MAXIMO_PLATAFORMAS && p->active; ++oi)
         {
             Obstacle *o = &g->obstacles[oi];
             if (!o->active)
                 continue;
-            if (collision_circle_vs_aabb(p->pos, p->radius, maths_vec2(o->x, o->y), maths_vec2(o->x + o->w, o->y + o->h)))
+            if (colisao_circulo_vs_retangulo(p->pos, p->radius, matematica_vetor2d(o->x, o->y), matematica_vetor2d(o->x + o->w, o->y + o->h)))
                 p->active = 0;
         }
     }
 
-    for (i = 0; i < MAX_ENEMIES; ++i)
+    for (i = 0; i < MAXIMO_INIMIGOS; ++i)
     {
         Enemy *e = &g->enemies[i];
         int j;
-        Vec2 ep;
+        Vetor2D ep;
         if (!e->active)
             continue;
 
@@ -412,35 +412,35 @@ static void game_update_playing(Game *g, float dt)
         if (e->hitFlash < 0.0f)
             e->hitFlash = 0.0f;
 
-        ep = enemy_position(e);
+        ep = inimigo_posicao(e);
 
         {
-            static Vec2 prevEnemyPos[MAX_ENEMIES] = {{0, 0}};
-            static Vec2 prevEnemyVel[MAX_ENEMIES] = {{0, 0}};
+            static Vetor2D prevEnemyPos[MAXIMO_INIMIGOS] = {{0, 0}};
+            static Vetor2D prevEnemyVel[MAXIMO_INIMIGOS] = {{0, 0}};
 
             if (prevEnemyPos[i].x == 0 && prevEnemyPos[i].y == 0)
             {
                 prevEnemyPos[i] = ep;
             }
 
-            e->vel = maths_vec2_mul(maths_vec2_sub(ep, prevEnemyPos[i]), 1.0f / dt);
-            e->accel = maths_vec2_mul(maths_vec2_sub(e->vel, prevEnemyVel[i]), 1.0f / dt);
+            e->vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(ep, prevEnemyPos[i]), 1.0f / dt);
+            e->accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(e->vel, prevEnemyVel[i]), 1.0f / dt);
 
             prevEnemyPos[i] = ep;
             prevEnemyVel[i] = e->vel;
         }
 
-        if (collision_circle_vs_circle(g->player.pos, g->player.size * 0.8f, ep, e->size))
+        if (colisao_circulo_vs_circulo(g->player.pos, g->player.size * 0.8f, ep, e->size))
         {
-            g->player.hp = maths_clamp_min(g->player.hp -= e->damage * dt, 0);
+            g->player.hp = matematica_limite_min(g->player.hp -= e->damage * dt, 0);
             tookHit = 1;
-            particles_spawn(g, g->player.pos, 1, (Color){1.0f, 0.2f, 0.2f, 0.8f});
+            particulas_criar(g, g->player.pos, 1, (Color){1.0f, 0.2f, 0.2f, 0.8f});
         }
 
         e->shootCooldown -= dt;
         if (e->shootCooldown <= 0.0f)
         {
-            Vec2 dirToPlayer = maths_vec2_norm(maths_vec2_sub(g->player.pos, ep));
+            Vetor2D dirToPlayer = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(g->player.pos, ep));
             float enemyShotSpeed;
             float enemyShotDamage;
 
@@ -448,59 +448,59 @@ static void game_update_playing(Game *g, float dt)
             {
                 if (e->burstCount > 0)
                 {
-                    float ppOverload = MAX_PLAYER_LAT_ACCEL * 0.5f;
-                    projectiles_spawn(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
+                    float ppOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 0.5f;
+                    projeteis_criar(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
                     e->burstCount--;
                     e->shootCooldown = 0.5f;
                     if (e->burstCount == 0)
                     {
-                        e->shootCooldown = maths_randf(3.0f, 7.0f);
+                        e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
                         e->burstCount = 3;
                     }
                 }
                 else
                 {
-                    e->shootCooldown = maths_randf(3.0f, 7.0f);
+                    e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
                     e->burstCount = 3;
                 }
             }
             else if (e->type == ENEMY_PENTAGON)
             {
-                float apnOverload = MAX_PLAYER_LAT_ACCEL * 1.0f;
-                projectiles_spawn(g, ep, dirToPlayer, 0, 300.0f + g->wave * 15.0f, 30.0f + g->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
-                e->shootCooldown = maths_randf(2.5f, 4.0f);
+                float apnOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 1.0f;
+                projeteis_criar(g, ep, dirToPlayer, 0, 300.0f + g->wave * 15.0f, 30.0f + g->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
+                e->shootCooldown = matematica_float_aleatorio(2.5f, 4.0f);
             }
             else if (e->isBoss)
             {
-                Vec2 sideA = maths_vec2_norm(maths_vec2(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
-                Vec2 sideB = maths_vec2_norm(maths_vec2(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
+                Vetor2D sideA = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
+                Vetor2D sideB = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 enemyShotSpeed = 260.0f + g->wave * 18.0f;
                 enemyShotDamage = 9.5f + g->wave * 1.4f;
-                projectiles_spawn(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
-                projectiles_spawn(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                projectiles_spawn(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = maths_randf(0.8f, 1.8f) - g->wave * 0.05f;
+                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
+                projeteis_criar(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                projeteis_criar(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio(0.8f, 1.8f) - g->wave * 0.05f;
             }
             else if (e->type == ENEMY_SNIPER)
             {
                 enemyShotSpeed = 330.0f + g->wave * 22.0f;
                 enemyShotDamage = 9.0f + g->wave * 1.6f;
-                projectiles_spawn(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = maths_randf(1.0f, 2.1f) - g->wave * 0.04f;
+                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio(1.0f, 2.1f) - g->wave * 0.04f;
             }
             else if (e->type == ENEMY_TANK)
             {
                 enemyShotSpeed = 180.0f + g->wave * 14.0f;
                 enemyShotDamage = 11.0f + g->wave * 1.8f;
-                projectiles_spawn(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = maths_randf(1.8f, 3.2f) - g->wave * 0.03f;
+                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio(1.8f, 3.2f) - g->wave * 0.03f;
             }
             else
             {
                 enemyShotSpeed = 220.0f + g->wave * 18.0f;
                 enemyShotDamage = 7.0f + g->wave * 1.4f;
-                projectiles_spawn(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = maths_randf(1.1f, 2.6f) - g->wave * 0.05f;
+                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio(1.1f, 2.6f) - g->wave * 0.05f;
             }
 
             if (e->shootCooldown < 0.45f)
@@ -509,19 +509,19 @@ static void game_update_playing(Game *g, float dt)
             }
         }
 
-        for (j = 0; j < MAX_PROJECTILES; ++j)
+        for (j = 0; j < MAXIMO_PROJETEIS; ++j)
         {
             Projectile *p = &g->projectiles[j];
             if (!p->active || !p->fromPlayer)
                 continue;
 
-            if (collision_circle_vs_circle(p->pos, p->radius, ep, e->size))
+            if (colisao_circulo_vs_circulo(p->pos, p->radius, ep, e->size))
             {
                 p->active = 0;
-                e->hp = maths_clamp_min(e->hp -= p->damage, 0);
+                e->hp = matematica_limite_min(e->hp -= p->damage, 0);
                 e->hitFlash = 1.0f;
-                particles_spawn(g, ep, 8, (Color){1.0f, 0.6f, 0.2f, 0.95f});
-                audio_play_hit();
+                particulas_criar(g, ep, 8, (Color){1.0f, 0.6f, 0.2f, 0.95f});
+                audio_tocar_som_tiro_atingido();
 
                 if (e->hp <= 0.0f)
                 {
@@ -547,14 +547,14 @@ static void game_update_playing(Game *g, float dt)
                         g->score += (int)((120 + g->wave * 20) * scoreMul);
                         g->gold += 1;
                     }
-                    particles_spawn(g, ep, 18, (Color){1.0f, 0.85f, 0.2f, 0.95f});
+                    particulas_criar(g, ep, 18, (Color){1.0f, 0.85f, 0.2f, 0.95f});
                 }
                 break;
             }
         }
     }
 
-    for (i = 0; i < MAX_PROJECTILES; ++i)
+    for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
         Projectile *p = &g->projectiles[i];
         if (!p->active || p->fromPlayer)
@@ -562,25 +562,25 @@ static void game_update_playing(Game *g, float dt)
             continue;
         }
 
-        if (collision_circle_vs_circle(p->pos, p->radius, g->player.pos, g->player.size * 0.75f))
+        if (colisao_circulo_vs_circulo(p->pos, p->radius, g->player.pos, g->player.size * 0.75f))
         {
             p->active = 0;
-            g->player.hp = maths_clamp_min(g->player.hp -= p->damage, 0);
+            g->player.hp = matematica_limite_min(g->player.hp -= p->damage, 0);
             tookHit = 1;
-            particles_spawn(g, g->player.pos, 7, (Color){1.0f, 0.3f, 0.2f, 0.9f});
-            audio_play_hit();
+            particulas_criar(g, g->player.pos, 7, (Color){1.0f, 0.3f, 0.2f, 0.9f});
+            audio_tocar_som_tiro_atingido();
         }
     }
 
-    for (i = 0; i < MAX_PARTICLES; ++i)
+    for (i = 0; i < MAXIMO_PARTICULAS; ++i)
     {
         Particle *pt = &g->particles[i];
         if (!pt->active)
             continue;
 
         pt->life -= dt;
-        pt->pos = maths_vec2_add(pt->pos, maths_vec2_mul(pt->vel, dt));
-        pt->vel = maths_vec2_mul(pt->vel, 0.96f);
+        pt->pos = matematica_vetor2d_adicao(pt->pos, matematica_vetor2d_multiplicacao(pt->vel, dt));
+        pt->vel = matematica_vetor2d_multiplicacao(pt->vel, 0.96f);
         if (pt->life <= 0.0f)
         {
             pt->active = 0;
@@ -602,7 +602,7 @@ static void game_update_playing(Game *g, float dt)
 
     if (g->player.hp <= 0.0f || g->timeLeft <= 0.0f)
     {
-        ui_set_end_screen(g, SCREEN_LOSE);
+        interface_desenhar_tela_fim(g, SCREEN_LOSE);
         return;
     }
 
@@ -610,19 +610,19 @@ static void game_update_playing(Game *g, float dt)
     {
         if (g->wave >= g->wavesToWin)
         {
-            ui_set_end_screen(g, SCREEN_WIN);
+            interface_desenhar_tela_fim(g, SCREEN_WIN);
         }
         else
         {
             g->timeLeft += 6.0f;
             g->score += (int)((180 + g->wave * 40) * scoreMul);
-            upgrades_roll(g);
+            melhorias_rolar_opcoes(g);
             g->screen = SCREEN_UPGRADE;
         }
     }
 }
 
-void game_update(Game *g, float dt)
+void jogo_atualizar(Game *g, float dt)
 {
     if (!g->running)
     {
@@ -649,11 +649,11 @@ void game_update(Game *g, float dt)
 
     if (g->screen == SCREEN_PLAYING)
     {
-        game_update_playing(g, dt);
+        jogo_atualizar_playing(g, dt);
     }
 }
 
-void game_on_key_down(Game *g, unsigned char key, int x, int y)
+void jogo_tecla_pressionada(Game *g, unsigned char key, int x, int y)
 {
     (void)x;
     (void)y;
@@ -695,7 +695,7 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
 
     if (g->screen == SCREEN_MENU && (key == 13 || key == ' '))
     {
-        game_restart(g);
+        jogo_reiniciar(g);
     }
 
     if (g->screen == SCREEN_MENU && (key == 'o' || key == 'O'))
@@ -718,9 +718,9 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
         if (key == '1' || key == '2' || key == '3')
         {
             int idx = key - '1';
-            if (idx >= 0 && idx < MAX_UPGRADE_OPTIONS)
+            if (idx >= 0 && idx < MAXIMO_OPCOES_UPGRADE)
             {
-                upgrades_choose(g, idx);
+                melhorias_escolher(g, idx);
             }
         }
         else if (key == 'r' || key == 'R')
@@ -728,12 +728,12 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
             if (g->gold >= 3)
             {
                 g->gold -= 3;
-                upgrades_roll(g);
-                ui_set_toast(g, "Upgrade rerolled (-3 gold)");
+                melhorias_rolar_opcoes(g);
+                interface_desenhar_notificacao(g, "Upgrade rerolled (-3 gold)");
             }
             else
             {
-                ui_set_toast(g, "Not enough gold for reroll");
+                interface_desenhar_notificacao(g, "Not enough gold for reroll");
             }
         }
     }
@@ -743,18 +743,18 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
         if (key == 'a' || key == 'A')
         {
             g->audioEnabled = !g->audioEnabled;
-            audio_set_enabled(g->audioEnabled);
-            persistence_save_settings(g->audioEnabled, g->difficulty);
-            ui_set_toast(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
+            audio_definir_ativacao(g->audioEnabled);
+            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
+            interface_desenhar_notificacao(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
         }
         else if (key == 'd' || key == 'D')
         {
             g->difficulty = (g->difficulty + 1) % 3;
-            persistence_save_settings(g->audioEnabled, g->difficulty);
+            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", enemy_difficulty_name(g->difficulty));
-                ui_set_toast(g, msg);
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(g->difficulty));
+                interface_desenhar_notificacao(g, msg);
             }
         }
         else if (key == 13 || key == 'm' || key == 'M')
@@ -789,11 +789,11 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
         }
         else if (key == 'c' || key == 'C')
         {
-            persistence_clear_scores();
-            ui_refresh_top_scores(g);
-            ui_refresh_all_scores(g);
+            persistencia_limpar_pontuacoes();
+            interface_refrescar_pontuacoes_maximas(g);
+            interface_refrescar_pontuacoes(g);
             g->scorePage = 0;
-            ui_set_toast(g, "Score history cleared");
+            interface_desenhar_notificacao(g, "Score history cleared");
         }
         else if (key == 'm' || key == 'M' || key == 13)
         {
@@ -817,11 +817,11 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
             {
                 snprintf(g->playerName, sizeof(g->playerName), "Player");
             }
-            persistence_append_score(g->playerName, g->score, g->wave);
+            persistencia_apor_pontuacao(g->playerName, g->score, g->wave);
             g->nameSaved = 1;
-            ui_refresh_top_scores(g);
-            ui_refresh_all_scores(g);
-            ui_set_toast(g, "Score saved");
+            interface_refrescar_pontuacoes_maximas(g);
+            interface_refrescar_pontuacoes(g);
+            interface_desenhar_notificacao(g, "Score saved");
             return;
         }
 
@@ -839,7 +839,7 @@ void game_on_key_down(Game *g, unsigned char key, int x, int y)
     }
 }
 
-void game_on_key_up(Game *g, unsigned char key, int x, int y)
+void jogo_tecla_levantada(Game *g, unsigned char key, int x, int y)
 {
     (void)x;
     (void)y;
@@ -849,7 +849,7 @@ void game_on_key_up(Game *g, unsigned char key, int x, int y)
     }
 }
 
-void game_on_special_down(Game *g, int key, int x, int y)
+void jogo_especial_pressionado(Game *g, int key, int x, int y)
 {
     (void)x;
     (void)y;
@@ -867,18 +867,18 @@ void game_on_special_down(Game *g, int key, int x, int y)
         snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
                  tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
                  tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
-        if (screenshot_capture_ppm(filename, g->width, g->height))
+        if (print_capturar_ppm(filename, g->width, g->height))
         {
-            ui_set_toast(g, "Screenshot saved");
+            interface_desenhar_notificacao(g, "Screenshot saved");
         }
         else
         {
-            ui_set_toast(g, "Screenshot failed");
+            interface_desenhar_notificacao(g, "Screenshot failed");
         }
     }
 }
 
-void game_on_special_up(Game *g, int key, int x, int y)
+void jogo_especial_levantado(Game *g, int key, int x, int y)
 {
     (void)x;
     (void)y;
@@ -888,7 +888,7 @@ void game_on_special_up(Game *g, int key, int x, int y)
     }
 }
 
-void game_on_mouse(Game *g, int button, int state, int x, int y)
+void jogo_mouse_pressionado(Game *g, int button, int state, int x, int y)
 {
     float wx;
     float wy;
@@ -946,7 +946,7 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         by = g->height * 0.30f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + startH)
         {
-            game_restart(g);
+            jogo_reiniciar(g);
             return;
         }
 
@@ -972,9 +972,9 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
             g->audioEnabled = !g->audioEnabled;
-            audio_set_enabled(g->audioEnabled);
-            persistence_save_settings(g->audioEnabled, g->difficulty);
-            ui_set_toast(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
+            audio_definir_ativacao(g->audioEnabled);
+            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
+            interface_desenhar_notificacao(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
             return;
         }
 
@@ -982,11 +982,11 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
             g->difficulty = (g->difficulty + 1) % 3;
-            persistence_save_settings(g->audioEnabled, g->difficulty);
+            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", enemy_difficulty_name(g->difficulty));
-                ui_set_toast(g, msg);
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(g->difficulty));
+                interface_desenhar_notificacao(g, msg);
             }
             return;
         }
@@ -1034,11 +1034,11 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         bx = g->width * 0.5f - 110.0f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
         {
-            persistence_clear_scores();
-            ui_refresh_top_scores(g);
-            ui_refresh_all_scores(g);
+            persistencia_limpar_pontuacoes();
+            interface_refrescar_pontuacoes_maximas(g);
+            interface_refrescar_pontuacoes(g);
             g->scorePage = 0;
-            ui_set_toast(g, "Score history cleared");
+            interface_desenhar_notificacao(g, "Score history cleared");
             return;
         }
 
@@ -1083,7 +1083,7 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         cardW = 170.0f * uiScale;
         cardH = 130.0f * uiScale;
         cardGap = 20.0f * uiScale;
-        totalW = cardW * MAX_UPGRADE_OPTIONS + cardGap * (MAX_UPGRADE_OPTIONS - 1);
+        totalW = cardW * MAXIMO_OPCOES_UPGRADE + cardGap * (MAXIMO_OPCOES_UPGRADE - 1);
         startX = centerX - totalW * 0.5f;
         cardY = g->height * 0.36f;
 
@@ -1092,13 +1092,13 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         rerollX = centerX - rerollW * 0.5f;
         rerollY = cardY + cardH + 20.0f * uiScale;
 
-        for (i = 0; i < MAX_UPGRADE_OPTIONS; ++i)
+        for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
         {
             bx = startX + i * (cardW + cardGap);
             by = cardY;
             if (wx >= bx && wx <= bx + cardW && wy >= by && wy <= by + cardH)
             {
-                upgrades_choose(g, i);
+                melhorias_escolher(g, i);
                 return;
             }
         }
@@ -1108,8 +1108,8 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
         if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && g->gold >= 3)
         {
             g->gold -= 3;
-            upgrades_roll(g);
-            ui_set_toast(g, "Upgrade rerolled (-3 gold)");
+            melhorias_rolar_opcoes(g);
+            interface_desenhar_notificacao(g, "Upgrade rerolled (-3 gold)");
             return;
         }
     }
@@ -1126,13 +1126,13 @@ void game_on_mouse(Game *g, int button, int state, int x, int y)
     }
 }
 
-void game_on_mouse_move(Game *g, int x, int y)
+void jogo_mouse_movido(Game *g, int x, int y)
 {
     g->input.mouseX = x;
     g->input.mouseY = y;
 }
 
-void game_render(Game *g)
+void jogo_renderizar(Game *g)
 {
     int i;
 
@@ -1141,8 +1141,8 @@ void game_render(Game *g)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    render_ortho(g);
-    world_draw_background(g);
+    renderizar_perspectiva_ortografica(g);
+    cenario_desenhar_fundo(g);
 
     if (g->screen == SCREEN_MENU)
     {
@@ -1219,87 +1219,87 @@ void game_render(Game *g)
             }
         }
 
-        render_text(centerX - 160.0f, g->height * 0.14f, "ORBIT SIEGE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.98f, 0.95f);
-        render_text(centerX - 310.0f, g->height * 0.20f, "A platformer action game with upgrades and survival mechanics", GLUT_BITMAP_HELVETICA_12, 0.75f, 0.82f, 0.95f);
+        renderizar_texto(centerX - 160.0f, g->height * 0.14f, "ORBIT SIEGE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.98f, 0.95f);
+        renderizar_texto(centerX - 310.0f, g->height * 0.20f, "A platformer action game with upgrades and survival mechanics", GLUT_BITMAP_HELVETICA_12, 0.75f, 0.82f, 0.95f);
         if (!compactUI)
         {
-            render_text(centerX - 138.0f, g->height * 0.24f, "Press O for options or L for leaderboard", GLUT_BITMAP_HELVETICA_12, 0.72f, 0.80f, 0.92f);
+            renderizar_texto(centerX - 138.0f, g->height * 0.24f, "Press O for options or L for leaderboard", GLUT_BITMAP_HELVETICA_12, 0.72f, 0.80f, 0.92f);
         }
 
         if (hoverAnim[0] > 0.01f)
         {
-            render_rect(bx - shadowPad - 4.0f * uiScale, by - 9.0f * uiScale,
+            renderizar_retangulo(bx - shadowPad - 4.0f * uiScale, by - 9.0f * uiScale,
                         btnW + (shadowPad + 4.0f * uiScale) * 2.0f, startH + 18.0f * uiScale,
                         (Color){0.45f, 0.75f, 1.0f, (0.10f + 0.18f * pulse) * hoverAnim[0]});
         }
-        render_rect(bx - shadowPad, by - 5.0f * uiScale, btnW + shadowPad * 2.0f, startH + 10.0f * uiScale,
+        renderizar_retangulo(bx - shadowPad, by - 5.0f * uiScale, btnW + shadowPad * 2.0f, startH + 10.0f * uiScale,
                     (Color){0.08f + 0.12f * hoverAnim[0], 0.25f + 0.20f * hoverAnim[0], 0.55f + 0.35f * hoverAnim[0], 0.50f + 0.05f * hoverAnim[0]});
-        render_rect(bx, by, btnW, startH,
+        renderizar_retangulo(bx, by, btnW, startH,
                     (Color){0.15f + 0.07f * hoverAnim[0], 0.45f + 0.13f * hoverAnim[0], 0.85f + 0.15f * hoverAnim[0], 0.95f + 0.03f * hoverAnim[0]});
-        render_text(centerX - 52.0f * uiScale, by + 20.0f * uiScale, "START GAME", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
-        render_text(centerX - 89.0f * uiScale, by + 40.0f * uiScale, "Press ENTER or click", GLUT_BITMAP_HELVETICA_10, 0.75f, 0.85f, 1.0f);
+        renderizar_texto(centerX - 52.0f * uiScale, by + 20.0f * uiScale, "START GAME", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(centerX - 89.0f * uiScale, by + 40.0f * uiScale, "Press ENTER or click", GLUT_BITMAP_HELVETICA_10, 0.75f, 0.85f, 1.0f);
 
         if (hoverAnim[1] > 0.01f)
         {
-            render_rect(obx - shadowPad - 3.0f * uiScale, oby - 8.0f * uiScale,
+            renderizar_retangulo(obx - shadowPad - 3.0f * uiScale, oby - 8.0f * uiScale,
                         btnW + (shadowPad + 3.0f * uiScale) * 2.0f, subH + 16.0f * uiScale,
                         (Color){0.78f, 0.52f, 1.0f, (0.08f + 0.16f * pulse) * hoverAnim[1]});
         }
-        render_rect(obx - shadowPad, oby - 5.0f * uiScale, btnW + shadowPad * 2.0f, subH + 10.0f * uiScale,
+        renderizar_retangulo(obx - shadowPad, oby - 5.0f * uiScale, btnW + shadowPad * 2.0f, subH + 10.0f * uiScale,
                     (Color){0.26f + 0.15f * hoverAnim[1], 0.12f + 0.07f * hoverAnim[1], 0.36f + 0.24f * hoverAnim[1], 0.50f + 0.05f * hoverAnim[1]});
-        render_rect(obx, oby, btnW, subH,
+        renderizar_retangulo(obx, oby, btnW, subH,
                     (Color){0.36f + 0.12f * hoverAnim[1], 0.22f + 0.10f * hoverAnim[1], 0.62f + 0.20f * hoverAnim[1], 0.90f + 0.05f * hoverAnim[1]});
-        render_text(centerX - 52.0f * uiScale, oby + 17.0f * uiScale, "OPTIONS (O)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(centerX - 52.0f * uiScale, oby + 17.0f * uiScale, "OPTIONS (O)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (hoverAnim[2] > 0.01f)
         {
-            render_rect(lbx - shadowPad - 3.0f * uiScale, lby - 8.0f * uiScale,
+            renderizar_retangulo(lbx - shadowPad - 3.0f * uiScale, lby - 8.0f * uiScale,
                         btnW + (shadowPad + 3.0f * uiScale) * 2.0f, subH + 16.0f * uiScale,
                         (Color){0.45f, 0.95f, 0.90f, (0.08f + 0.16f * pulse) * hoverAnim[2]});
         }
-        render_rect(lbx - shadowPad, lby - 5.0f * uiScale, btnW + shadowPad * 2.0f, subH + 10.0f * uiScale,
+        renderizar_retangulo(lbx - shadowPad, lby - 5.0f * uiScale, btnW + shadowPad * 2.0f, subH + 10.0f * uiScale,
                     (Color){0.08f + 0.08f * hoverAnim[2], 0.22f + 0.18f * hoverAnim[2], 0.30f + 0.20f * hoverAnim[2], 0.50f + 0.05f * hoverAnim[2]});
-        render_rect(lbx, lby, btnW, subH,
+        renderizar_retangulo(lbx, lby, btnW, subH,
                     (Color){0.16f + 0.10f * hoverAnim[2], 0.36f + 0.16f * hoverAnim[2], 0.50f + 0.18f * hoverAnim[2], 0.90f + 0.05f * hoverAnim[2]});
-        render_text(centerX - 77.0f * uiScale, lby + 17.0f * uiScale, "LEADERBOARD (L)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(centerX - 77.0f * uiScale, lby + 17.0f * uiScale, "LEADERBOARD (L)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (hoverStart || hoverOptions || hoverScores)
         {
-            render_text(centerX - 56.0f * uiScale, g->height * 0.57f, "Click to select", GLUT_BITMAP_HELVETICA_12, 0.9f, 0.96f, 1.0f);
+            renderizar_texto(centerX - 56.0f * uiScale, g->height * 0.57f, "Click to select", GLUT_BITMAP_HELVETICA_12, 0.9f, 0.96f, 1.0f);
         }
 
-        render_rect(g->width * 0.5f - 400.0f, g->height * 0.90f, 800.0f, compactUI ? 40.0f : 60.0f, (Color){0.0f, 0.0f, 0.0f, 0.25f});
-        render_text(g->width * 0.5f - 380.0f, g->height * 0.925f, "A/D or ARROWS: Move  |  SPACE or W: Jump  |  Mouse: Aim  |  LClick: Shoot", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
+        renderizar_retangulo(g->width * 0.5f - 400.0f, g->height * 0.90f, 800.0f, compactUI ? 40.0f : 60.0f, (Color){0.0f, 0.0f, 0.0f, 0.25f});
+        renderizar_texto(g->width * 0.5f - 380.0f, g->height * 0.925f, "A/D or ARROWS: Move  |  SPACE or W: Jump  |  Mouse: Aim  |  LClick: Shoot", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
         if (!compactUI)
         {
-            render_text(g->width * 0.5f - 380.0f, g->height * 0.95f, "P or ESC: Pause  |  F12: Screenshot  |  Enemy types: Orange (Standard), Diamond (Sniper), Heavy (Tank)", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
+            renderizar_texto(g->width * 0.5f - 380.0f, g->height * 0.95f, "P or ESC: Pause  |  F12: Screenshot  |  Enemy types: Orange (Standard), Diamond (Sniper), Heavy (Tank)", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
         }
 
-        render_rect(30.0f, g->height * 0.78f, 320.0f, 90.0f, (Color){0.0f, 0.0f, 0.0f, 0.4f});
+        renderizar_retangulo(30.0f, g->height * 0.78f, 320.0f, 90.0f, (Color){0.0f, 0.0f, 0.0f, 0.4f});
         {
             char stats[128];
             snprintf(stats, sizeof(stats), "High Score: %d", g->highScore);
-            render_text(50.0f, g->height * 0.82f, stats, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.4f);
+            renderizar_texto(50.0f, g->height * 0.82f, stats, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.4f);
             snprintf(stats, sizeof(stats), "Max Wave: %d", g->maxWaveEver);
-            render_text(50.0f, g->height * 0.86f, stats, GLUT_BITMAP_HELVETICA_18, 0.85f, 0.95f, 0.5f);
+            renderizar_texto(50.0f, g->height * 0.86f, stats, GLUT_BITMAP_HELVETICA_18, 0.85f, 0.95f, 0.5f);
         }
 
-        render_rect(g->width - 350.0f, g->height * 0.78f, 320.0f, 90.0f, (Color){0.0f, 0.0f, 0.0f, 0.4f});
+        renderizar_retangulo(g->width - 350.0f, g->height * 0.78f, 320.0f, 90.0f, (Color){0.0f, 0.0f, 0.0f, 0.4f});
         {
             char cfg[128];
-            snprintf(cfg, sizeof(cfg), "Difficulty: %s", enemy_difficulty_name(g->difficulty));
-            render_text(g->width - 330.0f, g->height * 0.82f, cfg, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.88f, 0.3f);
+            snprintf(cfg, sizeof(cfg), "Difficulty: %s", inimigo_nome_dificuldade(g->difficulty));
+            renderizar_texto(g->width - 330.0f, g->height * 0.82f, cfg, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.88f, 0.3f);
             snprintf(cfg, sizeof(cfg), "Audio: %s", g->audioEnabled ? "ON" : "OFF");
-            render_text(g->width - 330.0f, g->height * 0.86f, cfg, GLUT_BITMAP_HELVETICA_18, 0.3f, g->audioEnabled ? 0.9f : 0.5f, 0.8f);
+            renderizar_texto(g->width - 330.0f, g->height * 0.86f, cfg, GLUT_BITMAP_HELVETICA_18, 0.3f, g->audioEnabled ? 0.9f : 0.5f, 0.8f);
         }
 
-        render_rect(g->width * 0.5f - 280.0f, g->height * 0.60f, 560.0f, 140.0f, (Color){0.05f, 0.08f, 0.15f, 0.7f});
-        render_text(g->width * 0.5f - 150.0f, g->height * 0.63f, "TOP 5 SCORES", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.9f, 0.5f);
+        renderizar_retangulo(g->width * 0.5f - 280.0f, g->height * 0.60f, 560.0f, 140.0f, (Color){0.05f, 0.08f, 0.15f, 0.7f});
+        renderizar_texto(g->width * 0.5f - 150.0f, g->height * 0.63f, "TOP 5 SCORES", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.9f, 0.5f);
         for (s = 0; s < g->topScoreCount && s < 5; ++s)
         {
             char row[128];
             snprintf(row, sizeof(row), "%d. %-18s  %7d  W%d", s + 1, g->topScores[s].name, g->topScores[s].score, g->topScores[s].wave);
-            render_text(g->width * 0.5f - 260.0f, g->height * 0.67f + s * 20.0f, row, GLUT_BITMAP_HELVETICA_10, 0.8f, 0.88f, 0.98f);
+            renderizar_texto(g->width * 0.5f - 260.0f, g->height * 0.67f + s * 20.0f, row, GLUT_BITMAP_HELVETICA_10, 0.8f, 0.88f, 0.98f);
         }
     }
 
@@ -1350,15 +1350,15 @@ void game_render(Game *g)
             endIndex = g->allScoreCount;
         }
 
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.67f});
-        render_text(g->width * 0.5f - 78.0f, g->height * 0.82f, "SCOREBOARD", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.67f});
+        renderizar_texto(g->width * 0.5f - 78.0f, g->height * 0.82f, "SCOREBOARD", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
 
-        render_rect(g->width * 0.5f - 300.0f, g->height * 0.26f, 600.0f, 360.0f, (Color){0.06f, 0.09f, 0.17f, 0.88f});
-        render_text(g->width * 0.5f - 270.0f, g->height * 0.58f, "#   NAME                    SCORE       WAVE", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
+        renderizar_retangulo(g->width * 0.5f - 300.0f, g->height * 0.26f, 600.0f, 360.0f, (Color){0.06f, 0.09f, 0.17f, 0.88f});
+        renderizar_texto(g->width * 0.5f - 270.0f, g->height * 0.58f, "#   NAME                    SCORE       WAVE", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
 
         if (g->allScoreCount == 0)
         {
-            render_text(g->width * 0.5f - 96.0f, g->height * 0.45f, "No scores saved yet", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.7f);
+            renderizar_texto(g->width * 0.5f - 96.0f, g->height * 0.45f, "No scores saved yet", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.7f);
         }
         else
         {
@@ -1368,44 +1368,44 @@ void game_render(Game *g)
                 char row[128];
                 int rowY = (int)(g->height * 0.53f - (i - startIndex) * 28.0f);
                 snprintf(row, sizeof(row), "%02d  %-22s %8d   %4d", i + 1, g->allScores[i].name, g->allScores[i].score, g->allScores[i].wave);
-                render_text(g->width * 0.5f - 270.0f, (float)rowY, row, GLUT_BITMAP_HELVETICA_18, 0.85f, 0.93f, 1.0f);
+                renderizar_texto(g->width * 0.5f - 270.0f, (float)rowY, row, GLUT_BITMAP_HELVETICA_18, 0.85f, 0.93f, 1.0f);
             }
         }
 
         snprintf(pageText, sizeof(pageText), "Page %d/%d", g->scorePage + 1, pageCount);
-        render_text(g->width * 0.5f - 40.0f, g->height * 0.22f, pageText, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+        renderizar_texto(g->width * 0.5f - 40.0f, g->height * 0.22f, pageText, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
 
         if (scoreHover[0] > 0.01f)
         {
-            render_rect(centerX - 258.0f, g->height * 0.20f - 3.0f, 166.0f, 50.0f, (Color){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[0]});
+            renderizar_retangulo(centerX - 258.0f, g->height * 0.20f - 3.0f, 166.0f, 50.0f, (Color){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[0]});
         }
-        render_rect(g->width * 0.5f - 255.0f, g->height * 0.20f, 160.0f, 44.0f,
+        renderizar_retangulo(g->width * 0.5f - 255.0f, g->height * 0.20f, 160.0f, 44.0f,
                     (Color){0.20f + 0.08f * scoreHover[0], 0.30f + 0.10f * scoreHover[0], 0.52f + 0.16f * scoreHover[0], 0.90f + 0.05f * scoreHover[0]});
-        render_text(g->width * 0.5f - 205.0f, g->height * 0.228f, "PREV", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f - 205.0f, g->height * 0.228f, "PREV", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (scoreHover[1] > 0.01f)
         {
-            render_rect(centerX + 92.0f, g->height * 0.20f - 3.0f, 166.0f, 50.0f, (Color){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[1]});
+            renderizar_retangulo(centerX + 92.0f, g->height * 0.20f - 3.0f, 166.0f, 50.0f, (Color){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[1]});
         }
-        render_rect(g->width * 0.5f + 95.0f, g->height * 0.20f, 160.0f, 44.0f,
+        renderizar_retangulo(g->width * 0.5f + 95.0f, g->height * 0.20f, 160.0f, 44.0f,
                     (Color){0.20f + 0.08f * scoreHover[1], 0.30f + 0.10f * scoreHover[1], 0.52f + 0.16f * scoreHover[1], 0.90f + 0.05f * scoreHover[1]});
-        render_text(g->width * 0.5f + 147.0f, g->height * 0.228f, "NEXT", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f + 147.0f, g->height * 0.228f, "NEXT", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (scoreHover[2] > 0.01f)
         {
-            render_rect(centerX - 113.0f, g->height * 0.20f - 3.0f, 226.0f, 50.0f, (Color){1.0f, 0.52f, 0.54f, (0.10f + 0.12f * pulse) * scoreHover[2]});
+            renderizar_retangulo(centerX - 113.0f, g->height * 0.20f - 3.0f, 226.0f, 50.0f, (Color){1.0f, 0.52f, 0.54f, (0.10f + 0.12f * pulse) * scoreHover[2]});
         }
-        render_rect(g->width * 0.5f - 110.0f, g->height * 0.20f, 220.0f, 44.0f,
+        renderizar_retangulo(g->width * 0.5f - 110.0f, g->height * 0.20f, 220.0f, 44.0f,
                     (Color){0.45f + 0.10f * scoreHover[2], 0.20f + 0.06f * scoreHover[2], 0.22f + 0.08f * scoreHover[2], 0.90f + 0.05f * scoreHover[2]});
-        render_text(g->width * 0.5f - 78.0f, g->height * 0.228f, "CLEAR (C)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f - 78.0f, g->height * 0.228f, "CLEAR (C)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (scoreHover[3] > 0.01f)
         {
-            render_rect(centerX - 113.0f, g->height * 0.11f - 3.0f, 226.0f, 50.0f, (Color){0.52f, 0.78f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[3]});
+            renderizar_retangulo(centerX - 113.0f, g->height * 0.11f - 3.0f, 226.0f, 50.0f, (Color){0.52f, 0.78f, 1.0f, (0.10f + 0.12f * pulse) * scoreHover[3]});
         }
-        render_rect(g->width * 0.5f - 110.0f, g->height * 0.11f, 220.0f, 44.0f,
+        renderizar_retangulo(g->width * 0.5f - 110.0f, g->height * 0.11f, 220.0f, 44.0f,
                     (Color){0.10f + 0.08f * scoreHover[3], 0.35f + 0.12f * scoreHover[3], 0.70f + 0.14f * scoreHover[3], 0.90f + 0.05f * scoreHover[3]});
-        render_text(g->width * 0.5f - 82.0f, g->height * 0.138f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f - 82.0f, g->height * 0.138f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
     }
 
     if (g->screen == SCREEN_OPTIONS)
@@ -1436,58 +1436,58 @@ void game_render(Game *g)
             }
         }
 
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.62f});
-        render_text(g->width * 0.5f - 76.0f, g->height * 0.73f, "OPTIONS", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.62f});
+        renderizar_texto(g->width * 0.5f - 76.0f, g->height * 0.73f, "OPTIONS", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
 
         if (optHover[0] > 0.01f)
         {
-            render_rect(centerX - 183.0f, g->height * 0.56f - 3.0f, 366.0f, 62.0f, (Color){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulse) * optHover[0]});
+            renderizar_retangulo(centerX - 183.0f, g->height * 0.56f - 3.0f, 366.0f, 62.0f, (Color){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulse) * optHover[0]});
         }
-        render_rect(g->width * 0.5f - 180.0f, g->height * 0.56f, 360.0f, 56.0f,
+        renderizar_retangulo(g->width * 0.5f - 180.0f, g->height * 0.56f, 360.0f, 56.0f,
                     (Color){0.20f + 0.08f * optHover[0], 0.25f + 0.10f * optHover[0], 0.50f + 0.16f * optHover[0], 0.90f + 0.05f * optHover[0]});
         snprintf(line, sizeof(line), "Audio: %s  (click or A)", g->audioEnabled ? "ON" : "OFF");
-        render_text(g->width * 0.5f - 150.0f, g->height * 0.595f, line, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f - 150.0f, g->height * 0.595f, line, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
         if (optHover[1] > 0.01f)
         {
-            render_rect(centerX - 183.0f, g->height * 0.46f - 3.0f, 366.0f, 62.0f, (Color){0.84f, 0.66f, 1.0f, (0.10f + 0.12f * pulse) * optHover[1]});
+            renderizar_retangulo(centerX - 183.0f, g->height * 0.46f - 3.0f, 366.0f, 62.0f, (Color){0.84f, 0.66f, 1.0f, (0.10f + 0.12f * pulse) * optHover[1]});
         }
-        render_rect(g->width * 0.5f - 180.0f, g->height * 0.46f, 360.0f, 56.0f,
+        renderizar_retangulo(g->width * 0.5f - 180.0f, g->height * 0.46f, 360.0f, 56.0f,
                     (Color){0.28f + 0.10f * optHover[1], 0.22f + 0.08f * optHover[1], 0.44f + 0.15f * optHover[1], 0.90f + 0.05f * optHover[1]});
-        snprintf(line, sizeof(line), "Difficulty: %s  (click or D)", enemy_difficulty_name(g->difficulty));
-        render_text(g->width * 0.5f - 150.0f, g->height * 0.495f, line, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        snprintf(line, sizeof(line), "Difficulty: %s  (click or D)", inimigo_nome_dificuldade(g->difficulty));
+        renderizar_texto(g->width * 0.5f - 150.0f, g->height * 0.495f, line, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
-        render_text(g->width * 0.5f - 180.0f, g->height * 0.40f, "Easy: less damage + more time | Hard: stronger/faster enemies", GLUT_BITMAP_HELVETICA_12, 0.92f, 0.92f, 0.92f);
+        renderizar_texto(g->width * 0.5f - 180.0f, g->height * 0.40f, "Easy: less damage + more time | Hard: stronger/faster enemies", GLUT_BITMAP_HELVETICA_12, 0.92f, 0.92f, 0.92f);
 
         if (optHover[2] > 0.01f)
         {
-            render_rect(centerX - 113.0f, g->height * 0.31f - 3.0f, 226.0f, 56.0f, (Color){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulse) * optHover[2]});
+            renderizar_retangulo(centerX - 113.0f, g->height * 0.31f - 3.0f, 226.0f, 56.0f, (Color){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulse) * optHover[2]});
         }
-        render_rect(g->width * 0.5f - 110.0f, g->height * 0.31f, 220.0f, 50.0f,
+        renderizar_retangulo(g->width * 0.5f - 110.0f, g->height * 0.31f, 220.0f, 50.0f,
                     (Color){0.10f + 0.08f * optHover[2], 0.35f + 0.12f * optHover[2], 0.70f + 0.14f * optHover[2], 0.90f + 0.05f * optHover[2]});
-        render_text(g->width * 0.5f - 76.0f, g->height * 0.342f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(g->width * 0.5f - 76.0f, g->height * 0.342f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
     }
 
     if (g->screen == SCREEN_PLAYING || g->screen == SCREEN_PAUSED || g->screen == SCREEN_UPGRADE || g->screen == SCREEN_WIN || g->screen == SCREEN_LOSE)
     {
         int i;
-        world_draw_obstacles(g);
-        for (i = 0; i < MAX_ENEMIES; ++i)
+        cenario_desenhar_plataformas(g);
+        for (i = 0; i < MAXIMO_INIMIGOS; ++i)
         {
             if (g->enemies[i].active)
             {
-                ui_draw_enemy(&g->enemies[i]);
+                interface_desenhar_inimigo(&g->enemies[i]);
             }
         }
 
-        projectiles_draw(g);
-        particles_draw(g);
-        ui_draw_player(g);
-        ui_draw_hud(g);
-        ui_draw_boss_hp_bar(g);
+        projeteis_desenhar(g);
+        particulas_desenhar(g);
+        interface_desenhar_jogador(g);
+        interface_desenhar_hud(g);
+        interface_desenhar_vida_boss(g);
         if (g->screen == SCREEN_PLAYING)
         {
-            ui_draw_crosshair(g);
+            interface_desenhar_mira(g);
         }
     }
 
@@ -1495,21 +1495,21 @@ void game_render(Game *g)
     {
         float centerX = g->width * 0.5f;
         int compactUI = (g->width < 1100 || g->height < 680);
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.56f});
-        render_rect(centerX - 240.0f, g->height * 0.42f, 480.0f, compactUI ? 110.0f : 140.0f, (Color){0.06f, 0.10f, 0.18f, 0.88f});
-        render_text(centerX - 64.0f, g->height * 0.47f, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
-        render_text(centerX - 150.0f, g->height * 0.53f, "Press P or ENTER to continue", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.56f});
+        renderizar_retangulo(centerX - 240.0f, g->height * 0.42f, 480.0f, compactUI ? 110.0f : 140.0f, (Color){0.06f, 0.10f, 0.18f, 0.88f});
+        renderizar_texto(centerX - 64.0f, g->height * 0.47f, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(centerX - 150.0f, g->height * 0.53f, "Press P or ENTER to continue", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
         if (!compactUI)
         {
-            render_text(centerX - 120.0f, g->height * 0.58f, "ESC also resumes the game", GLUT_BITMAP_HELVETICA_12, 0.78f, 0.86f, 0.98f);
+            renderizar_texto(centerX - 120.0f, g->height * 0.58f, "ESC also resumes the game", GLUT_BITMAP_HELVETICA_12, 0.78f, 0.86f, 0.98f);
         }
     }
 
     if (g->screen == SCREEN_UPGRADE)
     {
-        static float upgradeHoverAnim[MAX_UPGRADE_OPTIONS] = {0.0f, 0.0f, 0.0f};
+        static float upgradeHoverAnim[MAXIMO_OPCOES_UPGRADE] = {0.0f, 0.0f, 0.0f};
         static float rerollHoverAnim = 0.0f;
-        Vec2 mouse = maths_vec2((float)g->input.mouseX, (float)g->input.mouseY);
+        Vetor2D mouse = matematica_vetor2d((float)g->input.mouseX, (float)g->input.mouseY);
         float centerX = g->width * 0.5f;
         float uiScale = (float)g->width / 1280.0f;
         float hScale = (float)g->height / 720.0f;
@@ -1543,7 +1543,7 @@ void game_render(Game *g)
         cardW = 170.0f * uiScale;
         cardH = 130.0f * uiScale;
         cardGap = 20.0f * uiScale;
-        totalW = cardW * MAX_UPGRADE_OPTIONS + cardGap * (MAX_UPGRADE_OPTIONS - 1);
+        totalW = cardW * MAXIMO_OPCOES_UPGRADE + cardGap * (MAXIMO_OPCOES_UPGRADE - 1);
         startX = centerX - totalW * 0.5f;
         cardY = g->height * 0.36f;
 
@@ -1552,17 +1552,17 @@ void game_render(Game *g)
         rerollX = centerX - rerollW * 0.5f;
         rerollY = cardY + cardH + 20.0f * uiScale;
 
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.58f});
-        render_rect(centerX - totalW * 0.5f - 40.0f * uiScale, cardY - 70.0f * uiScale,
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.58f});
+        renderizar_retangulo(centerX - totalW * 0.5f - 40.0f * uiScale, cardY - 70.0f * uiScale,
                     totalW + 80.0f * uiScale, cardH + 190.0f * uiScale, (Color){0.07f, 0.10f, 0.18f, 0.86f});
-        render_text(centerX - 92.0f, cardY - 34.0f * uiScale, "CHOOSE UPGRADE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+        renderizar_texto(centerX - 92.0f, cardY - 34.0f * uiScale, "CHOOSE UPGRADE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
         if (!compactUI)
         {
-            render_text(centerX - 155.0f, cardY - 12.0f * uiScale, "Select with mouse click or keys 1, 2, 3", GLUT_BITMAP_HELVETICA_12, 0.80f, 0.88f, 1.0f);
+            renderizar_texto(centerX - 155.0f, cardY - 12.0f * uiScale, "Select with mouse click or keys 1, 2, 3", GLUT_BITMAP_HELVETICA_12, 0.80f, 0.88f, 1.0f);
         }
         g->upgradeHover = -1;
 
-        for (i = 0; i < MAX_UPGRADE_OPTIONS; ++i)
+        for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
         {
             float bx = startX + i * (cardW + cardGap);
             float by = cardY;
@@ -1583,18 +1583,18 @@ void game_render(Game *g)
 
             if (upgradeHoverAnim[i] > 0.01f)
             {
-                render_rect(bx - 4.0f * uiScale, by - 4.0f * uiScale, cardW + 8.0f * uiScale, cardH + 8.0f * uiScale,
+                renderizar_retangulo(bx - 4.0f * uiScale, by - 4.0f * uiScale, cardW + 8.0f * uiScale, cardH + 8.0f * uiScale,
                             (Color){0.65f, 0.88f, 1.0f, (0.10f + 0.14f * pulse) * upgradeHoverAnim[i]});
             }
-            render_rect(bx, by, cardW, cardH,
+            renderizar_retangulo(bx, by, cardW, cardH,
                         (Color){0.14f + 0.06f * upgradeHoverAnim[i], 0.20f + i * 0.07f + 0.06f * upgradeHoverAnim[i], 0.45f + 0.10f * upgradeHoverAnim[i], 0.92f + 0.04f * upgradeHoverAnim[i]});
-            upgrades_draw_icon(g->upgrades[i].type, bx + cardW - 25.0f * uiScale, by + cardH - 26.0f * uiScale);
-            render_text(bx + 12.0f * uiScale, by + 34.0f * uiScale, g->upgrades[i].label, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
-            render_text_wrapped(bx + 12.0f * uiScale, by + 62.0f * uiScale, g->upgrades[i].desc, GLUT_BITMAP_HELVETICA_12, 0.88f, 0.95f, 1.0f, cardW - 32.0f * uiScale);
+            melhorias_desenhar_icone(g->upgrades[i].type, bx + cardW - 25.0f * uiScale, by + cardH - 26.0f * uiScale);
+            renderizar_texto(bx + 12.0f * uiScale, by + 34.0f * uiScale, g->upgrades[i].label, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+            renderizar_texto_limites(bx + 12.0f * uiScale, by + 62.0f * uiScale, g->upgrades[i].desc, GLUT_BITMAP_HELVETICA_12, 0.88f, 0.95f, 1.0f, cardW - 32.0f * uiScale);
             {
                 char idx[8];
                 snprintf(idx, sizeof(idx), "[%d]", i + 1);
-                render_text(bx + 12.0f * uiScale, by + cardH - 14.0f * uiScale, idx, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.95f, 0.6f);
+                renderizar_texto(bx + 12.0f * uiScale, by + cardH - 14.0f * uiScale, idx, GLUT_BITMAP_HELVETICA_18, 1.0f, 0.95f, 0.6f);
             }
         }
 
@@ -1612,18 +1612,18 @@ void game_render(Game *g)
 
             if (rerollHoverAnim > 0.01f)
             {
-                render_rect(rerollX - 3.0f * uiScale, rerollY - 3.0f * uiScale, rerollW + 6.0f * uiScale, rerollH + 6.0f * uiScale,
+                renderizar_retangulo(rerollX - 3.0f * uiScale, rerollY - 3.0f * uiScale, rerollW + 6.0f * uiScale, rerollH + 6.0f * uiScale,
                             (Color){0.75f, 0.64f, 1.0f, (0.08f + 0.12f * pulse) * rerollHoverAnim});
             }
-            render_rect(rerollX, rerollY, rerollW, rerollH,
+            renderizar_retangulo(rerollX, rerollY, rerollW, rerollH,
                         (Color){0.22f + 0.10f * rerollHoverAnim, 0.18f + 0.08f * rerollHoverAnim, 0.35f + 0.12f * rerollHoverAnim, 0.92f + 0.04f * rerollHoverAnim});
-            render_text(centerX - 90.0f * uiScale, rerollY + 26.0f * uiScale, "Reroll (R) - Cost: 3 gold", GLUT_BITMAP_HELVETICA_12, 1.0f, 0.95f, 0.9f);
+            renderizar_texto(centerX - 90.0f * uiScale, rerollY + 26.0f * uiScale, "Reroll (R) - Cost: 3 gold", GLUT_BITMAP_HELVETICA_12, 1.0f, 0.95f, 0.9f);
         }
 
-        if (g->upgradeHover >= 0 && g->upgradeHover < MAX_UPGRADE_OPTIONS)
+        if (g->upgradeHover >= 0 && g->upgradeHover < MAXIMO_OPCOES_UPGRADE)
         {
-            render_rect(centerX - 240.0f * uiScale, rerollY + rerollH + 12.0f * uiScale, 480.0f * uiScale, 40.0f * uiScale, (Color){0.08f, 0.12f, 0.24f, 0.85f});
-            render_text(centerX - 220.0f * uiScale, rerollY + rerollH + 36.0f * uiScale, g->upgrades[g->upgradeHover].desc, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.98f, 1.0f);
+            renderizar_retangulo(centerX - 240.0f * uiScale, rerollY + rerollH + 12.0f * uiScale, 480.0f * uiScale, 40.0f * uiScale, (Color){0.08f, 0.12f, 0.24f, 0.85f});
+            renderizar_texto(centerX - 220.0f * uiScale, rerollY + rerollH + 36.0f * uiScale, g->upgrades[g->upgradeHover].desc, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.98f, 1.0f);
         }
     }
 
@@ -1644,50 +1644,50 @@ void game_render(Game *g)
         if (endMenuHover > 1.0f)
             endMenuHover = 1.0f;
 
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.62f});
-        render_rect(centerX - 280.0f, g->height * 0.38f, 560.0f, 260.0f, (Color){0.08f, 0.10f, 0.18f, 0.86f});
-        render_text(centerX - 60.0f, g->height * 0.44f, title, GLUT_BITMAP_TIMES_ROMAN_24,
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.0f, 0.0f, 0.0f, 0.62f});
+        renderizar_retangulo(centerX - 280.0f, g->height * 0.38f, 560.0f, 260.0f, (Color){0.08f, 0.10f, 0.18f, 0.86f});
+        renderizar_texto(centerX - 60.0f, g->height * 0.44f, title, GLUT_BITMAP_TIMES_ROMAN_24,
                     g->screen == SCREEN_WIN ? 0.9f : 1.0f,
                     g->screen == SCREEN_WIN ? 1.0f : 0.85f,
                     g->screen == SCREEN_WIN ? 0.9f : 0.85f);
 
         snprintf(line, sizeof(line), "Score: %d  |  Wave: %d", g->score, g->wave);
-        render_text(centerX - 100.0f, g->height * 0.50f, line, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
+        renderizar_texto(centerX - 100.0f, g->height * 0.50f, line, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
 
         if (!g->nameSaved)
         {
-            render_text(centerX - 190.0f, g->height * 0.57f, "Type name and press ENTER to save score:", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
-            render_rect(centerX - 170.0f, g->height * 0.61f, 340.0f, 40.0f, (Color){0.12f, 0.12f, 0.2f, 0.9f});
-            render_text(centerX - 160.0f, g->height * 0.635f, g->playerName, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 0.8f);
+            renderizar_texto(centerX - 190.0f, g->height * 0.57f, "Type name and press ENTER to save score:", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+            renderizar_retangulo(centerX - 170.0f, g->height * 0.61f, 340.0f, 40.0f, (Color){0.12f, 0.12f, 0.2f, 0.9f});
+            renderizar_texto(centerX - 160.0f, g->height * 0.635f, g->playerName, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 0.8f);
         }
         else
         {
-            render_text(centerX - 170.0f, g->height * 0.57f, "Saved. Press ENTER or M to go menu.", GLUT_BITMAP_HELVETICA_18, 0.95f, 1.0f, 0.85f);
+            renderizar_texto(centerX - 170.0f, g->height * 0.57f, "Saved. Press ENTER or M to go menu.", GLUT_BITMAP_HELVETICA_18, 0.95f, 1.0f, 0.85f);
             if (endMenuHover > 0.01f)
             {
-                render_rect(centerX - 113.0f, g->height * 0.45f - 3.0f, 226.0f, 56.0f,
+                renderizar_retangulo(centerX - 113.0f, g->height * 0.45f - 3.0f, 226.0f, 56.0f,
                             (Color){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulse) * endMenuHover});
             }
-            render_rect(centerX - 110.0f, g->height * 0.45f, 220.0f, 50.0f,
+            renderizar_retangulo(centerX - 110.0f, g->height * 0.45f, 220.0f, 50.0f,
                         (Color){0.10f + 0.10f * endMenuHover, 0.35f + 0.12f * endMenuHover, 0.70f + 0.14f * endMenuHover, 0.90f + 0.05f * endMenuHover});
-            render_text(centerX - 72.0f, g->height * 0.482f, "MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+            renderizar_texto(centerX - 72.0f, g->height * 0.482f, "MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
         }
     }
 
     if (g->screen == SCREEN_PLAYING && g->damageFlash > 0.0f)
     {
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.9f, 0.1f, 0.1f, 0.18f * g->damageFlash});
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.9f, 0.1f, 0.1f, 0.18f * g->damageFlash});
     }
 
     if (g->screen == SCREEN_PLAYING && g->upgradeFlash > 0.0f)
     {
-        render_rect(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.2f, 0.8f, 1.0f, 0.12f * g->upgradeFlash});
+        renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.2f, 0.8f, 1.0f, 0.12f * g->upgradeFlash});
     }
 
     glutSwapBuffers();
 }
 
-void game_begin_frame(Game *g)
+void jogo_iniciar_frame(Game *g)
 {
     memset(g->input.keysPressed, 0, sizeof(g->input.keysPressed));
     memset(g->input.mousePressed, 0, sizeof(g->input.mousePressed));

@@ -1,10 +1,10 @@
-#include "render.h"
-#include "game.h"
+#include "renderizar.h"
+#include "jogo.h"
 
 #include <GL/glut.h>
 #include <math.h>
 
-void render_text(float x, float y, const char *text, void *font, float r, float g, float b)
+void renderizar_texto(float x, float y, const char *text, void *font, float r, float g, float b)
 {
     const unsigned char *p = (const unsigned char *)text;
     glColor3f(r, g, b);
@@ -15,7 +15,7 @@ void render_text(float x, float y, const char *text, void *font, float r, float 
     }
 }
 
-void render_rect(float x, float y, float w, float h, Color c)
+void renderizar_retangulo(float x, float y, float w, float h, Color c)
 {
     glColor4f(c.r, c.g, c.b, c.a);
     glBegin(GL_QUADS);
@@ -26,7 +26,7 @@ void render_rect(float x, float y, float w, float h, Color c)
     glEnd();
 }
 
-void render_circle(Vec2 p, float radius, Color c, int segments)
+void renderizar_circulo(Vetor2D p, float radius, Color c, int segments)
 {
     int i;
     glColor4f(c.r, c.g, c.b, c.a);
@@ -40,7 +40,7 @@ void render_circle(Vec2 p, float radius, Color c, int segments)
     glEnd();
 }
 
-void render_triangle(Vec2 p, float size, Color c)
+void renderizar_triangulo(Vetor2D p, float size, Color c)
 {
     glColor4f(c.r, c.g, c.b, c.a);
     glBegin(GL_TRIANGLES);
@@ -50,7 +50,7 @@ void render_triangle(Vec2 p, float size, Color c)
     glEnd();
 }
 
-void render_diamond(Vec2 p, float size, Color c)
+void renderizar_losangulo(Vetor2D p, float size, Color c)
 {
     glColor4f(c.r, c.g, c.b, c.a);
     glBegin(GL_QUADS);
@@ -61,7 +61,7 @@ void render_diamond(Vec2 p, float size, Color c)
     glEnd();
 }
 
-void render_star(Vec2 p, float size, Color c)
+void renderizar_estrela(Vetor2D p, float size, Color c)
 {
     int i;
     glColor4f(c.r, c.g, c.b, c.a);
@@ -76,7 +76,7 @@ void render_star(Vec2 p, float size, Color c)
     glEnd();
 }
 
-void render_pentagon(Vec2 p, float size, Color c)
+void renderizar_pentagono(Vetor2D p, float size, Color c)
 {
     int i;
     glColor4f(c.r, c.g, c.b, c.a);
@@ -90,7 +90,7 @@ void render_pentagon(Vec2 p, float size, Color c)
     glEnd();
 }
 
-void render_text_wrapped(float x, float y, const char *text, void *font, float r, float g, float b, float maxW)
+void renderizar_texto_limites(float x, float y, const char *text, void *font, float r, float g, float b, float maxW)
 {
     const unsigned char *p = (const unsigned char *)text;
     float curX = x;
@@ -138,7 +138,7 @@ void render_text_wrapped(float x, float y, const char *text, void *font, float r
     }
 }
 
-void render_ortho(struct Game *g)
+void renderizar_perspectiva_ortografica(struct Game *g)
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

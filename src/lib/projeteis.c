@@ -1,15 +1,15 @@
-#include "projectiles.h"
-#include "maths.h"
-#include "render.h"
+#include "projeteis.h"
+#include "matematica.h"
+#include "renderizar.h"
 
 #include <GL/glut.h>
 #include <math.h>
 #include <string.h>
 
-void projectiles_spawn(Game *g, Vec2 pos, Vec2 dir, int fromPlayer, float speed, float damage, float radius, float life, GuidanceType guidance, int targetIdx, float maxLatAccel)
+void projeteis_criar(Game *g, Vetor2D pos, Vetor2D dir, int fromPlayer, float speed, float damage, float radius, float life, GuidanceType guidance, int targetIdx, float maxLatAccel)
 {
     int i;
-    for (i = 0; i < MAX_PROJECTILES; ++i)
+    for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
         Projectile *p = &g->projectiles[i];
         if (!p->active)
@@ -18,7 +18,7 @@ void projectiles_spawn(Game *g, Vec2 pos, Vec2 dir, int fromPlayer, float speed,
             p->active = 1;
             p->fromPlayer = fromPlayer;
             p->pos = pos;
-            p->vel = maths_vec2_mul(dir, speed);
+            p->vel = matematica_vetor2d_multiplicacao(dir, speed);
             p->radius = radius;
             p->life = life;
             p->damage = damage;
@@ -26,7 +26,7 @@ void projectiles_spawn(Game *g, Vec2 pos, Vec2 dir, int fromPlayer, float speed,
             p->guidance = guidance;
             p->targetIdx = targetIdx;
             p->actualLatAccel = 0.0f;
-            p->fuelTimer = (guidance != GUIDANCE_NONE) ? GUIDED_FUEL_TIME : 0.0f;
+            p->fuelTimer = (guidance != GUIDANCE_NONE) ? MISSIL_TEMPO_COMBUSTIVEL : 0.0f;
             p->prevDist = 99999.0f;
             p->missed = 0;
             p->sdTimer = 0.0f;
@@ -36,11 +36,11 @@ void projectiles_spawn(Game *g, Vec2 pos, Vec2 dir, int fromPlayer, float speed,
     }
 }
 
-void projectiles_draw(Game *g)
+void projeteis_desenhar(Game *g)
 {
     int i;
 
-    for (i = 0; i < MAX_PROJECTILES; ++i)
+    for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
         Projectile *p = &g->projectiles[i];
         if (!p->active)
@@ -68,22 +68,22 @@ void projectiles_draw(Game *g)
             glPushMatrix();
             glTranslatef(p->pos.x, p->pos.y, 0.0f);
             glRotatef(angle, 0.0f, 0.0f, 1.0f);
-            render_triangle(maths_vec2(0, 0), p->radius * 1.4f, c);
+            renderizar_triangulo(matematica_vetor2d(0, 0), p->radius * 1.4f, c);
             glPopMatrix();
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-            render_circle(p->pos, p->radius * 2.5f, (Color){c.r, c.g, c.b, 0.25f}, 12);
+            renderizar_circulo(p->pos, p->radius * 2.5f, (Color){c.r, c.g, c.b, 0.25f}, 12);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
         else
         {
             Color projectileColor = p->fromPlayer ? (Color){0.3f, 0.95f, 1.0f, 0.9f} : (Color){1.0f, 0.8f, 0.0f, 0.9f};
 
-            render_circle(p->pos, p->radius, projectileColor, 14);
+            renderizar_circulo(p->pos, p->radius, projectileColor, 14);
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE);
             Color haloColor = p->fromPlayer ? (Color){0.3f, 0.85f, 1.0f, 0.28f} : (Color){1.0f, 0.75f, 0.0f, 0.24f};
-            render_circle(p->pos, p->radius * 2.2f, haloColor, 14);
+            renderizar_circulo(p->pos, p->radius * 2.2f, haloColor, 14);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
     }

@@ -1,13 +1,13 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef TIPOS_H
+#define TIPOS_H
 
-#include "config.h"
+#include "configuracao.h"
 
-typedef struct Vec2
+typedef struct Vetor2D
 {
     float x;
     float y;
-} Vec2;
+} Vetor2D;
 
 typedef struct Color
 {
@@ -79,7 +79,7 @@ typedef struct InputState
 
 typedef struct Player
 {
-    Vec2 pos;
+    Vetor2D pos;
     float size;
     float hp;
     float maxHp;
@@ -92,8 +92,8 @@ typedef struct Player
     float velY;
     int isOnGround;
     float jumpPressedTime;
-    Vec2 vel;
-    Vec2 accel;
+    Vetor2D vel;
+    Vetor2D accel;
 
     int hasPP;
     int hasAPNG;
@@ -107,7 +107,7 @@ typedef struct Enemy
     int active;
     int isBoss;
     EnemyType type;
-    Vec2 center;
+    Vetor2D center;
     float orbitRadius;
     float angle;
     float angularSpeed;
@@ -121,16 +121,16 @@ typedef struct Enemy
     int burstCount;
     float burstTimer;
 
-    Vec2 vel;
-    Vec2 accel;
+    Vetor2D vel;
+    Vetor2D accel;
 } Enemy;
 
 typedef struct Projectile
 {
     int active;
     int fromPlayer;
-    Vec2 pos;
-    Vec2 vel;
+    Vetor2D pos;
+    Vetor2D vel;
     float radius;
     float life;
     float damage;
@@ -148,8 +148,8 @@ typedef struct Projectile
 typedef struct Particle
 {
     int active;
-    Vec2 pos;
-    Vec2 vel;
+    Vetor2D pos;
+    Vetor2D vel;
     float size;
     float life;
     Color color;
@@ -184,10 +184,10 @@ typedef struct Game
     float deltaTime;
 
     Player player;
-    Enemy enemies[MAX_ENEMIES];
-    Projectile projectiles[MAX_PROJECTILES];
-    Particle particles[MAX_PARTICLES];
-    Obstacle obstacles[MAX_OBSTACLES];
+    Enemy enemies[MAXIMO_INIMIGOS];
+    Projectile projectiles[MAXIMO_PROJETEIS];
+    Particle particles[MAXIMO_PARTICULAS];
+    Obstacle obstacles[MAXIMO_PLATAFORMAS];
 
     int wave;
     int enemiesRemaining;
@@ -207,7 +207,7 @@ typedef struct Game
     int audioEnabled;
     int difficulty;
 
-    UpgradeOption upgrades[MAX_UPGRADE_OPTIONS];
+    UpgradeOption upgrades[MAXIMO_OPCOES_UPGRADE];
 
     int highScore;
     int maxWaveEver;

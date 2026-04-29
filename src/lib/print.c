@@ -1,10 +1,10 @@
-#include "screenshot.h"
+#include "print.h"
 
 #include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-int screenshot_capture_ppm(const char *filename, int width, int height)
+int print_capturar_ppm(const char *filename, int width, int height)
 {
     const size_t bytes = (size_t)width * (size_t)height * 3;
     unsigned char *pixels = (unsigned char *)malloc(bytes);

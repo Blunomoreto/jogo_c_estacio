@@ -1,13 +1,13 @@
-#include "upgrades.h"
-#include "maths.h"
-#include "render.h"
-#include "world.h"
+#include "melhorias.h"
+#include "matematica.h"
+#include "renderizar.h"
+#include "cenario.h"
 #include "audio.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-void upgrades_fill_option(UpgradeOption *o, UpgradeType type)
+void melhorias_preencher_opcoes(UpgradeOption *o, UpgradeType type)
 {
     o->type = type;
     switch (type)
@@ -55,7 +55,7 @@ void upgrades_fill_option(UpgradeOption *o, UpgradeType type)
     }
 }
 
-void upgrades_roll(Game *g)
+void melhorias_rolar_opcoes(Game *g)
 {
     int i;
     int used[UPGRADE_COUNT] = {0};
@@ -65,7 +65,7 @@ void upgrades_roll(Game *g)
     if (g->player.hasAPNG)
         used[UPGRADE_GUIDANCE_APNG] = 1;
 
-    for (i = 0; i < MAX_UPGRADE_OPTIONS; ++i)
+    for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
     {
         UpgradeType t;
         int guard = 0;
@@ -81,11 +81,11 @@ void upgrades_roll(Game *g)
             guard++;
         } while (used[t] && guard < 32);
         used[t] = 1;
-        upgrades_fill_option(&g->upgrades[i], t);
+        melhorias_preencher_opcoes(&g->upgrades[i], t);
     }
 }
 
-void upgrades_apply(Game *g, UpgradeType t)
+void melhorias_aplicar(Game *g, UpgradeType t)
 {
     switch (t)
     {
@@ -117,7 +117,7 @@ void upgrades_apply(Game *g, UpgradeType t)
         g->player.maxGuidedAmmo += 10;
         g->player.guidedAmmo = g->player.maxGuidedAmmo;
         if (g->player.maxLatAccel < 100.0f)
-            g->player.maxLatAccel = MAX_PLAYER_LAT_ACCEL;
+            g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
     case UPGRADE_GUIDANCE_APNG:
         if (!g->player.hasPP)
@@ -129,7 +129,7 @@ void upgrades_apply(Game *g, UpgradeType t)
         g->player.maxGuidedAmmo += 10;
         g->player.guidedAmmo = g->player.maxGuidedAmmo;
         if (g->player.maxLatAccel < 100.0f)
-            g->player.maxLatAccel = MAX_PLAYER_LAT_ACCEL;
+            g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
     case UPGRADE_AMMO:
         g->player.maxGuidedAmmo += 8;
@@ -150,58 +150,58 @@ void upgrades_apply(Game *g, UpgradeType t)
     }
 }
 
-void upgrades_draw_icon(UpgradeType t, float x, float y)
+void melhorias_desenhar_icone(UpgradeType t, float x, float y)
 {
     switch (t)
     {
     case UPGRADE_DAMAGE:
-        render_star(maths_vec2(x, y), 16.0f, (Color){1.0f, 0.7f, 0.25f, 0.95f});
+        renderizar_estrela(matematica_vetor2d(x, y), 16.0f, (Color){1.0f, 0.7f, 0.25f, 0.95f});
         break;
     case UPGRADE_FIRE_RATE:
-        render_triangle(maths_vec2(x, y), 14.0f, (Color){1.0f, 0.95f, 0.5f, 0.95f});
-        render_triangle(maths_vec2(x + 10.0f, y), 10.0f, (Color){1.0f, 0.75f, 0.2f, 0.85f});
+        renderizar_triangulo(matematica_vetor2d(x, y), 14.0f, (Color){1.0f, 0.95f, 0.5f, 0.95f});
+        renderizar_triangulo(matematica_vetor2d(x + 10.0f, y), 10.0f, (Color){1.0f, 0.75f, 0.2f, 0.85f});
         break;
     case UPGRADE_SPEED:
-        render_diamond(maths_vec2(x - 6.0f, y), 10.0f, (Color){0.5f, 1.0f, 0.9f, 0.95f});
-        render_diamond(maths_vec2(x + 8.0f, y), 8.0f, (Color){0.3f, 0.9f, 1.0f, 0.9f});
+        renderizar_losangulo(matematica_vetor2d(x - 6.0f, y), 10.0f, (Color){0.5f, 1.0f, 0.9f, 0.95f});
+        renderizar_losangulo(matematica_vetor2d(x + 8.0f, y), 8.0f, (Color){0.3f, 0.9f, 1.0f, 0.9f});
         break;
     case UPGRADE_HEAL:
-        render_rect(x - 4.0f, y - 12.0f, 8.0f, 24.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
-        render_rect(x - 12.0f, y - 4.0f, 24.0f, 8.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
+        renderizar_retangulo(x - 4.0f, y - 12.0f, 8.0f, 24.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
+        renderizar_retangulo(x - 12.0f, y - 4.0f, 24.0f, 8.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
         break;
     case UPGRADE_TIME:
-        render_circle(maths_vec2(x, y), 13.0f, (Color){0.7f, 0.85f, 1.0f, 0.95f}, 16);
-        render_rect(x - 1.0f, y - 1.0f, 2.0f, 9.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
-        render_rect(x - 1.0f, y - 1.0f, 7.0f, 2.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
+        renderizar_circulo(matematica_vetor2d(x, y), 13.0f, (Color){0.7f, 0.85f, 1.0f, 0.95f}, 16);
+        renderizar_retangulo(x - 1.0f, y - 1.0f, 2.0f, 9.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
+        renderizar_retangulo(x - 1.0f, y - 1.0f, 7.0f, 2.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
         break;
     case UPGRADE_GUIDANCE_PP:
-        render_circle(maths_vec2(x, y), 10.0f, (Color){0.2f, 0.9f, 1.0f, 0.9f}, 16);
+        renderizar_circulo(matematica_vetor2d(x, y), 10.0f, (Color){0.2f, 0.9f, 1.0f, 0.9f}, 16);
         break;
     case UPGRADE_GUIDANCE_APNG:
-        render_circle(maths_vec2(x, y), 10.0f, (Color){0.9f, 0.2f, 1.0f, 0.9f}, 16);
+        renderizar_circulo(matematica_vetor2d(x, y), 10.0f, (Color){0.9f, 0.2f, 1.0f, 0.9f}, 16);
         break;
     default:
-        render_circle(maths_vec2(x, y), 12.0f, (Color){1.0f, 1.0f, 1.0f, 0.8f}, 12);
+        renderizar_circulo(matematica_vetor2d(x, y), 12.0f, (Color){1.0f, 1.0f, 1.0f, 0.8f}, 12);
         break;
     }
 }
 
-void upgrades_choose(Game *g, int idx)
+void melhorias_escolher(Game *g, int idx)
 {
-    if (idx < 0 || idx >= MAX_UPGRADE_OPTIONS)
+    if (idx < 0 || idx >= MAXIMO_OPCOES_UPGRADE)
     {
         return;
     }
 
-    upgrades_apply(g, g->upgrades[idx].type);
+    melhorias_aplicar(g, g->upgrades[idx].type);
     snprintf(g->lastUpgrade, sizeof(g->lastUpgrade), "%s", g->upgrades[idx].label);
     g->lastUpgradeTimer = 2.5f;
     g->upgradeFlash = 1.0f;
-    audio_play_shoot();
+    audio_tocar_som_tiro_disparo();
 
     g->player.guidedAmmo = g->player.maxGuidedAmmo;
 
     g->wave += 1;
-    world_spawn_wave(g);
+    cenario_criar_onda(g);
     g->screen = SCREEN_PLAYING;
 }
