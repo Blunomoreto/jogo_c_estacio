@@ -1,30 +1,34 @@
 #include "colisao.h"
 #include "matematica.h"
 
-int colisao_circulo_vs_circulo(Vetor2D a, float ra, Vetor2D b, float rb)
+int colisao_circulo_vs_circulo(Vetor2D posicaoA, float raioA, Vetor2D posicaoB, float raioB)
 {
-    const float r = ra + rb;
-    return matematica_vetor2d_distance_sq(a, b) <= r * r;
+    const float raio = raioA + raioB;
+
+    return matematica_vetor2d_distance_sq(posicaoA, posicaoB) <= raio * raio;
 }
 
-int colisao_circulo_vs_retangulo(Vetor2D c, float r, Vetor2D bmin, Vetor2D bmax)
+int colisao_circulo_vs_retangulo(Vetor2D posicaoA, float raioA, Vetor2D cantoSuperiorEsquerdo, Vetor2D cantoSuperiorDireito)
 {
-    float closestX = c.x;
-    float closestY = c.y;
+    float closestX = posicaoA.x;
+    float closestY = posicaoA.y;
     float dx;
     float dy;
 
-    if (closestX < bmin.x)
-        closestX = bmin.x;
-    if (closestX > bmax.x)
-        closestX = bmax.x;
-    if (closestY < bmin.y)
-        closestY = bmin.y;
-    if (closestY > bmax.y)
-        closestY = bmax.y;
+    if (closestX < cantoSuperiorEsquerdo.x)
+        closestX = cantoSuperiorEsquerdo.x;
 
-    dx = c.x - closestX;
-    dy = c.y - closestY;
-    return (dx * dx + dy * dy) <= r * r;
+    if (closestX > cantoSuperiorDireito.x)
+        closestX = cantoSuperiorDireito.x;
+
+    if (closestY < cantoSuperiorEsquerdo.y)
+        closestY = cantoSuperiorEsquerdo.y;
+
+    if (closestY > cantoSuperiorDireito.y)
+        closestY = cantoSuperiorDireito.y;
+
+    dx = posicaoA.x - closestX;
+    dy = posicaoA.y - closestY;
+
+    return (dx * dx + dy * dy) <= raioA * raioA;
 }
-
