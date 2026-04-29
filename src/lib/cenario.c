@@ -74,7 +74,7 @@ void cenario_criar_plataformas(Game *g)
 
 void cenario_criar_onda(Game *g)
 {
-    int amount = 4 + g->wave * 2;
+    int quantidade_inimigos = 3 + g->wave * 1.2;
     int i;
     int finalWave = (g->wave >= g->wavesToWin);
     float hpMul = inimigo_multiplicador_vida(g->difficulty);
@@ -83,19 +83,19 @@ void cenario_criar_onda(Game *g)
 
     if (finalWave)
     {
-        amount = 1 + g->wave;
+        quantidade_inimigos = 1 + g->wave;
     }
 
-    if (amount > MAXIMO_INIMIGOS)
+    if (quantidade_inimigos > MAXIMO_INIMIGOS)
     {
-        amount = MAXIMO_INIMIGOS;
+        quantidade_inimigos = MAXIMO_INIMIGOS;
     }
 
     cenario_limpar_entidades(g);
     cenario_criar_plataformas(g);
-    g->enemiesRemaining = amount;
+    g->enemiesRemaining = quantidade_inimigos;
 
-    for (i = 0; i < amount; ++i)
+    for (i = 0; i < quantidade_inimigos; ++i)
     {
         Enemy *e = &g->enemies[i];
         e->active = 1;

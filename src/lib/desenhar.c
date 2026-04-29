@@ -77,7 +77,7 @@ void desenhar_vida_boss(Game *jogo)
                 pct = 0.0f;
             renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f, 16.0f, (Color){0.15f, 0.12f, 0.2f, 0.92f});
             renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f * pct, 16.0f, (Color){0.95f, 0.2f, 0.85f, 0.95f});
-            desenhar_texto(jogo->width * 0.5f - 56.0f, 42.0f, "MINI BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
+            desenhar_texto(jogo->width * 0.5f - 56.0f, 42.0f, "BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
             break;
         }
     }

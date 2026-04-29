@@ -24,10 +24,6 @@ Atualmente os itens do menu possuem keybinds para ativação (comportamento espe
 
 ## Back
 
-### Upgrade de velocidade
-
-Criar um novo upgrade para aumentar a velocidade do projétil não guiado (projétil guiado deve manter velocidade fixa)
-
 ### Renomeação
 
 Variáveis devem explicar a função delas e utilizar português (hp -> vida, score -> pontuacao etc.)

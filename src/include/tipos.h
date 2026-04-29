@@ -39,7 +39,6 @@ typedef enum UpgradeType
     UPGRADE_GUIDANCE_PP,
     UPGRADE_GUIDANCE_APNG,
     UPGRADE_AMMO,
-    UPGRADE_OVERLOAD,
     UPGRADE_COUNT
 } UpgradeType;
 

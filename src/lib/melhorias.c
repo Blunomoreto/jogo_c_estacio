@@ -11,44 +11,40 @@ void melhorias_preencher_opcoes(UpgradeOption *o, UpgradeType type)
     switch (type)
     {
     case UPGRADE_DAMAGE:
-        snprintf(o->label, sizeof(o->label), "+Damage");
-        snprintf(o->desc, sizeof(o->desc), "Increase projectile damage by +6");
+        snprintf(o->label, sizeof(o->label), "Dano do Disparo");
+        snprintf(o->desc, sizeof(o->desc), "Aumenta o dano do disparo");
         break;
     case UPGRADE_FIRE_RATE:
-        snprintf(o->label, sizeof(o->label), "+Fire Rate");
-        snprintf(o->desc, sizeof(o->desc), "Shoot faster (cooldown -18%%)");
+        snprintf(o->label, sizeof(o->label), "Taxa de Disparo");
+        snprintf(o->desc, sizeof(o->desc), "Aumenta a taxa de disparo");
         break;
     case UPGRADE_SPEED:
-        snprintf(o->label, sizeof(o->label), "+Speed");
-        snprintf(o->desc, sizeof(o->desc), "Movement speed +45");
+        snprintf(o->label, sizeof(o->label), "Velocidade");
+        snprintf(o->desc, sizeof(o->desc), "Aumenta a velocidade de movimento");
         break;
     case UPGRADE_HEAL:
-        snprintf(o->label, sizeof(o->label), "Heal");
-        snprintf(o->desc, sizeof(o->desc), "Recover 26 HP");
+        snprintf(o->label, sizeof(o->label), "Aumento de Vida");
+        snprintf(o->desc, sizeof(o->desc), "Recupera e adiciona mais 50 de vida");
         break;
     case UPGRADE_TIME:
-        snprintf(o->label, sizeof(o->label), "+Time");
-        snprintf(o->desc, sizeof(o->desc), "Add 18 seconds to timer");
+        snprintf(o->label, sizeof(o->label), "Aumento de Tempo");
+        snprintf(o->desc, sizeof(o->desc), "Acrescenta 20 segundos ao timer");
         break;
     case UPGRADE_GUIDANCE_PP:
-        snprintf(o->label, sizeof(o->label), "Guidance PP");
-        snprintf(o->desc, sizeof(o->desc), "Unlock Pure Pursuit for right click. 10 missiles start.");
+        snprintf(o->label, sizeof(o->label), "Balas Guiadas");
+        snprintf(o->desc, sizeof(o->desc), "Desbloqueia projeteis guiados com 5 balas guiadas");
         break;
     case UPGRADE_GUIDANCE_APNG:
-        snprintf(o->label, sizeof(o->label), "Guidance APN");
-        snprintf(o->desc, sizeof(o->desc), "Unlock Augmented Proportional Navigation for right click. 10 missiles start.");
+        snprintf(o->label, sizeof(o->label), "Balas Guiadas+");
+        snprintf(o->desc, sizeof(o->desc), "Melhora os projeteis guiados e adiciona mais 5 balas guiadas");
         break;
     case UPGRADE_AMMO:
-        snprintf(o->label, sizeof(o->label), "Ammo Pack");
-        snprintf(o->desc, sizeof(o->desc), "Increase max guided missiles by +8");
-        break;
-    case UPGRADE_OVERLOAD:
-        snprintf(o->label, sizeof(o->label), "Overload");
-        snprintf(o->desc, sizeof(o->desc), "Increase missile maneuverability (G-limit) by +25%%");
+        snprintf(o->label, sizeof(o->label), "Aumento de Municao");
+        snprintf(o->desc, sizeof(o->desc), "Adiciona mais 10 balas guiadas");
         break;
     default:
-        snprintf(o->label, sizeof(o->label), "Unknown");
-        snprintf(o->desc, sizeof(o->desc), "Unknown effect");
+        snprintf(o->label, sizeof(o->label), "Desconhecido");
+        snprintf(o->desc, sizeof(o->desc), "Efeito desconhecido");
         break;
     }
 }
@@ -72,7 +68,7 @@ void melhorias_rolar_opcoes(Game *g)
             t = (UpgradeType)(rand() % UPGRADE_COUNT);
             if (t == UPGRADE_GUIDANCE_APNG && !g->player.hasPP)
                 t = UPGRADE_DAMAGE;
-            if ((t == UPGRADE_AMMO || t == UPGRADE_OVERLOAD) && (!g->player.hasPP && !g->player.hasAPNG))
+            if ((t == UPGRADE_AMMO) && (!g->player.hasPP && !g->player.hasAPNG))
             {
                 t = UPGRADE_DAMAGE;
             }
@@ -88,31 +84,28 @@ void melhorias_aplicar(Game *g, UpgradeType t)
     switch (t)
     {
     case UPGRADE_DAMAGE:
-        g->player.damage += 6.0f;
+        g->player.damage += 7.5f;
         break;
     case UPGRADE_FIRE_RATE:
-        g->player.fireRate *= 0.82f;
-        if (g->player.fireRate < 0.08f)
+        g->player.fireRate *= 0.8f;
+        if (g->player.fireRate < 0.1f)
         {
-            g->player.fireRate = 0.08f;
+            g->player.fireRate = 0.1f;
         }
         break;
     case UPGRADE_SPEED:
-        g->player.speed += 45.0f;
+        g->player.speed += 20.0f;
         break;
     case UPGRADE_HEAL:
-        g->player.hp += 26.0f;
-        if (g->player.hp > g->player.maxHp)
-        {
-            g->player.hp = g->player.maxHp;
-        }
+        g->player.maxHp += 50.0f;
+        g->player.hp = g->player.maxHp;
         break;
     case UPGRADE_TIME:
-        g->timeLeft += 18.0f;
+        g->timeLeft += 20.0f;
         break;
     case UPGRADE_GUIDANCE_PP:
         g->player.hasPP = 1;
-        g->player.maxGuidedAmmo += 10;
+        g->player.maxGuidedAmmo += 5;
         g->player.guidedAmmo = g->player.maxGuidedAmmo;
         if (g->player.maxLatAccel < 100.0f)
             g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
@@ -124,24 +117,14 @@ void melhorias_aplicar(Game *g, UpgradeType t)
             g->player.maxGuidedAmmo += 10;
         }
         g->player.hasAPNG = 1;
-        g->player.maxGuidedAmmo += 10;
+        g->player.maxGuidedAmmo += 5;
         g->player.guidedAmmo = g->player.maxGuidedAmmo;
         if (g->player.maxLatAccel < 100.0f)
             g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
     case UPGRADE_AMMO:
-        g->player.maxGuidedAmmo += 8;
+        g->player.maxGuidedAmmo += 10;
         g->player.guidedAmmo = g->player.maxGuidedAmmo;
-        break;
-    case UPGRADE_OVERLOAD:
-        if (g->player.hasAPNG)
-        {
-            g->player.maxLatAccel *= 1.25f;
-        }
-        else
-        {
-            g->player.hp += 26.0f;
-        }
         break;
     default:
         break;
