@@ -21,7 +21,6 @@ set(SOURCES
     src/lib/colisao.c
     src/lib/persistencia.c
     src/lib/audio.c
-    src/lib/print.c
     src/lib/imagem.c
     src/lib/pastas.c
 )

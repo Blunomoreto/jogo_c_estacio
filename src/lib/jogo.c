@@ -10,7 +10,6 @@
 #include "projeteis.h"
 #include "renderizar.h"
 #include "desenhar.h"
-#include "print.h"
 #include "interface.h"
 #include "melhorias.h"
 #include "cenario.h"
@@ -868,7 +867,7 @@ void jogo_especial_pressionado(Game *g, int key, int x, int y)
         snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
                  tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
                  tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
-        if (print_capturar_ppm(filename, g->width, g->height))
+        if (imagem_salvar_ppm(filename, g->width, g->height))
         {
             interface_notificar(g, "Screenshot saved");
         }

@@ -45,7 +45,6 @@ Write-Host "[2/2] Compilando jogo..."
     (Join-Path $ProjectRoot "lib\colisao.c") `
     (Join-Path $ProjectRoot "lib\persistencia.c") `
     (Join-Path $ProjectRoot "lib\audio.c") `
-    (Join-Path $ProjectRoot "lib\print.c") `
     (Join-Path $ProjectRoot "lib\imagem.c") `
     (Join-Path $ProjectRoot "lib\pastas.c") `
     -L"$glutLib" `

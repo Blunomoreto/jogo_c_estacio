@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int image_skip_comments(FILE *f)
+static int imagem_pular_comentarios(FILE *f)
 {
     int c = fgetc(f);
     while (c == '#')
@@ -44,17 +44,17 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
         return 0;
     }
 
-    if (!image_skip_comments(f) || fscanf(f, "%d", &width) != 1)
+    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &width) != 1)
     {
         fclose(f);
         return 0;
     }
-    if (!image_skip_comments(f) || fscanf(f, "%d", &height) != 1)
+    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &height) != 1)
     {
         fclose(f);
         return 0;
     }
-    if (!image_skip_comments(f) || fscanf(f, "%d", &maxval) != 1 || maxval != 255)
+    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &maxval) != 1 || maxval != 255)
     {
         fclose(f);
         return 0;
@@ -107,4 +107,51 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
     free(data);
     *ok = 1;
     return tex;
+}
+
+unsigned int imagem_salvar_ppm(const char *filename, int width, int height)
+{
+    const size_t bytes = (size_t)width * (size_t)height * 3;
+    unsigned char *pixels = (unsigned char *)malloc(bytes);
+    unsigned char *flipped = (unsigned char *)malloc(bytes);
+    int y;
+
+    if (!pixels || !flipped)
+    {
+        free(pixels);
+        free(flipped);
+        return 0;
+    }
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    for (y = 0; y < height; ++y)
+    {
+        const size_t src = (size_t)y * (size_t)width * 3;
+        const size_t dst = (size_t)(height - 1 - y) * (size_t)width * 3;
+        size_t i;
+        for (i = 0; i < (size_t)width * 3; ++i)
+        {
+            flipped[dst + i] = pixels[src + i];
+        }
+    }
+
+    {
+        FILE *f = fopen(filename, "wb");
+        if (!f)
+        {
+            free(pixels);
+            free(flipped);
+            return 0;
+        }
+        fprintf(f, "P6\n%d %d\n255\n", width, height);
+        fwrite(flipped, 1, bytes, f);
+        fclose(f);
+    }
+
+    free(pixels);
+    free(flipped);
+    return 1;
 }

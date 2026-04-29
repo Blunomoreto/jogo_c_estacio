@@ -52,7 +52,7 @@ Esse script:
 
 A partir da raiz do projeto:
 
-gcc -I"src\include" -I"src\third_party\freeglut\freeglut\include" src\lib\main.c src\lib\jogo.c src\lib\matematica.c src\lib\renderizar.c src\lib\desenhar.c src\lib\inimigo.c src\lib\particulas.c src\lib\projeteis.c src\lib\melhorias.c src\lib\cenario.c src\lib\interface.c src\lib\colisao.c src\lib\persistencia.c src\lib\audio.c src\lib\print.c src\lib\imagem.c src\lib\pastas.c -L"src\third_party\freeglut\freeglut\lib\x64" -o src\orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
+gcc -I"src\include" -I"src\third_party\freeglut\freeglut\include" src\lib\main.c src\lib\jogo.c src\lib\matematica.c src\lib\renderizar.c src\lib\desenhar.c src\lib\inimigo.c src\lib\particulas.c src\lib\projeteis.c src\lib\melhorias.c src\lib\cenario.c src\lib\interface.c src\lib\colisao.c src\lib\persistencia.c src\lib\audio.c src\lib\imagem.c src\lib\pastas.c -L"src\third_party\freeglut\freeglut\lib\x64" -o src\orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
 
 ### 4.3 Build com CMake
 
