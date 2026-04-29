@@ -6,7 +6,7 @@
 #endif
 
 #define GRAVIDADE 800.0f
-#define ALTURA_CHAO 400.0f
+#define ALTURA_CHAO 600.0f
 
 #define TEMPO_LIMITE 180.0f
 #define ONDAS_TOTAIS 10

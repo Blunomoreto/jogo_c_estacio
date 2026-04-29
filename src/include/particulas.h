@@ -4,6 +4,5 @@
 #include "jogo.h"
 
 void particulas_criar(Game *g, Vetor2D p, int count, Color color);
-void particulas_desenhar(Game *g);
 
 #endif

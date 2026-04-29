@@ -28,7 +28,3 @@ int colisao_circulo_vs_retangulo(Vetor2D c, float r, Vetor2D bmin, Vetor2D bmax)
     return (dx * dx + dy * dy) <= r * r;
 }
 
-int colisao_dentro_do_retangulo(float x, float y, float rx, float ry, float rw, float rh)
-{
-    return x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
-}

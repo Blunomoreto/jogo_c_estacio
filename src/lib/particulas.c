@@ -1,6 +1,5 @@
 #include "particulas.h"
 #include "matematica.h"
-#include "renderizar.h"
 
 #include <math.h>
 
@@ -29,16 +28,3 @@ void particulas_criar(Game *g, Vetor2D p, int count, Color color)
     }
 }
 
-void particulas_desenhar(Game *g)
-{
-    int i;
-    for (i = 0; i < MAXIMO_PARTICULAS; ++i)
-    {
-        Particle *pt = &g->particles[i];
-        if (!pt->active)
-        {
-            continue;
-        }
-        renderizar_circulo(pt->pos, pt->size, (Color){pt->color.r, pt->color.g, pt->color.b, pt->color.a * (pt->life * 2.0f)}, 8);
-    }
-}

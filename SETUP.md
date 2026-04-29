@@ -1,132 +1,122 @@
 # Instalação do Orbit Siege (Windows + MinGW Standalone)
 
-Este guia é para **MinGW-w64 standalone** (sem MSYS2).
-
 ## 1 Pré-requisitos obrigatórios
 
-- **MinGW-w64 standalone** (GCC + G++)
-- **FreeGLUT** (headers + .a/.dll.a + freeglut.dll)
-- **OpenGL** (já incluso no Windows: opengl32 e glu32)
-- **Opcional:** CMake
+- **MinGW-w64 standalone** com GCC 10+ (ex.: [WinLibs](https://winlibs.com))
+- **FreeGLUT** - baixado automaticamente pelo script de setup
+- **CMake 3.16+** - necessário para compilar FreeGLUT no setup inicial ([cmake.org](https://cmake.org/download/))
+- **OpenGL** - já incluso no Windows (opengl32, glu32)
 
 ## 2 Instalar MinGW-w64 standalone
 
 1. Baixe uma distribuição standalone de MinGW-w64 (ex.: WinLibs).
-2. Extraia em um caminho sem espaços, por exemplo:
-    - C:\mingw64
-
-3. Garanta que estes executáveis existam:
-    - C:\mingw64\bin\gcc.exe
-    - C:\mingw64\bin\g++.exe
-
-4. Adicione ao PATH do Windows:
-    - C:\mingw64\bin
-
+2. Extraia em um caminho sem espaços, por exemplo `C:\mingw64`.
+3. Garanta que os executáveis `C:\mingw64\bin\gcc.exe` e `C:\mingw64\bin\g++.exe` existem
+4. Adicione `C:\mingw64\bin` ao PATH do Windows.
 5. Abra um novo PowerShell e valide:
 
-powershell
 gcc --version
+cmake --version
 
-## 3 Instalar FreeGLUT no MinGW standalone
+## 3 Setup do projeto (primeira vez)
 
-Você precisa de:
-    - GL/freeglut.h
-    - libfreeglut.a (ou libfreeglut.dll.a)
-    - freeglut.dll
+No diretório raiz do projeto, execute:
 
-Copie para:
-    - Header: C:\mingw64\include\GL\freeglut.h
-    - Lib: C:\mingw64\lib\libfreeglut.a (ou .dll.a)
-    - DLL runtime: C:\mingw64\bin\freeglut.dll
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_libs.ps1
 
-> Se sua lib tiver outro nome, mantenha um alias compatível com -lfreeglut.
+Esse script:
+
+- Valida que `gcc` e `cmake` estão no PATH
+- Baixa o código-fonte do FreeGLUT 3.8.0 de [github.com/freeglut/freeglut/releases](https://github.com/freeglut/freeglut/releases)
+- Compila FreeGLUT com MinGW Makefiles
+- Organiza headers, lib e `libfreeglut.dll` em `src\third_party\freeglut\freeglut\`
+
+O setup é idempotente: se `libfreeglut.dll` já existir, o script encerra imediatamente.
 
 ## 4 Compilar o jogo
 
-### 4.1 Setup automatizado (recomendado)
+### 4.1 Setup automatizado via powershell (recomendado)
 
 No diretório raiz do projeto:
 
-powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_mingw_standalone.ps1 -RunSmokeTest
+powershell -ExecutionPolicy Bypass -File .\scripts\compile_build.ps1
 
 Esse script:
-    - baixa e extrai FreeGLUT MinGW em third_party/
-    - compila orbit_siege.exe
-    - copia freeglut.dll para a raiz
-    - executa smoke test opcional
 
-### 4.2 Compilação manual (alternativa)
+- Compila todos os arquivos `.c` de `src\lib\`
+- Linka com opengl32, glu32, freeglut e winmm
+- Gera `src\orbit_siege.exe`
+- Copia `libfreeglut.dll` para `src\`
 
-powershell
-gcc -Iinclude -Ithird_party\freeglut\freeglut\include src\lib\main.c src\lib\jogo.c src\lib\colisao.c src\lib\persistencia.c src\lib\audio_winmm.c src\lib\print.c src\lib\imagem.c -Lthird_party\freeglut\freeglut\lib\x64 -o orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
-Copy-Item -Force third_party\freeglut\freeglut\bin\x64\freeglut.dll .\freeglut.dll
+### 4.2 Compilação manual
 
-Se quiser usar CMake + MinGW Makefiles:
+A partir da raiz do projeto:
 
-powershell
+gcc -I"src\include" -I"src\third_party\freeglut\freeglut\include" src\lib\main.c src\lib\jogo.c src\lib\matematica.c src\lib\renderizar.c src\lib\desenhar.c src\lib\inimigo.c src\lib\particulas.c src\lib\projeteis.c src\lib\melhorias.c src\lib\cenario.c src\lib\interface.c src\lib\colisao.c src\lib\persistencia.c src\lib\audio.c src\lib\print.c src\lib\imagem.c src\lib\pastas.c -L"src\third_party\freeglut\freeglut\lib\x64" -o src\orbit_siege.exe -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
+
+### 4.3 Build com CMake
+
+Requer CMake 3.16+ e FreeGLUT instalado via `setup_libs.ps1`:
+
 cmake -S . -B build -G "MinGW Makefiles"
 cmake --build build
 
-Executáveis esperados:
-
-- GCC direto: orbit_siege.exe
-- CMake: build\orbit_siege.exe
+O executável é gerado em `build\orbit_siege.exe`. `libfreeglut.dll` é copiado automaticamente via post-build command.
 
 ## 5 Execução
 
-Execute no diretório do projeto:
+Execute a partir da pasta `src\` para que os caminhos de assets e dados funcionem:
 
-- ./orbit_siege.exe (ou build\orbit_siege.exe)
+cd src
+.\orbit_siege.exe
 
-## 6 Estrutura de arquivos necessária
+## 6 Estrutura de arquivos necessária em tempo de execução
 
-Mantenha a estrutura:
+O executável deve ser rodado a partir de `src\` com a seguinte estrutura:
 
-- assets/images/background.ppm (opcional)
-- assets/audio/bgm.wav (opcional)
-- assets/audio/shoot.wav (opcional)
-- assets/audio/hit.wav (opcional)
-- data/stats.dat
-- data/scoreboard.dat
-- data/settings.dat
-- screenshots/
+src\
+  orbit_siege.exe
+  libfreeglut.dll
+  assets\
+    images\background.ppm   (opcional - fallback visual sem ele)
+    audio\bgm.wav            (opcional - silencioso sem ele)
+    audio\shoot.wav          (opcional)
+    audio\hit.wav            (opcional)
+  data\                      (criado automaticamente pelo jogo)
+  screenshots\               (criado automaticamente pelo jogo)
 
-Sem assets de áudio/imagem o jogo roda com fallback.
+## 7 Troubleshooting
 
-## 7 Troubleshooting (MinGW standalone)
+### `gcc` não encontrado
 
-### cannot find -lfreeglut
+Verifique se `C:\mingw64\bin` está no PATH e reabra o terminal.
 
-O linker não encontrou a biblioteca.
+### `cmake` não encontrado
 
-Verifique:
+Instale o CMake de [cmake.org/download](https://cmake.org/download) e reabra o terminal.
 
-- C:\mingw64\lib\libfreeglut.a (ou libfreeglut.dll.a)
-- gcc -print-search-dirs inclui C:\mingw64\lib
+### `cannot find -lfreeglut`
 
-### fatal error: GL/freeglut.h: No such file or directory
+Execute `scripts\setup_libs.ps1` para baixar e compilar FreeGLUT.
+Confirme que `src\third_party\freeglut\freeglut\lib\x64\libfreeglut.a` existe.
 
-- Falta header em C:\mingw64\include\GL\freeglut.h
+### `fatal error: GL/freeglut.h: No such file or directory`
 
-### Executável abre e fecha / erro de DLL
+Execute `scripts\setup_libs.ps1`. O header deve estar em
+`src\third_party\freeglut\freeglut\include\GL\freeglut.h`.
 
-- Garanta freeglut.dll em:
-  - C:\mingw64\bin, e
-  - C:\mingw64\bin no PATH
-  - (ou copie freeglut.dll para a pasta do .exe)
+### Executável abre e fecha imediatamente
 
-### cmake não reconhecido
-
-- Instale CMake e reabra o terminal.
+Garanta que `libfreeglut.dll` está em `src\` (ao lado do `.exe`).
+O script `compile_build.ps1` faz essa cópia automaticamente.
 
 ## 8 Validação mínima pós-instalação
 
 Após iniciar o jogo, confirme:
 
 - Menu com START, OPTIONS, SCOREBOARD
-- Movimento (teclado) e tiro (mouse)
-- HUD com tempo/score/vida
-- Pausa e upgrades funcionando
-- Screenshot com F12 gerando arquivo em screenshots/
+- Movimento com teclado e tiro com mouse
+- HUD com tempo, score e vida
+- Pausa e tela de upgrades funcionando
+- Screenshot com F12 gerando arquivo em `screenshots\`
 - Salvamento de score no final da run

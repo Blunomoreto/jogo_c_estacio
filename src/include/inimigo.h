@@ -4,8 +4,6 @@
 #include "tipos.h"
 
 Vetor2D inimigo_posicao(const Enemy *e);
-Vetor2D inimigo_velocidade(const Enemy *e);
-Vetor2D inimigo_aceleracao(const Enemy *e);
 
 const char *inimigo_nome_dificuldade(int difficulty);
 

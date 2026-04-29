@@ -1,10 +1,7 @@
 #include "cenario.h"
 #include "inimigo.h"
 #include "matematica.h"
-#include "renderizar.h"
 
-#include <GL/glut.h>
-#include <math.h>
 #include <string.h>
 
 void cenario_limpar_entidades(Game *g)
@@ -194,71 +191,3 @@ void cenario_criar_onda(Game *g)
     }
 }
 
-void cenario_desenhar_plataformas(Game *g)
-{
-    int i;
-    for (i = 0; i < MAXIMO_PLATAFORMAS; ++i)
-    {
-        Obstacle *o = &g->obstacles[i];
-        if (!o->active)
-        {
-            continue;
-        }
-        renderizar_retangulo(o->x, o->y, o->w, o->h, (Color){0.22f, 0.28f, 0.38f, 0.82f});
-        renderizar_retangulo(o->x + 3.0f, o->y + 3.0f, o->w - 6.0f, o->h - 6.0f, (Color){0.35f, 0.46f, 0.62f, 0.35f});
-    }
-}
-
-void cenario_desenhar_fundo(Game *g)
-{
-    float offset = fmodf(g->elapsed * 20.0f, (float)g->width);
-
-    if (g->bgTextureLoaded)
-    {
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, g->bgTexture);
-        glColor4f(1.0f, 1.0f, 1.0f, 0.28f);
-
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0f + offset / g->width, 0.0f);
-        glVertex2f(0.0f, 0.0f);
-        glTexCoord2f(1.0f + offset / g->width, 0.0f);
-        glVertex2f((float)g->width, 0.0f);
-        glTexCoord2f(1.0f + offset / g->width, 1.0f);
-        glVertex2f((float)g->width, (float)g->height);
-        glTexCoord2f(0.0f + offset / g->width, 1.0f);
-        glVertex2f(0.0f, (float)g->height);
-        glEnd();
-
-        glDisable(GL_TEXTURE_2D);
-    }
-
-    renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.04f, 0.06f, 0.11f, 1.0f});
-
-    renderizar_circulo(matematica_vetor2d(g->width * 0.85f, g->height * 0.25f), 60.0f, (Color){0.95f, 0.95f, 0.90f, 0.8f}, 24);
-    renderizar_circulo(matematica_vetor2d(g->width * 0.88f, g->height * 0.22f), 58.0f, (Color){0.04f, 0.06f, 0.11f, 0.9f}, 24);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    renderizar_retangulo(0.0f, 0.0f, (float)g->width, (float)g->height, (Color){0.03f, 0.02f, 0.07f, 0.40f});
-
-    {
-        int i;
-        for (i = 0; i < 18; ++i)
-        {
-            float x = fmodf((i * 97.0f + g->elapsed * (8.0f + i)), (float)g->width);
-            float y = 80.0f + fmodf((i * 61.0f + g->elapsed * (5.0f + i * 0.25f)), (float)g->height - 100.0f);
-            renderizar_circulo(matematica_vetor2d(x, y), 2.0f + (i % 3), (Color){0.7f, 0.8f, 1.0f, 0.22f}, 10);
-        }
-    }
-
-    renderizar_retangulo(0.0f, ALTURA_CHAO, (float)g->width, (float)g->height - ALTURA_CHAO, (Color){0.2f, 0.15f, 0.08f, 1.0f});
-
-    {
-        int i;
-        for (i = 0; i < 20; ++i)
-        {
-            float x1 = i * (g->width / 20.0f);
-            renderizar_retangulo(x1, ALTURA_CHAO - 4.0f, (g->width / 40.0f), 3.0f, (Color){0.3f, 0.2f, 0.1f, 0.7f});
-        }
-    }
-}

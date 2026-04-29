@@ -24,17 +24,9 @@ Atualmente os itens do menu possuem keybinds para ativação (comportamento espe
 
 ## Back
 
-### Balanceamento
-
-O jogo deve ser balanceado, atualmente existem muitos inimigos com uma progressão imediata, aumente a quantidade de fases para 10 e diminua a quantidade de inimigos pro fase
-
 ### Melhoria nos projéteis guiados
 
 Diminuir a quantidade de projéteis disparados por rajada, aumentar dano dos projéteis guiados do jogador
-
-### Duração de partida
-
-Aumentar a quantidade de `rounds` para 10 com uma progressão de dificuldade mais suave.
 
 ### Upgrade de velocidade
 
@@ -42,9 +34,12 @@ Criar um novo upgrade para aumentar a velocidade do projétil não guiado (proj�
 
 ### Renomeação
 
-Funções devem ser renomeadas para utilizar lingua portuguesa
 Variáveis devem explicar a função delas e utilizar português (hp -> vida, score -> pontuacao etc.)
 
 ### Utilizar e reutilizar funções
 
 Devem ser utilizadas e reutilizadas as novas funções clamp criadas e também outras funções aplicáveis
+
+### Abstrair código
+
+Código deve ser abstraído para utilizar a máxima quantidade de funções possível que digam exatamente os que o blocos fazem

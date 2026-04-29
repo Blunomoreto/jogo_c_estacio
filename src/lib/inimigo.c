@@ -6,20 +6,7 @@
 Vetor2D inimigo_posicao(const Enemy *e)
 {
     return matematica_vetor2d(e->center.x + cosf(e->angle) * e->orbitRadius,
-                      e->center.y + sinf(e->angle) * e->orbitRadius);
-}
-
-Vetor2D inimigo_velocidade(const Enemy *e)
-{
-    return matematica_vetor2d(-e->orbitRadius * e->angularSpeed * sinf(e->angle),
-                      e->orbitRadius * e->angularSpeed * cosf(e->angle));
-}
-
-Vetor2D inimigo_aceleracao(const Enemy *e)
-{
-    float omega = e->angularSpeed;
-    return matematica_vetor2d(-e->orbitRadius * omega * omega * cosf(e->angle),
-                      -e->orbitRadius * omega * omega * sinf(e->angle));
+                              e->center.y + sinf(e->angle) * e->orbitRadius);
 }
 
 const char *inimigo_nome_dificuldade(int difficulty)

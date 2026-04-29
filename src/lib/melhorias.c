@@ -1,6 +1,4 @@
 #include "melhorias.h"
-#include "matematica.h"
-#include "renderizar.h"
 #include "cenario.h"
 #include "audio.h"
 
@@ -146,42 +144,6 @@ void melhorias_aplicar(Game *g, UpgradeType t)
         }
         break;
     default:
-        break;
-    }
-}
-
-void melhorias_desenhar_icone(UpgradeType t, float x, float y)
-{
-    switch (t)
-    {
-    case UPGRADE_DAMAGE:
-        renderizar_estrela(matematica_vetor2d(x, y), 16.0f, (Color){1.0f, 0.7f, 0.25f, 0.95f});
-        break;
-    case UPGRADE_FIRE_RATE:
-        renderizar_triangulo(matematica_vetor2d(x, y), 14.0f, (Color){1.0f, 0.95f, 0.5f, 0.95f});
-        renderizar_triangulo(matematica_vetor2d(x + 10.0f, y), 10.0f, (Color){1.0f, 0.75f, 0.2f, 0.85f});
-        break;
-    case UPGRADE_SPEED:
-        renderizar_losangulo(matematica_vetor2d(x - 6.0f, y), 10.0f, (Color){0.5f, 1.0f, 0.9f, 0.95f});
-        renderizar_losangulo(matematica_vetor2d(x + 8.0f, y), 8.0f, (Color){0.3f, 0.9f, 1.0f, 0.9f});
-        break;
-    case UPGRADE_HEAL:
-        renderizar_retangulo(x - 4.0f, y - 12.0f, 8.0f, 24.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
-        renderizar_retangulo(x - 12.0f, y - 4.0f, 24.0f, 8.0f, (Color){0.45f, 1.0f, 0.45f, 0.95f});
-        break;
-    case UPGRADE_TIME:
-        renderizar_circulo(matematica_vetor2d(x, y), 13.0f, (Color){0.7f, 0.85f, 1.0f, 0.95f}, 16);
-        renderizar_retangulo(x - 1.0f, y - 1.0f, 2.0f, 9.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
-        renderizar_retangulo(x - 1.0f, y - 1.0f, 7.0f, 2.0f, (Color){0.1f, 0.2f, 0.5f, 0.95f});
-        break;
-    case UPGRADE_GUIDANCE_PP:
-        renderizar_circulo(matematica_vetor2d(x, y), 10.0f, (Color){0.2f, 0.9f, 1.0f, 0.9f}, 16);
-        break;
-    case UPGRADE_GUIDANCE_APNG:
-        renderizar_circulo(matematica_vetor2d(x, y), 10.0f, (Color){0.9f, 0.2f, 1.0f, 0.9f}, 16);
-        break;
-    default:
-        renderizar_circulo(matematica_vetor2d(x, y), 12.0f, (Color){1.0f, 1.0f, 1.0f, 0.8f}, 12);
         break;
     }
 }

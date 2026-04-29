@@ -52,11 +52,6 @@ Vetor2D matematica_mouse_para_mundo(Game *g)
     return matematica_vetor2d((float)g->input.mouseX, (float)g->input.mouseY);
 }
 
-float matematica_vetor2d_length_sq(Vetor2D v)
-{
-    return v.x * v.x + v.y * v.y;
-}
-
 float matematica_vetor2d_distance_sq(Vetor2D a, Vetor2D b)
 {
     const float dx = a.x - b.x;
