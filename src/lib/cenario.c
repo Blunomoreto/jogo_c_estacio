@@ -46,7 +46,7 @@ void cenario_criar_plataformas(Game *g)
             o->w = matematica_float_aleatorio(100.0f, 220.0f);
             o->h = matematica_float_aleatorio(22.0f, 44.0f);
             o->x = matematica_float_aleatorio(40.0f, (float)g->width - o->w - 40.0f);
-            o->y = matematica_float_aleatorio((float)g->height * 0.45f, (float)g->height * 0.65f);
+            o->y = matematica_float_aleatorio(ALTURA_CHAO - 200.0f, ALTURA_CHAO - 150.0f);
 
             for (j = 0; j < i; ++j)
             {
@@ -162,7 +162,7 @@ void cenario_criar_onda(Game *g)
             e->hp = 35.0f + g->wave * 10.0f;
             e->damage = 15.0f + g->wave * 2.0f;
             e->shootCooldown = matematica_float_aleatorio(2.0f, 4.0f);
-            e->burstCount = 3;
+            e->burstCount = 2;
         }
         else if (e->type == ENEMY_PENTAGON)
         {
@@ -190,4 +190,3 @@ void cenario_criar_onda(Game *g)
         e->accel = matematica_vetor2d(0.0f, 0.0f);
     }
 }
-

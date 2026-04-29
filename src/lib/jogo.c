@@ -255,7 +255,7 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, g->player.pos));
                 GuidanceType law = g->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
 
-                projeteis_criar(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 2.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
+                projeteis_criar(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 3.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
                 g->player.guidedAmmo--;
                 g->player.fireCooldown = g->player.fireRate * 2.0f;
                 audio_tocar_som_tiro_disparo();
@@ -456,13 +456,13 @@ static void jogo_atualizar_playing(Game *g, float dt)
                     if (e->burstCount == 0)
                     {
                         e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
-                        e->burstCount = 3;
+                        e->burstCount = 2;
                     }
                 }
                 else
                 {
                     e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
-                    e->burstCount = 3;
+                    e->burstCount = 2;
                 }
             }
             else if (e->type == ENEMY_PENTAGON)

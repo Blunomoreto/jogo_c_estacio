@@ -24,10 +24,6 @@ Atualmente os itens do menu possuem keybinds para ativação (comportamento espe
 
 ## Back
 
-### Melhoria nos projéteis guiados
-
-Diminuir a quantidade de projéteis disparados por rajada, aumentar dano dos projéteis guiados do jogador
-
 ### Upgrade de velocidade
 
 Criar um novo upgrade para aumentar a velocidade do projétil não guiado (projétil guiado deve manter velocidade fixa)
