@@ -1,8 +1,7 @@
-# Utilizado para definir pastas e arquivos que não serão replicados no github.
-
-*/assets
-*/build
-*/third_party
+*assets/
+*build/
+*third_party/
 
 freeglut.dll
+libfreeglut.dll
 orbit_siege.exe

@@ -1,12 +1,12 @@
-#include "persistence.h"
-#include "config.h"
+#include "persistencia.h"
+#include "configuracao.h"
 
 #include <stdio.h>
 #include <string.h>
 
-void persistence_load_stats(int *highScore, int *maxWave)
+void persistencia_carregar_stats(int *highScore, int *maxWave)
 {
-    FILE *f = fopen(STATS_FILE, "r");
+    FILE *f = fopen(ARQUIVO_STATS, "r");
     if (!f)
     {
         *highScore = 0;
@@ -22,9 +22,9 @@ void persistence_load_stats(int *highScore, int *maxWave)
     fclose(f);
 }
 
-void persistence_save_stats(int highScore, int maxWave)
+void persistencia_salvar_stats(int highScore, int maxWave)
 {
-    FILE *f = fopen(STATS_FILE, "w");
+    FILE *f = fopen(ARQUIVO_STATS, "w");
     if (!f)
     {
         return;
@@ -33,9 +33,9 @@ void persistence_save_stats(int highScore, int maxWave)
     fclose(f);
 }
 
-void persistence_append_score(const char *name, int score, int wave)
+void persistencia_apor_pontuacao(const char *name, int score, int wave)
 {
-    FILE *f = fopen(SCOREBOARD_FILE, "a");
+    FILE *f = fopen(ARQUIVO_SCOREBOARD, "a");
     if (!f)
     {
         return;
@@ -44,9 +44,9 @@ void persistence_append_score(const char *name, int score, int wave)
     fclose(f);
 }
 
-int persistence_load_top_scores(ScoreEntry *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntries)
 {
-    FILE *f = fopen(SCOREBOARD_FILE, "r");
+    FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
     int count = 0;
 
@@ -104,9 +104,9 @@ int persistence_load_top_scores(ScoreEntry *outEntries, int maxEntries)
     return count;
 }
 
-int persistence_load_scores(ScoreEntry *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries)
 {
-    FILE *f = fopen(SCOREBOARD_FILE, "r");
+    FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
     int count = 0;
 
@@ -164,9 +164,9 @@ int persistence_load_scores(ScoreEntry *outEntries, int maxEntries)
     return count;
 }
 
-void persistence_clear_scores(void)
+void persistencia_limpar_pontuacoes(void)
 {
-    FILE *f = fopen(SCOREBOARD_FILE, "w");
+    FILE *f = fopen(ARQUIVO_SCOREBOARD, "w");
     if (!f)
     {
         return;
@@ -174,9 +174,9 @@ void persistence_clear_scores(void)
     fclose(f);
 }
 
-void persistence_load_settings(int *audioEnabled, int *difficulty)
+void persistencia_carregar_configuracoes(int *audioEnabled, int *difficulty)
 {
-    FILE *f = fopen(SETTINGS_FILE, "r");
+    FILE *f = fopen(ARQUIVO_SETTINGS, "r");
     int a = 1;
     int d = 1;
 
@@ -205,9 +205,9 @@ void persistence_load_settings(int *audioEnabled, int *difficulty)
     }
 }
 
-void persistence_save_settings(int audioEnabled, int difficulty)
+void persistencia_salvar_configuracoes(int audioEnabled, int difficulty)
 {
-    FILE *f = fopen(SETTINGS_FILE, "w");
+    FILE *f = fopen(ARQUIVO_SETTINGS, "w");
     if (!f)
     {
         return;

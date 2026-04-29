@@ -1,6 +1,6 @@
 # Orbit Siege (C + OpenGL/GLUT)
 
-Jogo 2D platformer com ação em C estruturado (sem OO), onde você controla um humano em um cenário extraterrestre com gravidade e mecânicas de pulo, survivalidade com upgrades.
+Jogo 2D platformer com ação em C estruturado (sem OO), onde você controla um humano em um cenário extraterrestre com gravidade e mecânicas de pulo, survivalidade com melhorias.
 
 ## Estrutura do repositório
 
@@ -51,21 +51,34 @@ A raíz do repositório contém apenas arquivos instrucionais e de setup.
 - Upgrade reroll: `R` (custo 3 de ouro)
 - Ranking: `A`/`D` muda página, `C` limpa histórico, `M` volta ao menu
 
+## Build (Powershell)
+
+O sistema de build é composto por dois scripts PowerShell em `scripts/`:
+
+**1. Setup inicial** — baixa e compila FreeGLUT (execute uma vez):
+
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_libs.ps1
+
+**2. Compilação** (use sempre que alterar o código):
+
+powershell -ExecutionPolicy Bypass -File .\scripts\compile_build.ps1
+
 ## Build (CMake)
 
-```bash
-cmake -S . -B build
+cmake -S . -B build -G "MinGW Makefiles"
 cmake --build build
-```
 
-No Windows, instale FreeGLUT e garanta `freeglut` disponível para link.
+O executável é gerado em `src\orbit_siege.exe`.
 
-Guia completo de instalação: [INSTALL.md](INSTALL.md)
+Guia completo de instalação: [SETUP.md](SETUP.md)
 
 ## Troubleshooting rápido
 
-- Se não compilar por falta de `cmake`, instale CMake e reabra o terminal.
-- Se faltar `freeglut`, instale a biblioteca e confirme o linker do ambiente.
+- Se não compilar por falta de `gcc`, instale MinGW-w64 standalone e reabra o terminal.
+- Se o setup falhar por falta de `cmake`, instale o CMake de cmake.org e reabra o terminal.
+- Se faltar `libfreeglut.dll`, execute `setup_libs.ps1` novamente para recompilar FreeGLUT.
+- Se o setup falhar por falta de `cmake`, instale o CMake de cmake.org e reabra o terminal.
+- Se faltar `freeglut`, execute `setup_libs.ps1` novamente para baixar e compilar a biblioteca.
 - Se não houver áudio, valide presença dos arquivos WAV em `assets/audio`.
 - Se o fundo não carregar, mantenha um `background.ppm` válido em `assets/images`.
 
@@ -118,23 +131,23 @@ Sem assets, o jogo continua funcional com fallback visual/silencioso.
 
 ## Roteiro de demonstração (5 minutos)
 
-1. **00:00–00:40** — Menu inicial
+1. **00:00-00:40** - Menu inicial
 Mostrar `START`, `OPTIONS`, `SCOREBOARD`.
 
-2. **00:40–01:20** — Configuração
+2. **00:40-01:20** - Configuração
 Entrar em `OPTIONS` e alternar áudio + dificuldade.
 Voltar ao menu e destacar persistência das configurações.
 
-3. **01:20–03:20** — Gameplay principal
+3. **01:20-03:20** - Gameplay principal
 Movimentar com teclado e mirar/atirar com mouse.
 Mostrar colisões (inimigo/projétil/cenário), HUD, pontuação e tempo.
 Abrir tela de upgrades, selecionar upgrade e usar reroll.
 
-4. **03:20–04:20** — Efeitos e extras
+4. **03:20-04:20** - Efeitos e extras
 Destacar brilho, transparência, partículas e animações.
 Tirar screenshot com `F12` e mostrar notificação.
 
-5. **04:20–05:00** — Encerramento de run
+5. **04:20-05:00** - Encerramento de run
 Mostrar vitória/derrota, salvar nome/pontuação.
 Abrir ranking completo com paginação.
 
