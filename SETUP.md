@@ -4,7 +4,7 @@
 
 - **MinGW-w64 standalone** com GCC 10+ (ex.: [WinLibs](https://winlibs.com))
 - **FreeGLUT** - baixado automaticamente pelo script de setup
-- **CMake 3.16+** - necessário para compilar FreeGLUT no setup inicial ([cmake.org](https://cmake.org/download/))
+- **CMake 3.16+** - necessário para etapas que usam cmake ou compilar compilar FreeGLUT no setup inicial com cmake ([cmake.org](https://cmake.org/download/))
 - **OpenGL** - já incluso no Windows (opengl32, glu32)
 
 ## 2 Instalar MinGW-w64 standalone
@@ -20,7 +20,11 @@ cmake --version
 
 ## 3 Setup do projeto (primeira vez)
 
-No diretório raiz do projeto, execute:
+No diretório raiz do projeto, se preferir usar cmake execute:
+
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_libs_cmake.ps1
+
+Ou, se prefirir instalação direta sem cmake utilize:
 
 powershell -ExecutionPolicy Bypass -File .\scripts\setup_libs.ps1
 
