@@ -13,7 +13,6 @@ void renderizar_triangulo(Vetor2D vetor, float tamanho, Color cor);
 void renderizar_losangulo(Vetor2D vetor, float tamanho, Color cor);
 void renderizar_estrela(Vetor2D vetor, float tamanho, Color cor);
 void renderizar_pentagono(Vetor2D vetor, float tamanho, Color cor);
-
 void renderizar_fundo(struct Game *jogo);
 void renderizar_plataformas(struct Game *jogo);
 void renderizar_jogador(struct Game *jogo);

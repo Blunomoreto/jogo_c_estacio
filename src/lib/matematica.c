@@ -4,11 +4,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-float matematica_float_aleatorio_alcance(float min, float max)
-{
-    return min + (max - min) * ((float)rand() / (float)RAND_MAX);
-}
-
 Vetor2D matematica_vetor2d(float x, float y)
 {
     Vetor2D vetor;
@@ -32,11 +27,6 @@ Vetor2D matematica_vetor2d_multiplicacao(Vetor2D vetor, float multiplicador)
     return matematica_vetor2d(vetor.x * multiplicador, vetor.y * multiplicador);
 }
 
-float matematica_vetor2d_len(Vetor2D vetor)
-{
-    return sqrtf(vetor.x * vetor.x + vetor.y * vetor.y);
-}
-
 Vetor2D matematica_vetor2d_normalizar(Vetor2D vetor)
 {
     float len = matematica_vetor2d_len(vetor);
@@ -52,11 +42,21 @@ Vetor2D matematica_mouse_para_mundo(Game *jogo)
     return matematica_vetor2d((float)jogo->input.mouseX, (float)jogo->input.mouseY);
 }
 
+float matematica_vetor2d_len(Vetor2D vetor)
+{
+    return sqrtf(vetor.x * vetor.x + vetor.y * vetor.y);
+}
+
 float matematica_vetor2d_distance_sq(Vetor2D vetor1, Vetor2D vetor2)
 {
     const float dx = vetor1.x - vetor2.x;
     const float dy = vetor1.y - vetor2.y;
     return dx * dx + dy * dy;
+}
+
+float matematica_float_aleatorio_alcance(float min, float max)
+{
+    return min + (max - min) * ((float)rand() / (float)RAND_MAX);
 }
 
 float matematica_limite_min_max(float valor, float min, float max)

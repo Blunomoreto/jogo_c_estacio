@@ -20,11 +20,6 @@ void audio_definir_ativacao(int ativado)
         audio_parar_musica();
 }
 
-int audio_esta_ativado(void)
-{
-    return s_audioAtivado;
-}
-
 void audio_tocar_musica(void)
 {
     if (!s_audioAtivado)
@@ -80,4 +75,9 @@ void audio_tocar_som_pulo_fim(void)
 #ifdef _WIN32
     PlaySoundA("assets/audio/land.wav", NULL, SND_ASYNC | SND_FILENAME | SND_NODEFAULT);
 #endif
+}
+
+int audio_esta_ativado(void)
+{
+    return s_audioAtivado;
 }

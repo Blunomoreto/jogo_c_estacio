@@ -44,6 +44,62 @@ void persistencia_apor_pontuacao(const char *nome, int pontuacao, int onda)
     fclose(f);
 }
 
+void persistencia_limpar_pontuacoes(void)
+{
+    FILE *f = fopen(ARQUIVO_SCOREBOARD, "w");
+    if (!f)
+    {
+        return;
+    }
+    fclose(f);
+}
+
+void persistencia_carregar_configuracoes(int *audio_ativado, int *dificuldade)
+{
+    FILE *f = fopen(ARQUIVO_SETTINGS, "r");
+    int a = 1;
+    int d = 1;
+
+    if (f)
+    {
+        if (fscanf(f, "%d %d", &a, &d) != 2)
+        {
+            a = 1;
+            d = 1;
+        }
+        fclose(f);
+    }
+
+    if (d < 0)
+        d = 0;
+    if (d > 2)
+        d = 2;
+
+    if (audio_ativado)
+    {
+        *audio_ativado = a ? 1 : 0;
+    }
+    if (dificuldade)
+    {
+        *dificuldade = d;
+    }
+}
+
+void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade)
+{
+    FILE *f = fopen(ARQUIVO_SETTINGS, "w");
+    if (!f)
+    {
+        return;
+    }
+    if (dificuldade < 0)
+        dificuldade = 0;
+    if (dificuldade > 2)
+        dificuldade = 2;
+    fprintf(f, "%d %d\n", audio_ativado ? 1 : 0, dificuldade);
+    fclose(f);
+}
+
 int persistencia_carregar_pontuacoes_altas(ScoreEntry *entradas_fora_lista, int entradas_maximas)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
@@ -162,60 +218,4 @@ int persistencia_carregar_pontuacoes(ScoreEntry *entradas_fora_lista, int entrad
 
     fclose(f);
     return count;
-}
-
-void persistencia_limpar_pontuacoes(void)
-{
-    FILE *f = fopen(ARQUIVO_SCOREBOARD, "w");
-    if (!f)
-    {
-        return;
-    }
-    fclose(f);
-}
-
-void persistencia_carregar_configuracoes(int *audio_ativado, int *dificuldade)
-{
-    FILE *f = fopen(ARQUIVO_SETTINGS, "r");
-    int a = 1;
-    int d = 1;
-
-    if (f)
-    {
-        if (fscanf(f, "%d %d", &a, &d) != 2)
-        {
-            a = 1;
-            d = 1;
-        }
-        fclose(f);
-    }
-
-    if (d < 0)
-        d = 0;
-    if (d > 2)
-        d = 2;
-
-    if (audio_ativado)
-    {
-        *audio_ativado = a ? 1 : 0;
-    }
-    if (dificuldade)
-    {
-        *dificuldade = d;
-    }
-}
-
-void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade)
-{
-    FILE *f = fopen(ARQUIVO_SETTINGS, "w");
-    if (!f)
-    {
-        return;
-    }
-    if (dificuldade < 0)
-        dificuldade = 0;
-    if (dificuldade > 2)
-        dificuldade = 2;
-    fprintf(f, "%d %d\n", audio_ativado ? 1 : 0, dificuldade);
-    fclose(f);
 }

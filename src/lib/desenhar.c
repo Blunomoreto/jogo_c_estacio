@@ -64,25 +64,6 @@ void desenhar_texto_limites(float x, float y, const char *texto, void *fonte, fl
     }
 }
 
-void desenhar_vida_boss(Game *jogo)
-{
-    int i;
-    for (i = 0; i < MAXIMO_INIMIGOS; ++i)
-    {
-        Enemy *e = &jogo->enemies[i];
-        if (e->active && e->isBoss)
-        {
-            float pct = e->hp / e->maxHp;
-            if (pct < 0.0f)
-                pct = 0.0f;
-            renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f, 16.0f, (Color){0.15f, 0.12f, 0.2f, 0.92f});
-            renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f * pct, 16.0f, (Color){0.95f, 0.2f, 0.85f, 0.95f});
-            desenhar_texto(jogo->width * 0.5f - 56.0f, 42.0f, "BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
-            break;
-        }
-    }
-}
-
 void desenhar_hud(Game *jogo)
 {
     char linha[128];
@@ -128,6 +109,25 @@ void desenhar_mira(Game *jogo)
     glVertex2f(m.x, m.y + 10.0f);
     glEnd();
     renderizar_circulo(m, 4.0f, (Color){0.3f, 0.9f, 1.0f, 0.65f}, 12);
+}
+
+void desenhar_vida_boss(Game *jogo)
+{
+    int i;
+    for (i = 0; i < MAXIMO_INIMIGOS; ++i)
+    {
+        Enemy *e = &jogo->enemies[i];
+        if (e->active && e->isBoss)
+        {
+            float pct = e->hp / e->maxHp;
+            if (pct < 0.0f)
+                pct = 0.0f;
+            renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f, 16.0f, (Color){0.15f, 0.12f, 0.2f, 0.92f});
+            renderizar_retangulo(jogo->width * 0.5f - 250.0f, 20.0f, 500.0f * pct, 16.0f, (Color){0.95f, 0.2f, 0.85f, 0.95f});
+            desenhar_texto(jogo->width * 0.5f - 56.0f, 42.0f, "BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
+            break;
+        }
+    }
 }
 
 void desenhar_icone_melhoria(UpgradeType tipo, float x, float y)

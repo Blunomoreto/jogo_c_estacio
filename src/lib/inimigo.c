@@ -36,6 +36,15 @@ float inimigo_multiplicador_dano(int dificuldade)
     return DIFICULDADE_NORMAL_MULTIPLICADOR;
 }
 
+float inimigo_multiplicador_pontos(int dificuldade)
+{
+    if (dificuldade <= 0)
+        return DIFICULDADE_FACIL_MULTIPLICADOR;
+    if (dificuldade >= 2)
+        return DIFICULDADE_DIFICIL_MULTIPLICADOR;
+    return DIFICULDADE_NORMAL_MULTIPLICADOR;
+}
+
 float inimigo_taxa_disparo(int dificuldade)
 {
     if (dificuldade <= 0)
@@ -66,13 +75,4 @@ int inimigo_ondas_vitoria(int dificuldade)
     if (v < 1)
         v = 1;
     return v;
-}
-
-float inimigo_multiplicador_pontos(int dificuldade)
-{
-    if (dificuldade <= 0)
-        return DIFICULDADE_FACIL_MULTIPLICADOR;
-    if (dificuldade >= 2)
-        return DIFICULDADE_DIFICIL_MULTIPLICADOR;
-    return DIFICULDADE_NORMAL_MULTIPLICADOR;
 }
