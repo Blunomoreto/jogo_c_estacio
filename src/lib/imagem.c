@@ -22,12 +22,12 @@ static int imagem_pular_comentarios(FILE *f)
     return c != EOF;
 }
 
-unsigned int imagem_carregar_ppm(const char *path, int *ok)
+unsigned int imagem_carregar_ppm(const char *caminho_arquivo, int *ok)
 {
-    FILE *f = fopen(path, "rb");
+    FILE *f = fopen(caminho_arquivo, "rb");
     char magic[3] = {0};
-    int width = 0;
-    int height = 0;
+    int largura = 0;
+    int altura = 0;
     int maxval = 0;
     unsigned char *data;
     GLuint tex = 0;
@@ -44,12 +44,12 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
         return 0;
     }
 
-    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &width) != 1)
+    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &largura) != 1)
     {
         fclose(f);
         return 0;
     }
-    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &height) != 1)
+    if (!imagem_pular_comentarios(f) || fscanf(f, "%d", &altura) != 1)
     {
         fclose(f);
         return 0;
@@ -61,7 +61,7 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
     }
     fgetc(f);
 
-    data = (unsigned char *)malloc((size_t)width * (size_t)height * 3);
+    data = (unsigned char *)malloc((size_t)largura * (size_t)altura * 3);
     if (!data)
     {
         fclose(f);
@@ -70,7 +70,7 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
 
     if (magic[1] == '6')
     {
-        if (fread(data, 1, (size_t)width * (size_t)height * 3, f) != (size_t)width * (size_t)height * 3)
+        if (fread(data, 1, (size_t)largura * (size_t)altura * 3, f) != (size_t)largura * (size_t)altura * 3)
         {
             free(data);
             fclose(f);
@@ -80,7 +80,7 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
     else
     {
         size_t i;
-        for (i = 0; i < (size_t)width * (size_t)height * 3; ++i)
+        for (i = 0; i < (size_t)largura * (size_t)altura * 3; ++i)
         {
             int v = 0;
             if (fscanf(f, "%d", &v) != 1)
@@ -102,16 +102,16 @@ unsigned int imagem_carregar_ppm(const char *path, int *ok)
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, largura, altura, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
     free(data);
     *ok = 1;
     return tex;
 }
 
-unsigned int imagem_salvar_ppm(const char *filename, int width, int height)
+unsigned int imagem_salvar_ppm(const char *nome_arquivo, int largura, int altura)
 {
-    const size_t bytes = (size_t)width * (size_t)height * 3;
+    const size_t bytes = (size_t)largura * (size_t)altura * 3;
     unsigned char *pixels = (unsigned char *)malloc(bytes);
     unsigned char *flipped = (unsigned char *)malloc(bytes);
     int y;
@@ -125,28 +125,28 @@ unsigned int imagem_salvar_ppm(const char *filename, int width, int height)
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadBuffer(GL_FRONT);
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glReadPixels(0, 0, largura, altura, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-    for (y = 0; y < height; ++y)
+    for (y = 0; y < altura; ++y)
     {
-        const size_t src = (size_t)y * (size_t)width * 3;
-        const size_t dst = (size_t)(height - 1 - y) * (size_t)width * 3;
+        const size_t src = (size_t)y * (size_t)largura * 3;
+        const size_t dst = (size_t)(altura - 1 - y) * (size_t)largura * 3;
         size_t i;
-        for (i = 0; i < (size_t)width * 3; ++i)
+        for (i = 0; i < (size_t)largura * 3; ++i)
         {
             flipped[dst + i] = pixels[src + i];
         }
     }
 
     {
-        FILE *f = fopen(filename, "wb");
+        FILE *f = fopen(nome_arquivo, "wb");
         if (!f)
         {
             free(pixels);
             free(flipped);
             return 0;
         }
-        fprintf(f, "P6\n%d %d\n255\n", width, height);
+        fprintf(f, "P6\n%d %d\n255\n", largura, altura);
         fwrite(flipped, 1, bytes, f);
         fclose(f);
     }

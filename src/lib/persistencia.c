@@ -4,58 +4,58 @@
 #include <stdio.h>
 #include <string.h>
 
-void persistencia_carregar_stats(int *highScore, int *maxWave)
+void persistencia_carregar_stats(int *pontuacao_maxima, int *onda_maxima)
 {
     FILE *f = fopen(ARQUIVO_STATS, "r");
     if (!f)
     {
-        *highScore = 0;
-        *maxWave = 0;
+        *pontuacao_maxima = 0;
+        *onda_maxima = 0;
         return;
     }
 
-    if (fscanf(f, "%d %d", highScore, maxWave) != 2)
+    if (fscanf(f, "%d %d", pontuacao_maxima, onda_maxima) != 2)
     {
-        *highScore = 0;
-        *maxWave = 0;
+        *pontuacao_maxima = 0;
+        *onda_maxima = 0;
     }
     fclose(f);
 }
 
-void persistencia_salvar_stats(int highScore, int maxWave)
+void persistencia_salvar_stats(int pontuacao_maxima, int onda_maxima)
 {
     FILE *f = fopen(ARQUIVO_STATS, "w");
     if (!f)
     {
         return;
     }
-    fprintf(f, "%d %d\n", highScore, maxWave);
+    fprintf(f, "%d %d\n", pontuacao_maxima, onda_maxima);
     fclose(f);
 }
 
-void persistencia_apor_pontuacao(const char *name, int score, int wave)
+void persistencia_apor_pontuacao(const char *nome, int pontuacao, int onda)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "a");
     if (!f)
     {
         return;
     }
-    fprintf(f, "%s;%d;%d\n", name, score, wave);
+    fprintf(f, "%s;%d;%d\n", nome, pontuacao, onda);
     fclose(f);
 }
 
-int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes_altas(ScoreEntry *entradas_fora_lista, int entradas_maximas)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
     int count = 0;
 
-    if (!outEntries || maxEntries <= 0)
+    if (!entradas_fora_lista || entradas_maximas <= 0)
     {
         return 0;
     }
 
-    memset(outEntries, 0, sizeof(ScoreEntry) * (size_t)maxEntries);
+    memset(entradas_fora_lista, 0, sizeof(ScoreEntry) * (size_t)entradas_maximas);
 
     if (!f)
     {
@@ -76,16 +76,16 @@ int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntrie
 
         for (i = 0; i < count; ++i)
         {
-            if (entry.score > outEntries[i].score)
+            if (entry.score > entradas_fora_lista[i].score)
             {
                 int j;
-                int limit = (count < maxEntries) ? count : maxEntries - 1;
+                int limit = (count < entradas_maximas) ? count : entradas_maximas - 1;
                 for (j = limit; j > i; --j)
                 {
-                    outEntries[j] = outEntries[j - 1];
+                    entradas_fora_lista[j] = entradas_fora_lista[j - 1];
                 }
-                outEntries[i] = entry;
-                if (count < maxEntries)
+                entradas_fora_lista[i] = entry;
+                if (count < entradas_maximas)
                 {
                     count++;
                 }
@@ -94,9 +94,9 @@ int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntrie
             }
         }
 
-        if (!inserted && count < maxEntries)
+        if (!inserted && count < entradas_maximas)
         {
-            outEntries[count++] = entry;
+            entradas_fora_lista[count++] = entry;
         }
     }
 
@@ -104,18 +104,18 @@ int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntrie
     return count;
 }
 
-int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes(ScoreEntry *entradas_fora_lista, int entradas_maximas)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
     int count = 0;
 
-    if (!outEntries || maxEntries <= 0)
+    if (!entradas_fora_lista || entradas_maximas <= 0)
     {
         return 0;
     }
 
-    memset(outEntries, 0, sizeof(ScoreEntry) * (size_t)maxEntries);
+    memset(entradas_fora_lista, 0, sizeof(ScoreEntry) * (size_t)entradas_maximas);
 
     if (!f)
     {
@@ -136,16 +136,16 @@ int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries)
 
         for (i = 0; i < count; ++i)
         {
-            if (entry.score > outEntries[i].score)
+            if (entry.score > entradas_fora_lista[i].score)
             {
                 int j;
-                int limit = (count < maxEntries) ? count : maxEntries - 1;
+                int limit = (count < entradas_maximas) ? count : entradas_maximas - 1;
                 for (j = limit; j > i; --j)
                 {
-                    outEntries[j] = outEntries[j - 1];
+                    entradas_fora_lista[j] = entradas_fora_lista[j - 1];
                 }
-                outEntries[i] = entry;
-                if (count < maxEntries)
+                entradas_fora_lista[i] = entry;
+                if (count < entradas_maximas)
                 {
                     count++;
                 }
@@ -154,9 +154,9 @@ int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries)
             }
         }
 
-        if (!inserted && count < maxEntries)
+        if (!inserted && count < entradas_maximas)
         {
-            outEntries[count++] = entry;
+            entradas_fora_lista[count++] = entry;
         }
     }
 
@@ -174,7 +174,7 @@ void persistencia_limpar_pontuacoes(void)
     fclose(f);
 }
 
-void persistencia_carregar_configuracoes(int *audioEnabled, int *difficulty)
+void persistencia_carregar_configuracoes(int *audio_ativado, int *dificuldade)
 {
     FILE *f = fopen(ARQUIVO_SETTINGS, "r");
     int a = 1;
@@ -195,27 +195,27 @@ void persistencia_carregar_configuracoes(int *audioEnabled, int *difficulty)
     if (d > 2)
         d = 2;
 
-    if (audioEnabled)
+    if (audio_ativado)
     {
-        *audioEnabled = a ? 1 : 0;
+        *audio_ativado = a ? 1 : 0;
     }
-    if (difficulty)
+    if (dificuldade)
     {
-        *difficulty = d;
+        *dificuldade = d;
     }
 }
 
-void persistencia_salvar_configuracoes(int audioEnabled, int difficulty)
+void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade)
 {
     FILE *f = fopen(ARQUIVO_SETTINGS, "w");
     if (!f)
     {
         return;
     }
-    if (difficulty < 0)
-        difficulty = 0;
-    if (difficulty > 2)
-        difficulty = 2;
-    fprintf(f, "%d %d\n", audioEnabled ? 1 : 0, difficulty);
+    if (dificuldade < 0)
+        dificuldade = 0;
+    if (dificuldade > 2)
+        dificuldade = 2;
+    fprintf(f, "%d %d\n", audio_ativado ? 1 : 0, dificuldade);
     fclose(f);
 }

@@ -454,13 +454,13 @@ static void jogo_atualizar_playing(Game *g, float dt)
                     e->shootCooldown = 0.5f;
                     if (e->burstCount == 0)
                     {
-                        e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
+                        e->shootCooldown = matematica_float_aleatorio_alcance(3.0f, 7.0f);
                         e->burstCount = 2;
                     }
                 }
                 else
                 {
-                    e->shootCooldown = matematica_float_aleatorio(3.0f, 7.0f);
+                    e->shootCooldown = matematica_float_aleatorio_alcance(3.0f, 7.0f);
                     e->burstCount = 2;
                 }
             }
@@ -468,7 +468,7 @@ static void jogo_atualizar_playing(Game *g, float dt)
             {
                 float apnOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 1.0f;
                 projeteis_criar(g, ep, dirToPlayer, 0, 300.0f + g->wave * 15.0f, 30.0f + g->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
-                e->shootCooldown = matematica_float_aleatorio(2.5f, 4.0f);
+                e->shootCooldown = matematica_float_aleatorio_alcance(2.5f, 4.0f);
             }
             else if (e->isBoss)
             {
@@ -479,28 +479,28 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
                 projeteis_criar(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
                 projeteis_criar(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio(0.8f, 1.8f) - g->wave * 0.05f;
+                e->shootCooldown = matematica_float_aleatorio_alcance(0.8f, 1.8f) - g->wave * 0.05f;
             }
             else if (e->type == ENEMY_SNIPER)
             {
                 enemyShotSpeed = 330.0f + g->wave * 22.0f;
                 enemyShotDamage = 9.0f + g->wave * 1.6f;
                 projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio(1.0f, 2.1f) - g->wave * 0.04f;
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.0f, 2.1f) - g->wave * 0.04f;
             }
             else if (e->type == ENEMY_TANK)
             {
                 enemyShotSpeed = 180.0f + g->wave * 14.0f;
                 enemyShotDamage = 11.0f + g->wave * 1.8f;
                 projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio(1.8f, 3.2f) - g->wave * 0.03f;
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.8f, 3.2f) - g->wave * 0.03f;
             }
             else
             {
                 enemyShotSpeed = 220.0f + g->wave * 18.0f;
                 enemyShotDamage = 7.0f + g->wave * 1.4f;
                 projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio(1.1f, 2.6f) - g->wave * 0.05f;
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.1f, 2.6f) - g->wave * 0.05f;
             }
 
             if (e->shootCooldown < 0.45f)

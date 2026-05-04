@@ -3,9 +3,9 @@
 
 #include "jogo.h"
 
-void melhorias_preencher_opcoes(UpgradeOption *o, UpgradeType type);
-void melhorias_rolar_opcoes(Game *g);
-void melhorias_aplicar(Game *g, UpgradeType t);
-void melhorias_escolher(Game *g, int idx);
+void melhorias_preencher_opcoes(UpgradeOption *opcoes, UpgradeType tipo);
+void melhorias_rolar_opcoes(Game *jogo);
+void melhorias_aplicar(Game *jogo, UpgradeType tipo);
+void melhorias_escolher(Game *jogo, int identificador);
 
 #endif

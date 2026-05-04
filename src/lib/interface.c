@@ -5,35 +5,35 @@
 #include <stdio.h>
 #include <string.h>
 
-void interface_refrescar_pontuacoes_maximas(Game *g)
+void interface_refrescar_pontuacoes_maximas(Game *jogo)
 {
-    g->topScoreCount = persistencia_carregar_pontuacoes_altas(g->topScores, 5);
+    jogo->topScoreCount = persistencia_carregar_pontuacoes_altas(jogo->topScores, 5);
 }
 
-void interface_refrescar_pontuacoes(Game *g)
+void interface_refrescar_pontuacoes(Game *jogo)
 {
-    g->allScoreCount = persistencia_carregar_pontuacoes(g->allScores, 64);
-    if (g->scorePage < 0)
-        g->scorePage = 0;
+    jogo->allScoreCount = persistencia_carregar_pontuacoes(jogo->allScores, 64);
+    if (jogo->scorePage < 0)
+        jogo->scorePage = 0;
 }
 
-void interface_notificar(Game *g, const char *msg)
+void interface_notificar(Game *jogo, const char *mensagem)
 {
-    snprintf(g->toastMessage, sizeof(g->toastMessage), "%s", msg ? msg : "");
-    g->toastTimer = 2.2f;
+    snprintf(jogo->toastMessage, sizeof(jogo->toastMessage), "%s", mensagem ? mensagem : "");
+    jogo->toastTimer = 2.2f;
 }
 
-void interface_encerrar_partida(Game *g, GameScreen fim)
+void interface_encerrar_partida(Game *jogo, GameScreen fim)
 {
     audio_parar_musica();
-    g->screen = fim;
-    g->enteringName = 1;
-    g->nameSaved = 0;
+    jogo->screen = fim;
+    jogo->enteringName = 1;
+    jogo->nameSaved = 0;
 
-    if (g->score > g->highScore)
-        g->highScore = g->score;
-    if (g->wave > g->maxWaveEver)
-        g->maxWaveEver = g->wave;
-    persistencia_salvar_stats(g->highScore, g->maxWaveEver);
-    interface_refrescar_pontuacoes_maximas(g);
+    if (jogo->score > jogo->highScore)
+        jogo->highScore = jogo->score;
+    if (jogo->wave > jogo->maxWaveEver)
+        jogo->maxWaveEver = jogo->wave;
+    persistencia_salvar_stats(jogo->highScore, jogo->maxWaveEver);
+    interface_refrescar_pontuacoes_maximas(jogo);
 }

@@ -3,6 +3,6 @@
 
 #include "jogo.h"
 
-void projeteis_criar(Game *g, Vetor2D pos, Vetor2D dir, int fromPlayer, float speed, float damage, float radius, float life, GuidanceType guidance, int targetIdx, float maxLatAccel);
+void projeteis_criar(Game *jogo, Vetor2D posicao, Vetor2D direcao, int do_jogador, float velocidade, float dano, float raio, float tempo_vida, GuidanceType guianca, int identificador_alvo, float aceleracao_lateral_maxima);
 
 #endif

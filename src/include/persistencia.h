@@ -3,14 +3,14 @@
 
 #include "tipos.h"
 
-void persistencia_carregar_stats(int *highScore, int *maxWave);
-void persistencia_salvar_stats(int highScore, int maxWave);
-void persistencia_apor_pontuacao(const char *name, int score, int wave);
+void persistencia_carregar_stats(int *pontuacao_maxima, int *onda_maxima);
+void persistencia_salvar_stats(int pontuacao_maxima, int onda_maxima);
+void persistencia_apor_pontuacao(const char *nome, int pontuacao, int onda);
 void persistencia_limpar_pontuacoes(void);
-void persistencia_carregar_configuracoes(int *audioEnabled, int *difficulty);
-void persistencia_salvar_configuracoes(int audioEnabled, int difficulty);
+void persistencia_carregar_configuracoes(int *audio_ativado, int *dificuldade);
+void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade);
 
-int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntries);
-int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries);
+int persistencia_carregar_pontuacoes_altas(ScoreEntry *entradas_fora_lista, int entradas_maximas);
+int persistencia_carregar_pontuacoes(ScoreEntry *entradas_fora_lista, int entradas_maximas);
 
 #endif
