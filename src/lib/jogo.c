@@ -22,226 +22,168 @@
 #include <string.h>
 #include <time.h>
 
-static void game_reset_player(Game *g)
+static void game_reset_player(Game *jogo)
 {
-    memset(&g->player, 0, sizeof(g->player));
+    memset(&jogo->player, 0, sizeof(jogo->player));
 
-    g->player.pos = matematica_vetor2d((float)g->width * 0.5f, ALTURA_CHAO - 16.0f);
-    g->player.size = 16.0f;
-    g->player.hp = JOGADOR_INICIAL_VIDA;
-    g->player.maxHp = JOGADOR_INICIAL_VIDA;
-    g->player.speed = JOGADOR_INICIAL_VELOCIDADE;
-    g->player.damage = JOGADOR_INICIAL_DANO;
-    g->player.fireRate = JOGADOR_INICIAL_TAXA_DISPARO;
-    g->player.fireCooldown = 0.0f;
-    g->player.projectileSpeed = JOGADOR_INICIAL_VELOCIDADE_PROJETIL;
-    g->player.velY = 0.0f;
-    g->player.isOnGround = 1;
-    g->player.jumpPressedTime = 0.0f;
+    jogo->player.pos = matematica_vetor2d((float)jogo->width * 0.5f, ALTURA_CHAO - 16.0f);
+    jogo->player.size = 16.0f;
+    jogo->player.hp = JOGADOR_INICIAL_VIDA;
+    jogo->player.maxHp = JOGADOR_INICIAL_VIDA;
+    jogo->player.speed = JOGADOR_INICIAL_VELOCIDADE;
+    jogo->player.damage = JOGADOR_INICIAL_DANO;
+    jogo->player.fireRate = JOGADOR_INICIAL_TAXA_DISPARO;
+    jogo->player.fireCooldown = 0.0f;
+    jogo->player.projectileSpeed = JOGADOR_INICIAL_VELOCIDADE_PROJETIL;
+    jogo->player.velY = 0.0f;
+    jogo->player.isOnGround = 1;
+    jogo->player.jumpPressedTime = 0.0f;
 
-    g->player.hasPP = 0;
-    g->player.hasAPNG = 0;
-    g->player.guidedAmmo = 0;
-    g->player.maxGuidedAmmo = 0;
-    g->player.maxLatAccel = JOGADOR_INICIAL_ACELERACAO_LATERAL;
+    jogo->player.hasPP = 0;
+    jogo->player.hasAPNG = 0;
+    jogo->player.guidedAmmo = 0;
+    jogo->player.maxGuidedAmmo = 0;
+    jogo->player.maxLatAccel = JOGADOR_INICIAL_ACELERACAO_LATERAL;
 }
 
-void jogo_reiniciar(Game *g)
-{
-    game_reset_player(g);
-    cenario_limpar_entidades(g);
-
-    g->wave = 1;
-    g->wavesToWin = inimigo_ondas_vitoria(g->difficulty);
-    g->enemiesRemaining = 0;
-    g->timeLeft = inimigo_tempo_inicio(g->difficulty);
-    g->elapsed = 0.0f;
-    g->score = 0;
-    g->gold = 0;
-    g->damageFlash = 0.0f;
-    g->upgradeFlash = 0.0f;
-    g->upgradeHover = -1;
-    g->lastUpgradeTimer = 0.0f;
-    memset(g->lastUpgrade, 0, sizeof(g->lastUpgrade));
-    g->toastTimer = 0.0f;
-    memset(g->toastMessage, 0, sizeof(g->toastMessage));
-    g->screen = SCREEN_PLAYING;
-    g->enteringName = 0;
-    g->nameSaved = 0;
-
-    memset(g->playerName, 0, sizeof(g->playerName));
-    snprintf(g->playerName, sizeof(g->playerName), "Player");
-
-    cenario_criar_onda(g);
-    audio_tocar_musica();
-}
-
-void jogo_iniciar(Game *g, int width, int height)
-{
-    memset(g, 0, sizeof(*g));
-    srand((unsigned int)time(NULL));
-
-    g->width = width;
-    g->height = height;
-    g->screen = SCREEN_MENU;
-    g->running = 1;
-    g->audioEnabled = 1;
-    g->difficulty = 1;
-    g->scorePage = 0;
-    g->scorePageSize = 10;
-
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    persistencia_carregar_stats(&g->highScore, &g->maxWaveEver);
-    persistencia_carregar_configuracoes(&g->audioEnabled, &g->difficulty);
-    interface_refrescar_pontuacoes_maximas(g);
-    interface_refrescar_pontuacoes(g);
-
-    g->bgTexture = imagem_carregar_ppm("assets/images/background.ppm", &g->bgTextureLoaded);
-    audio_inicializar();
-    audio_definir_ativacao(g->audioEnabled);
-}
-
-static void jogo_atualizar_playing(Game *g, float dt)
+static void jogo_atualizar_playing(Game *jogo, float delta_tempo)
 {
     int i;
     int tookHit = 0;
-    float scoreMul = inimigo_multiplicador_pontos(g->difficulty);
+    float scoreMul = inimigo_multiplicador_pontos(jogo->difficulty);
 
     float moveX = 0.0f;
-    if (g->input.keys['a'] || g->input.keys['A'] || g->input.special[GLUT_KEY_LEFT])
+    if (jogo->input.keys['a'] || jogo->input.keys['A'] || jogo->input.special[GLUT_KEY_LEFT])
     {
         moveX -= 1.0f;
     }
-    if (g->input.keys['d'] || g->input.keys['D'] || g->input.special[GLUT_KEY_RIGHT])
+    if (jogo->input.keys['d'] || jogo->input.keys['D'] || jogo->input.special[GLUT_KEY_RIGHT])
     {
         moveX += 1.0f;
     }
-    g->player.pos.x += moveX * g->player.speed * dt;
+    jogo->player.pos.x += moveX * jogo->player.speed * delta_tempo;
 
-    if (g->player.pos.x < g->player.size)
-        g->player.pos.x = g->player.size;
-    if (g->player.pos.x > g->width - g->player.size)
-        g->player.pos.x = g->width - g->player.size;
+    if (jogo->player.pos.x < jogo->player.size)
+        jogo->player.pos.x = jogo->player.size;
+    if (jogo->player.pos.x > jogo->width - jogo->player.size)
+        jogo->player.pos.x = jogo->width - jogo->player.size;
 
-    if (g->input.keys[' '] || g->input.keys['w'] || g->input.keys['W'])
+    if (jogo->input.keys[' '] || jogo->input.keys['w'] || jogo->input.keys['W'])
     {
-        if (g->player.isOnGround)
+        if (jogo->player.isOnGround)
         {
-            g->player.velY = -JOGADOR_FORCA_PULO;
-            g->player.isOnGround = 0;
+            jogo->player.velY = -JOGADOR_FORCA_PULO;
+            jogo->player.isOnGround = 0;
             audio_tocar_som_pulo_inicio();
         }
     }
 
-    g->player.velY += GRAVIDADE * dt;
+    jogo->player.velY += GRAVIDADE * delta_tempo;
 
-    if (g->player.velY > 600.0f)
-        g->player.velY = 600.0f;
+    if (jogo->player.velY > 600.0f)
+        jogo->player.velY = 600.0f;
 
-    g->player.pos.y += g->player.velY * dt;
+    jogo->player.pos.y += jogo->player.velY * delta_tempo;
 
     {
         static Vetor2D prevP = {0, 0};
         static Vetor2D prevV = {0, 0};
         if (prevP.x == 0 && prevP.y == 0)
-            prevP = g->player.pos;
-        g->player.vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(g->player.pos, prevP), 1.0f / dt);
-        g->player.accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(g->player.vel, prevV), 1.0f / dt);
-        prevP = g->player.pos;
-        prevV = g->player.vel;
+            prevP = jogo->player.pos;
+        jogo->player.vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->player.pos, prevP), 1.0f / delta_tempo);
+        jogo->player.accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->player.vel, prevV), 1.0f / delta_tempo);
+        prevP = jogo->player.pos;
+        prevV = jogo->player.vel;
     }
 
-    g->player.isOnGround = 0;
-    if (g->player.pos.y + g->player.size >= ALTURA_CHAO)
+    jogo->player.isOnGround = 0;
+    if (jogo->player.pos.y + jogo->player.size >= ALTURA_CHAO)
     {
-        if (g->player.velY > 100.0f)
+        if (jogo->player.velY > 100.0f)
         {
             audio_tocar_som_pulo_fim();
         }
-        g->player.pos.y = ALTURA_CHAO - g->player.size;
-        g->player.velY = 0.0f;
-        g->player.isOnGround = 1;
+        jogo->player.pos.y = ALTURA_CHAO - jogo->player.size;
+        jogo->player.velY = 0.0f;
+        jogo->player.isOnGround = 1;
     }
 
-    if (g->player.pos.y - g->player.size <= 20.0f)
+    if (jogo->player.pos.y - jogo->player.size <= 20.0f)
     {
-        g->player.pos.y = 20.0f + g->player.size;
-        g->player.velY = 0.0f;
+        jogo->player.pos.y = 20.0f + jogo->player.size;
+        jogo->player.velY = 0.0f;
     }
 
     {
         int oi;
         for (oi = 0; oi < MAXIMO_PLATAFORMAS; ++oi)
         {
-            Obstacle *o = &g->obstacles[oi];
+            Obstacle *o = &jogo->obstacles[oi];
             if (!o->active)
             {
                 continue;
             }
-            if (colisao_circulo_vs_retangulo(g->player.pos, g->player.size,
+            if (colisao_circulo_vs_retangulo(jogo->player.pos, jogo->player.size,
                                              matematica_vetor2d(o->x, o->y), matematica_vetor2d(o->x + o->w, o->y + o->h)))
             {
                 float cx = o->x + o->w * 0.5f;
                 float cy = o->y + o->h * 0.5f;
-                float dx = fabsf(g->player.pos.x - cx);
-                float dy = fabsf(g->player.pos.y - cy);
+                float dx = fabsf(jogo->player.pos.x - cx);
+                float dy = fabsf(jogo->player.pos.y - cy);
 
-                if (g->player.pos.y - g->player.size < cy && g->player.velY >= 0.0f)
+                if (jogo->player.pos.y - jogo->player.size < cy && jogo->player.velY >= 0.0f)
                 {
-                    if (g->player.velY > 50.0f)
+                    if (jogo->player.velY > 50.0f)
                     {
                         audio_tocar_som_pulo_fim();
                     }
-                    g->player.pos.y = o->y - g->player.size;
-                    g->player.velY = 0.0f;
-                    g->player.isOnGround = 1;
+                    jogo->player.pos.y = o->y - jogo->player.size;
+                    jogo->player.velY = 0.0f;
+                    jogo->player.isOnGround = 1;
                 }
-                else if (g->player.pos.y - g->player.size >= cy && dx > dy)
+                else if (jogo->player.pos.y - jogo->player.size >= cy && dx > dy)
                 {
-                    if (g->player.pos.x < cx)
+                    if (jogo->player.pos.x < cx)
                     {
-                        g->player.pos.x = o->x - g->player.size - 5.0f;
+                        jogo->player.pos.x = o->x - jogo->player.size - 5.0f;
                     }
                     else
                     {
-                        g->player.pos.x = o->x + o->w + g->player.size + 5.0f;
+                        jogo->player.pos.x = o->x + o->w + jogo->player.size + 5.0f;
                     }
-                    if (g->player.pos.x < g->player.size)
-                        g->player.pos.x = g->player.size;
-                    if (g->player.pos.x > g->width - g->player.size)
-                        g->player.pos.x = g->width - g->player.size;
+                    if (jogo->player.pos.x < jogo->player.size)
+                        jogo->player.pos.x = jogo->player.size;
+                    if (jogo->player.pos.x > jogo->width - jogo->player.size)
+                        jogo->player.pos.x = jogo->width - jogo->player.size;
                 }
             }
         }
     }
 
-    g->player.fireCooldown -= dt;
+    jogo->player.fireCooldown -= delta_tempo;
 
-    if (g->input.mouseDown[0] && g->player.fireCooldown <= 0.0f)
+    if (jogo->input.mouseDown[0] && jogo->player.fireCooldown <= 0.0f)
     {
-        Vetor2D target = matematica_mouse_para_mundo(g);
-        Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, g->player.pos));
-        projeteis_criar(g, g->player.pos, dir, 1, g->player.projectileSpeed, g->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
-        particulas_criar(g, g->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
-        g->player.fireCooldown = g->player.fireRate;
+        Vetor2D target = matematica_mouse_para_mundo(jogo);
+        Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->player.pos));
+        projeteis_criar(jogo, jogo->player.pos, dir, 1, jogo->player.projectileSpeed, jogo->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
+        particulas_criar(jogo, jogo->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
+        jogo->player.fireCooldown = jogo->player.fireRate;
         audio_tocar_som_tiro_disparo();
     }
 
-    if (g->input.mouseDown[2] && g->player.fireCooldown <= 0.0f && g->player.guidedAmmo > 0)
+    if (jogo->input.mouseDown[2] && jogo->player.fireCooldown <= 0.0f && jogo->player.guidedAmmo > 0)
     {
-        if (g->player.hasPP || g->player.hasAPNG)
+        if (jogo->player.hasPP || jogo->player.hasAPNG)
         {
-            Vetor2D target = matematica_mouse_para_mundo(g);
+            Vetor2D target = matematica_mouse_para_mundo(jogo);
             int bestTarget = -1;
             float minD = 1000.0f;
             for (i = 0; i < MAXIMO_INIMIGOS; ++i)
             {
-                if (g->enemies[i].active)
+                if (jogo->enemies[i].active)
                 {
-                    float d = matematica_vetor2d_len(matematica_vetor2d_subtracao(inimigo_posicao(&g->enemies[i]), target));
+                    float d = matematica_vetor2d_len(matematica_vetor2d_subtracao(inimigo_posicao(&jogo->enemies[i]), target));
                     if (d < minD)
                     {
                         minD = d;
@@ -251,12 +193,12 @@ static void jogo_atualizar_playing(Game *g, float dt)
             }
             if (bestTarget != -1)
             {
-                Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, g->player.pos));
-                GuidanceType law = g->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
+                Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->player.pos));
+                GuidanceType law = jogo->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
 
-                projeteis_criar(g, g->player.pos, dir, 1, g->player.speed * 1.3f, g->player.damage * 3.0f, 8.0f, 5.0f, law, bestTarget, g->player.maxLatAccel);
-                g->player.guidedAmmo--;
-                g->player.fireCooldown = g->player.fireRate * 2.0f;
+                projeteis_criar(jogo, jogo->player.pos, dir, 1, jogo->player.speed * 1.3f, jogo->player.damage * 3.0f, 8.0f, 5.0f, law, bestTarget, jogo->player.maxLatAccel);
+                jogo->player.guidedAmmo--;
+                jogo->player.fireCooldown = jogo->player.fireRate * 2.0f;
                 audio_tocar_som_tiro_disparo();
             }
         }
@@ -264,20 +206,20 @@ static void jogo_atualizar_playing(Game *g, float dt)
 
     for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
-        Projectile *p = &g->projectiles[i];
+        Projectile *p = &jogo->projectiles[i];
         int oi;
         if (!p->active)
             continue;
 
         if (p->guidance != GUIDANCE_NONE && p->missed)
         {
-            p->sdTimer -= dt;
+            p->sdTimer -= delta_tempo;
             if (p->sdTimer <= 0.0f)
             {
                 p->active = 0;
             }
-            p->life -= dt;
-            p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, dt));
+            p->life -= delta_tempo;
+            p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, delta_tempo));
             continue;
         }
 
@@ -291,9 +233,9 @@ static void jogo_atualizar_playing(Game *g, float dt)
 
             if (p->fromPlayer)
             {
-                if (p->targetIdx != -1 && g->enemies[p->targetIdx].active)
+                if (p->targetIdx != -1 && jogo->enemies[p->targetIdx].active)
                 {
-                    Enemy *e = &g->enemies[p->targetIdx];
+                    Enemy *e = &jogo->enemies[p->targetIdx];
                     targetPos = inimigo_posicao(e);
                     targetVel = e->vel;
                     targetAccel = e->accel;
@@ -302,9 +244,9 @@ static void jogo_atualizar_playing(Game *g, float dt)
             }
             else
             {
-                targetPos = g->player.pos;
-                targetVel = g->player.vel;
-                targetAccel = g->player.accel;
+                targetPos = jogo->player.pos;
+                targetVel = jogo->player.vel;
+                targetAccel = jogo->player.accel;
                 targetValid = 1;
             }
 
@@ -361,7 +303,7 @@ static void jogo_atualizar_playing(Game *g, float dt)
                     if (aCmd < -p->maxLatAccel)
                         aCmd = -p->maxLatAccel;
 
-                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (dt / MISSIL_GUIANCA_LAG);
+                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (delta_tempo / MISSIL_GUIANCA_LAG);
                 }
             }
 
@@ -370,8 +312,8 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 float a_x_lateral = -p->actualLatAccel * sinf(gamma);
                 float a_y_lateral = p->actualLatAccel * cosf(gamma);
 
-                p->vel.x += a_x_lateral * dt;
-                p->vel.y += a_y_lateral * dt;
+                p->vel.x += a_x_lateral * delta_tempo;
+                p->vel.y += a_y_lateral * delta_tempo;
 
                 float newSpeed = matematica_vetor2d_len(p->vel);
                 if (newSpeed > 0.001f)
@@ -381,17 +323,17 @@ static void jogo_atualizar_playing(Game *g, float dt)
             }
         }
 
-        p->life -= dt;
-        p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, dt));
+        p->life -= delta_tempo;
+        p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, delta_tempo));
 
-        if (p->life <= 0.0f || p->pos.x < -20.0f || p->pos.x > g->width + 20.0f || p->pos.y < -20.0f || p->pos.y > g->height + 20.0f)
+        if (p->life <= 0.0f || p->pos.x < -20.0f || p->pos.x > jogo->width + 20.0f || p->pos.y < -20.0f || p->pos.y > jogo->height + 20.0f)
         {
             p->active = 0;
         }
 
         for (oi = 0; oi < MAXIMO_PLATAFORMAS && p->active; ++oi)
         {
-            Obstacle *o = &g->obstacles[oi];
+            Obstacle *o = &jogo->obstacles[oi];
             if (!o->active)
                 continue;
             if (colisao_circulo_vs_retangulo(p->pos, p->radius, matematica_vetor2d(o->x, o->y), matematica_vetor2d(o->x + o->w, o->y + o->h)))
@@ -401,14 +343,14 @@ static void jogo_atualizar_playing(Game *g, float dt)
 
     for (i = 0; i < MAXIMO_INIMIGOS; ++i)
     {
-        Enemy *e = &g->enemies[i];
+        Enemy *e = &jogo->enemies[i];
         int j;
         Vetor2D ep;
         if (!e->active)
             continue;
 
-        e->angle += e->angularSpeed * dt;
-        e->hitFlash -= dt * 4.0f;
+        e->angle += e->angularSpeed * delta_tempo;
+        e->hitFlash -= delta_tempo * 4.0f;
         if (e->hitFlash < 0.0f)
             e->hitFlash = 0.0f;
 
@@ -423,24 +365,24 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 prevEnemyPos[i] = ep;
             }
 
-            e->vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(ep, prevEnemyPos[i]), 1.0f / dt);
-            e->accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(e->vel, prevEnemyVel[i]), 1.0f / dt);
+            e->vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(ep, prevEnemyPos[i]), 1.0f / delta_tempo);
+            e->accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(e->vel, prevEnemyVel[i]), 1.0f / delta_tempo);
 
             prevEnemyPos[i] = ep;
             prevEnemyVel[i] = e->vel;
         }
 
-        if (colisao_circulo_vs_circulo(g->player.pos, g->player.size * 0.8f, ep, e->size))
+        if (colisao_circulo_vs_circulo(jogo->player.pos, jogo->player.size * 0.8f, ep, e->size))
         {
-            g->player.hp = matematica_limite_min(g->player.hp -= e->damage * dt, 0);
+            jogo->player.hp = matematica_limite_min(jogo->player.hp -= e->damage * delta_tempo, 0);
             tookHit = 1;
-            particulas_criar(g, g->player.pos, 1, (Color){1.0f, 0.2f, 0.2f, 0.8f});
+            particulas_criar(jogo, jogo->player.pos, 1, (Color){1.0f, 0.2f, 0.2f, 0.8f});
         }
 
-        e->shootCooldown -= dt;
+        e->shootCooldown -= delta_tempo;
         if (e->shootCooldown <= 0.0f)
         {
-            Vetor2D dirToPlayer = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(g->player.pos, ep));
+            Vetor2D dirToPlayer = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(jogo->player.pos, ep));
             float enemyShotSpeed;
             float enemyShotDamage;
 
@@ -449,7 +391,7 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 if (e->burstCount > 0)
                 {
                     float ppOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 0.5f;
-                    projeteis_criar(g, ep, dirToPlayer, 0, 200.0f + g->wave * 10.0f, 25.0f + g->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
+                    projeteis_criar(jogo, ep, dirToPlayer, 0, 200.0f + jogo->wave * 10.0f, 25.0f + jogo->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
                     e->burstCount--;
                     e->shootCooldown = 0.5f;
                     if (e->burstCount == 0)
@@ -467,40 +409,40 @@ static void jogo_atualizar_playing(Game *g, float dt)
             else if (e->type == ENEMY_PENTAGON)
             {
                 float apnOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 1.0f;
-                projeteis_criar(g, ep, dirToPlayer, 0, 300.0f + g->wave * 15.0f, 30.0f + g->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
+                projeteis_criar(jogo, ep, dirToPlayer, 0, 300.0f + jogo->wave * 15.0f, 30.0f + jogo->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
                 e->shootCooldown = matematica_float_aleatorio_alcance(2.5f, 4.0f);
             }
             else if (e->isBoss)
             {
                 Vetor2D sideA = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 Vetor2D sideB = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
-                enemyShotSpeed = 260.0f + g->wave * 18.0f;
-                enemyShotDamage = 9.5f + g->wave * 1.4f;
-                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
-                projeteis_criar(g, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                projeteis_criar(g, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(0.8f, 1.8f) - g->wave * 0.05f;
+                enemyShotSpeed = 260.0f + jogo->wave * 18.0f;
+                enemyShotDamage = 9.5f + jogo->wave * 1.4f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
+                projeteis_criar(jogo, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                projeteis_criar(jogo, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio_alcance(0.8f, 1.8f) - jogo->wave * 0.05f;
             }
             else if (e->type == ENEMY_SNIPER)
             {
-                enemyShotSpeed = 330.0f + g->wave * 22.0f;
-                enemyShotDamage = 9.0f + g->wave * 1.6f;
-                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.0f, 2.1f) - g->wave * 0.04f;
+                enemyShotSpeed = 330.0f + jogo->wave * 22.0f;
+                enemyShotDamage = 9.0f + jogo->wave * 1.6f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.0f, 2.1f) - jogo->wave * 0.04f;
             }
             else if (e->type == ENEMY_TANK)
             {
-                enemyShotSpeed = 180.0f + g->wave * 14.0f;
-                enemyShotDamage = 11.0f + g->wave * 1.8f;
-                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.8f, 3.2f) - g->wave * 0.03f;
+                enemyShotSpeed = 180.0f + jogo->wave * 14.0f;
+                enemyShotDamage = 11.0f + jogo->wave * 1.8f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.8f, 3.2f) - jogo->wave * 0.03f;
             }
             else
             {
-                enemyShotSpeed = 220.0f + g->wave * 18.0f;
-                enemyShotDamage = 7.0f + g->wave * 1.4f;
-                projeteis_criar(g, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.1f, 2.6f) - g->wave * 0.05f;
+                enemyShotSpeed = 220.0f + jogo->wave * 18.0f;
+                enemyShotDamage = 7.0f + jogo->wave * 1.4f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
+                e->shootCooldown = matematica_float_aleatorio_alcance(1.1f, 2.6f) - jogo->wave * 0.05f;
             }
 
             if (e->shootCooldown < 0.45f)
@@ -511,7 +453,7 @@ static void jogo_atualizar_playing(Game *g, float dt)
 
         for (j = 0; j < MAXIMO_PROJETEIS; ++j)
         {
-            Projectile *p = &g->projectiles[j];
+            Projectile *p = &jogo->projectiles[j];
             if (!p->active || !p->fromPlayer)
                 continue;
 
@@ -520,34 +462,34 @@ static void jogo_atualizar_playing(Game *g, float dt)
                 p->active = 0;
                 e->hp = matematica_limite_min(e->hp -= p->damage, 0);
                 e->hitFlash = 1.0f;
-                particulas_criar(g, ep, 8, (Color){1.0f, 0.6f, 0.2f, 0.95f});
+                particulas_criar(jogo, ep, 8, (Color){1.0f, 0.6f, 0.2f, 0.95f});
                 audio_tocar_som_tiro_atingido();
 
                 if (e->hp <= 0.0f)
                 {
                     e->active = 0;
-                    g->enemiesRemaining--;
+                    jogo->enemiesRemaining--;
                     if (e->isBoss)
                     {
-                        g->score += (int)(1500.0f * scoreMul);
-                        g->gold += 6;
+                        jogo->score += (int)(1500.0f * scoreMul);
+                        jogo->gold += 6;
                     }
                     else if (e->type == ENEMY_TANK)
                     {
-                        g->score += (int)((230 + g->wave * 28) * scoreMul);
-                        g->gold += 2;
+                        jogo->score += (int)((230 + jogo->wave * 28) * scoreMul);
+                        jogo->gold += 2;
                     }
                     else if (e->type == ENEMY_SNIPER)
                     {
-                        g->score += (int)((150 + g->wave * 24) * scoreMul);
-                        g->gold += 1;
+                        jogo->score += (int)((150 + jogo->wave * 24) * scoreMul);
+                        jogo->gold += 1;
                     }
                     else
                     {
-                        g->score += (int)((120 + g->wave * 20) * scoreMul);
-                        g->gold += 1;
+                        jogo->score += (int)((120 + jogo->wave * 20) * scoreMul);
+                        jogo->gold += 1;
                     }
-                    particulas_criar(g, ep, 18, (Color){1.0f, 0.85f, 0.2f, 0.95f});
+                    particulas_criar(jogo, ep, 18, (Color){1.0f, 0.85f, 0.2f, 0.95f});
                 }
                 break;
             }
@@ -556,30 +498,30 @@ static void jogo_atualizar_playing(Game *g, float dt)
 
     for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
-        Projectile *p = &g->projectiles[i];
+        Projectile *p = &jogo->projectiles[i];
         if (!p->active || p->fromPlayer)
         {
             continue;
         }
 
-        if (colisao_circulo_vs_circulo(p->pos, p->radius, g->player.pos, g->player.size * 0.75f))
+        if (colisao_circulo_vs_circulo(p->pos, p->radius, jogo->player.pos, jogo->player.size * 0.75f))
         {
             p->active = 0;
-            g->player.hp = matematica_limite_min(g->player.hp -= p->damage, 0);
+            jogo->player.hp = matematica_limite_min(jogo->player.hp -= p->damage, 0);
             tookHit = 1;
-            particulas_criar(g, g->player.pos, 7, (Color){1.0f, 0.3f, 0.2f, 0.9f});
+            particulas_criar(jogo, jogo->player.pos, 7, (Color){1.0f, 0.3f, 0.2f, 0.9f});
             audio_tocar_som_tiro_atingido();
         }
     }
 
     for (i = 0; i < MAXIMO_PARTICULAS; ++i)
     {
-        Particle *pt = &g->particles[i];
+        Particle *pt = &jogo->particles[i];
         if (!pt->active)
             continue;
 
-        pt->life -= dt;
-        pt->pos = matematica_vetor2d_adicao(pt->pos, matematica_vetor2d_multiplicacao(pt->vel, dt));
+        pt->life -= delta_tempo;
+        pt->pos = matematica_vetor2d_adicao(pt->pos, matematica_vetor2d_multiplicacao(pt->vel, delta_tempo));
         pt->vel = matematica_vetor2d_multiplicacao(pt->vel, 0.96f);
         if (pt->life <= 0.0f)
         {
@@ -587,278 +529,388 @@ static void jogo_atualizar_playing(Game *g, float dt)
         }
     }
 
-    g->elapsed += dt;
-    g->timeLeft -= dt;
-    g->score += (int)(dt * 14.0f * scoreMul);
-    g->damageFlash -= dt * 2.4f;
-    if (g->damageFlash < 0.0f)
+    jogo->elapsed += delta_tempo;
+    jogo->timeLeft -= delta_tempo;
+    jogo->score += (int)(delta_tempo * 14.0f * scoreMul);
+    jogo->damageFlash -= delta_tempo * 2.4f;
+    if (jogo->damageFlash < 0.0f)
     {
-        g->damageFlash = 0.0f;
+        jogo->damageFlash = 0.0f;
     }
     if (tookHit)
     {
-        g->damageFlash = 0.9f;
+        jogo->damageFlash = 0.9f;
     }
 
-    if (g->player.hp <= 0.0f || g->timeLeft <= 0.0f)
+    if (jogo->player.hp <= 0.0f || jogo->timeLeft <= 0.0f)
     {
-        interface_encerrar_partida(g, SCREEN_LOSE);
+        interface_encerrar_partida(jogo, SCREEN_LOSE);
         return;
     }
 
-    if (g->enemiesRemaining <= 0)
+    if (jogo->enemiesRemaining <= 0)
     {
-        if (g->wave >= g->wavesToWin)
+        if (jogo->wave >= jogo->wavesToWin)
         {
-            interface_encerrar_partida(g, SCREEN_WIN);
+            interface_encerrar_partida(jogo, SCREEN_WIN);
         }
         else
         {
-            g->timeLeft += 6.0f;
-            g->score += (int)((180 + g->wave * 40) * scoreMul);
-            melhorias_rolar_opcoes(g);
-            g->screen = SCREEN_UPGRADE;
+            jogo->timeLeft += 6.0f;
+            jogo->score += (int)((180 + jogo->wave * 40) * scoreMul);
+            melhorias_rolar_opcoes(jogo);
+            jogo->screen = SCREEN_UPGRADE;
         }
     }
 }
 
-void jogo_atualizar(Game *g, float dt)
+void jogo_iniciar(Game *jogo, int largura, int altura)
 {
-    if (!g->running)
+    memset(jogo, 0, sizeof(*jogo));
+    srand((unsigned int)time(NULL));
+
+    jogo->width = largura;
+    jogo->height = altura;
+    jogo->screen = SCREEN_MENU;
+    jogo->running = 1;
+    jogo->audioEnabled = 1;
+    jogo->difficulty = 1;
+    jogo->scorePage = 0;
+    jogo->scorePageSize = 10;
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    persistencia_carregar_stats(&jogo->highScore, &jogo->maxWaveEver);
+    persistencia_carregar_configuracoes(&jogo->audioEnabled, &jogo->difficulty);
+    interface_refrescar_pontuacoes_maximas(jogo);
+    interface_refrescar_pontuacoes(jogo);
+
+    jogo->bgTexture = imagem_carregar_ppm("assets/images/background.ppm", &jogo->bgTextureLoaded);
+    audio_inicializar();
+    audio_definir_ativacao(jogo->audioEnabled);
+}
+
+void jogo_atualizar(Game *jogo, float delta_tempo)
+{
+    if (!jogo->running)
     {
         return;
     }
 
-    g->deltaTime = dt;
+    jogo->deltaTime = delta_tempo;
 
-    g->upgradeFlash -= dt * 1.7f;
-    if (g->upgradeFlash < 0.0f)
+    jogo->upgradeFlash -= delta_tempo * 1.7f;
+    if (jogo->upgradeFlash < 0.0f)
     {
-        g->upgradeFlash = 0.0f;
+        jogo->upgradeFlash = 0.0f;
     }
-    g->lastUpgradeTimer -= dt;
-    if (g->lastUpgradeTimer < 0.0f)
+    jogo->lastUpgradeTimer -= delta_tempo;
+    if (jogo->lastUpgradeTimer < 0.0f)
     {
-        g->lastUpgradeTimer = 0.0f;
+        jogo->lastUpgradeTimer = 0.0f;
     }
-    g->toastTimer -= dt;
-    if (g->toastTimer < 0.0f)
+    jogo->toastTimer -= delta_tempo;
+    if (jogo->toastTimer < 0.0f)
     {
-        g->toastTimer = 0.0f;
+        jogo->toastTimer = 0.0f;
     }
 
-    if (g->screen == SCREEN_PLAYING)
+    if (jogo->screen == SCREEN_PLAYING)
     {
-        jogo_atualizar_playing(g, dt);
+        jogo_atualizar_playing(jogo, delta_tempo);
     }
 }
 
-void jogo_tecla_pressionada(Game *g, unsigned char key, int x, int y)
+void jogo_renderizar(Game *jogo)
+{
+    int i;
+
+    glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    renderizar_perspectiva_ortografica(jogo);
+    renderizar_fundo(jogo);
+
+    if (jogo->screen == SCREEN_MENU)
+        desenhar_menu(jogo);
+
+    if (jogo->screen == SCREEN_SCORES)
+        desenhar_placar(jogo);
+
+    if (jogo->screen == SCREEN_OPTIONS)
+        desenhar_opcoes(jogo);
+
+    if (jogo->screen == SCREEN_PLAYING || jogo->screen == SCREEN_PAUSED || jogo->screen == SCREEN_UPGRADE || jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE)
+    {
+        renderizar_plataformas(jogo);
+        for (i = 0; i < MAXIMO_INIMIGOS; ++i)
+        {
+            if (jogo->enemies[i].active)
+                renderizar_inimigo(&jogo->enemies[i]);
+        }
+        renderizar_projeteis(jogo);
+        renderizar_particulas(jogo);
+        renderizar_jogador(jogo);
+        desenhar_hud(jogo);
+        desenhar_vida_boss(jogo);
+        if (jogo->screen == SCREEN_PLAYING)
+            desenhar_mira(jogo);
+    }
+
+    if (jogo->screen == SCREEN_PAUSED)
+        desenhar_pausa(jogo);
+
+    if (jogo->screen == SCREEN_UPGRADE)
+        desenhar_melhorias_tela(jogo);
+
+    if (jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE)
+        desenhar_fim(jogo);
+
+    desenhar_flash(jogo);
+
+    glutSwapBuffers();
+}
+
+void jogo_reiniciar(Game *jogo)
+{
+    game_reset_player(jogo);
+    cenario_limpar_entidades(jogo);
+
+    jogo->wave = 1;
+    jogo->wavesToWin = inimigo_ondas_vitoria(jogo->difficulty);
+    jogo->enemiesRemaining = 0;
+    jogo->timeLeft = inimigo_tempo_inicio(jogo->difficulty);
+    jogo->elapsed = 0.0f;
+    jogo->score = 0;
+    jogo->gold = 0;
+    jogo->damageFlash = 0.0f;
+    jogo->upgradeFlash = 0.0f;
+    jogo->upgradeHover = -1;
+    jogo->lastUpgradeTimer = 0.0f;
+    memset(jogo->lastUpgrade, 0, sizeof(jogo->lastUpgrade));
+    jogo->toastTimer = 0.0f;
+    memset(jogo->toastMessage, 0, sizeof(jogo->toastMessage));
+    jogo->screen = SCREEN_PLAYING;
+    jogo->enteringName = 0;
+    jogo->nameSaved = 0;
+
+    memset(jogo->playerName, 0, sizeof(jogo->playerName));
+    snprintf(jogo->playerName, sizeof(jogo->playerName), "Player");
+
+    cenario_criar_onda(jogo);
+    audio_tocar_musica();
+}
+
+void jogo_tecla_pressionada(Game *jogo, unsigned char tecla, int x, int y)
 {
     (void)x;
     (void)y;
 
-    if (key < 256)
+    if (tecla < 256)
     {
-        g->input.keys[key] = 1;
-        g->input.keysPressed[key] = 1;
+        jogo->input.keys[tecla] = 1;
+        jogo->input.keysPressed[tecla] = 1;
     }
 
-    if (key == 27)
+    if (tecla == 27)
     {
-        if (g->screen == SCREEN_PLAYING)
+        if (jogo->screen == SCREEN_PLAYING)
         {
-            g->screen = SCREEN_PAUSED;
+            jogo->screen = SCREEN_PAUSED;
         }
-        else if (g->screen == SCREEN_PAUSED)
+        else if (jogo->screen == SCREEN_PAUSED)
         {
-            g->screen = SCREEN_PLAYING;
+            jogo->screen = SCREEN_PLAYING;
         }
-        else if (g->screen == SCREEN_OPTIONS)
+        else if (jogo->screen == SCREEN_OPTIONS)
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
         }
-        else if (g->screen == SCREEN_SCORES)
+        else if (jogo->screen == SCREEN_SCORES)
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
         }
     }
 
-    if ((key == 'p' || key == 'P') && g->screen == SCREEN_PLAYING)
+    if ((tecla == 'p' || tecla == 'P') && jogo->screen == SCREEN_PLAYING)
     {
-        g->screen = SCREEN_PAUSED;
+        jogo->screen = SCREEN_PAUSED;
     }
-    else if ((key == 'p' || key == 'P') && g->screen == SCREEN_PAUSED)
+    else if ((tecla == 'p' || tecla == 'P') && jogo->screen == SCREEN_PAUSED)
     {
-        g->screen = SCREEN_PLAYING;
-    }
-
-    if (g->screen == SCREEN_MENU && (key == 13 || key == ' '))
-    {
-        jogo_reiniciar(g);
+        jogo->screen = SCREEN_PLAYING;
     }
 
-    if (g->screen == SCREEN_MENU && (key == 'o' || key == 'O'))
+    if (jogo->screen == SCREEN_MENU && (tecla == 13 || tecla == ' '))
     {
-        g->screen = SCREEN_OPTIONS;
+        jogo_reiniciar(jogo);
     }
 
-    if (g->screen == SCREEN_MENU && (key == 'l' || key == 'L'))
+    if (jogo->screen == SCREEN_MENU && (tecla == 'o' || tecla == 'O'))
     {
-        g->screen = SCREEN_SCORES;
+        jogo->screen = SCREEN_OPTIONS;
     }
 
-    if (g->screen == SCREEN_PAUSED && key == 13)
+    if (jogo->screen == SCREEN_MENU && (tecla == 'l' || tecla == 'L'))
     {
-        g->screen = SCREEN_PLAYING;
+        jogo->screen = SCREEN_SCORES;
     }
 
-    if (g->screen == SCREEN_UPGRADE)
+    if (jogo->screen == SCREEN_PAUSED && tecla == 13)
     {
-        if (key == '1' || key == '2' || key == '3')
+        jogo->screen = SCREEN_PLAYING;
+    }
+
+    if (jogo->screen == SCREEN_UPGRADE)
+    {
+        if (tecla == '1' || tecla == '2' || tecla == '3')
         {
-            int idx = key - '1';
+            int idx = tecla - '1';
             if (idx >= 0 && idx < MAXIMO_OPCOES_UPGRADE)
             {
-                melhorias_escolher(g, idx);
+                melhorias_escolher(jogo, idx);
             }
         }
-        else if (key == 'r' || key == 'R')
+        else if (tecla == 'r' || tecla == 'R')
         {
-            if (g->gold >= 3)
+            if (jogo->gold >= 3)
             {
-                g->gold -= 3;
-                melhorias_rolar_opcoes(g);
-                interface_notificar(g, "Upgrade rerolled (-3 gold)");
+                jogo->gold -= 3;
+                melhorias_rolar_opcoes(jogo);
+                interface_notificar(jogo, "Upgrade rerolled (-3 gold)");
             }
             else
             {
-                interface_notificar(g, "Not enough gold for reroll");
+                interface_notificar(jogo, "Not enough gold for reroll");
             }
         }
     }
 
-    if (g->screen == SCREEN_OPTIONS)
+    if (jogo->screen == SCREEN_OPTIONS)
     {
-        if (key == 'a' || key == 'A')
+        if (tecla == 'a' || tecla == 'A')
         {
-            g->audioEnabled = !g->audioEnabled;
-            audio_definir_ativacao(g->audioEnabled);
-            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
-            interface_notificar(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
+            jogo->audioEnabled = !jogo->audioEnabled;
+            audio_definir_ativacao(jogo->audioEnabled);
+            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
+            interface_notificar(jogo, jogo->audioEnabled ? "Audio ON" : "Audio OFF");
         }
-        else if (key == 'd' || key == 'D')
+        else if (tecla == 'd' || tecla == 'D')
         {
-            g->difficulty = (g->difficulty + 1) % 3;
-            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
+            jogo->difficulty = (jogo->difficulty + 1) % 3;
+            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(g->difficulty));
-                interface_notificar(g, msg);
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->difficulty));
+                interface_notificar(jogo, msg);
             }
         }
-        else if (key == 13 || key == 'm' || key == 'M')
+        else if (tecla == 13 || tecla == 'm' || tecla == 'M')
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
         }
     }
 
-    if (g->screen == SCREEN_SCORES)
+    if (jogo->screen == SCREEN_SCORES)
     {
-        int pageCount = (g->allScoreCount + g->scorePageSize - 1) / g->scorePageSize;
+        int pageCount = (jogo->allScoreCount + jogo->scorePageSize - 1) / jogo->scorePageSize;
         if (pageCount <= 0)
         {
             pageCount = 1;
         }
 
-        if (key == 'a' || key == 'A')
+        if (tecla == 'a' || tecla == 'A')
         {
-            g->scorePage--;
-            if (g->scorePage < 0)
+            jogo->scorePage--;
+            if (jogo->scorePage < 0)
             {
-                g->scorePage = 0;
+                jogo->scorePage = 0;
             }
         }
-        else if (key == 'd' || key == 'D')
+        else if (tecla == 'd' || tecla == 'D')
         {
-            g->scorePage++;
-            if (g->scorePage > pageCount - 1)
+            jogo->scorePage++;
+            if (jogo->scorePage > pageCount - 1)
             {
-                g->scorePage = pageCount - 1;
+                jogo->scorePage = pageCount - 1;
             }
         }
-        else if (key == 'c' || key == 'C')
+        else if (tecla == 'c' || tecla == 'C')
         {
             persistencia_limpar_pontuacoes();
-            interface_refrescar_pontuacoes_maximas(g);
-            interface_refrescar_pontuacoes(g);
-            g->scorePage = 0;
-            interface_notificar(g, "Score history cleared");
+            interface_refrescar_pontuacoes_maximas(jogo);
+            interface_refrescar_pontuacoes(jogo);
+            jogo->scorePage = 0;
+            interface_notificar(jogo, "Score history cleared");
         }
-        else if (key == 'm' || key == 'M' || key == 13)
+        else if (tecla == 'm' || tecla == 'M' || tecla == 13)
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
         }
     }
 
-    if ((g->screen == SCREEN_WIN || g->screen == SCREEN_LOSE) && g->enteringName)
+    if ((jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE) && jogo->enteringName)
     {
-        int len = (int)strlen(g->playerName);
+        int len = (int)strlen(jogo->playerName);
 
-        if (key == 8 && len > 0)
+        if (tecla == 8 && len > 0)
         {
-            g->playerName[len - 1] = '\0';
+            jogo->playerName[len - 1] = '\0';
             return;
         }
 
-        if (key == 13 && !g->nameSaved)
+        if (tecla == 13 && !jogo->nameSaved)
         {
-            if (strlen(g->playerName) == 0)
+            if (strlen(jogo->playerName) == 0)
             {
-                snprintf(g->playerName, sizeof(g->playerName), "Player");
+                snprintf(jogo->playerName, sizeof(jogo->playerName), "Player");
             }
-            persistencia_apor_pontuacao(g->playerName, g->score, g->wave);
-            g->nameSaved = 1;
-            interface_refrescar_pontuacoes_maximas(g);
-            interface_refrescar_pontuacoes(g);
-            interface_notificar(g, "Score saved");
+            persistencia_apor_pontuacao(jogo->playerName, jogo->score, jogo->wave);
+            jogo->nameSaved = 1;
+            interface_refrescar_pontuacoes_maximas(jogo);
+            interface_refrescar_pontuacoes(jogo);
+            interface_notificar(jogo, "Score saved");
             return;
         }
 
-        if ((isalnum(key) || key == ' ' || key == '_') && len < (int)sizeof(g->playerName) - 1)
+        if ((isalnum(tecla) || tecla == ' ' || tecla == '_') && len < (int)sizeof(jogo->playerName) - 1)
         {
-            g->playerName[len] = (char)key;
-            g->playerName[len + 1] = '\0';
+            jogo->playerName[len] = (char)tecla;
+            jogo->playerName[len + 1] = '\0';
         }
 
-        if (g->nameSaved && (key == 'm' || key == 'M' || key == 13))
+        if (jogo->nameSaved && (tecla == 'm' || tecla == 'M' || tecla == 13))
         {
-            g->screen = SCREEN_MENU;
-            g->enteringName = 0;
+            jogo->screen = SCREEN_MENU;
+            jogo->enteringName = 0;
         }
     }
 }
 
-void jogo_tecla_levantada(Game *g, unsigned char key, int x, int y)
+void jogo_tecla_levantada(Game *jogo, unsigned char tecla, int x, int y)
 {
     (void)x;
     (void)y;
-    if (key < 256)
+    if (tecla < 256)
     {
-        g->input.keys[key] = 0;
+        jogo->input.keys[tecla] = 0;
     }
 }
 
-void jogo_especial_pressionado(Game *g, int key, int x, int y)
+void jogo_especial_pressionado(Game *jogo, int tecla, int x, int y)
 {
     (void)x;
     (void)y;
-    if (key < 256)
+    if (tecla < 256)
     {
-        g->input.special[key] = 1;
+        jogo->input.special[tecla] = 1;
     }
 
-    if (key == GLUT_KEY_F12)
+    if (tecla == GLUT_KEY_F12)
     {
         time_t t = time(NULL);
         struct tm *tmv = localtime(&t);
@@ -867,62 +919,62 @@ void jogo_especial_pressionado(Game *g, int key, int x, int y)
         snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
                  tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
                  tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
-        if (imagem_salvar_ppm(filename, g->width, g->height))
+        if (imagem_salvar_ppm(filename, jogo->width, jogo->height))
         {
-            interface_notificar(g, "Screenshot saved");
+            interface_notificar(jogo, "Screenshot saved");
         }
         else
         {
-            interface_notificar(g, "Screenshot failed");
+            interface_notificar(jogo, "Screenshot failed");
         }
     }
 }
 
-void jogo_especial_levantado(Game *g, int key, int x, int y)
+void jogo_especial_levantado(Game *jogo, int tecla, int x, int y)
 {
     (void)x;
     (void)y;
-    if (key < 256)
+    if (tecla < 256)
     {
-        g->input.special[key] = 0;
+        jogo->input.special[tecla] = 0;
     }
 }
 
-void jogo_mouse_pressionado(Game *g, int button, int state, int x, int y)
+void jogo_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
 {
     float wx;
     float wy;
     float bx;
     float by;
 
-    g->input.mouseX = x;
-    g->input.mouseY = y;
+    jogo->input.mouseX = x;
+    jogo->input.mouseY = y;
 
-    if (button >= 0 && button < 3)
+    if (botao >= 0 && botao < 3)
     {
-        if (state == GLUT_DOWN)
+        if (estado == GLUT_DOWN)
         {
-            g->input.mouseDown[button] = 1;
-            g->input.mousePressed[button] = 1;
+            jogo->input.mouseDown[botao] = 1;
+            jogo->input.mousePressed[botao] = 1;
         }
         else
         {
-            g->input.mouseDown[button] = 0;
+            jogo->input.mouseDown[botao] = 0;
         }
     }
 
     wx = (float)x;
     wy = (float)y;
 
-    if (button != GLUT_LEFT_BUTTON || state != GLUT_DOWN)
+    if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN)
     {
         return;
     }
 
-    if (g->screen == SCREEN_MENU)
+    if (jogo->screen == SCREEN_MENU)
     {
-        float uiScale = (float)g->width / 1280.0f;
-        float hScale = (float)g->height / 720.0f;
+        float uiScale = (float)jogo->width / 1280.0f;
+        float hScale = (float)jogo->height / 720.0f;
         float btnW;
         float startH;
         float subH;
@@ -942,119 +994,119 @@ void jogo_mouse_pressionado(Game *g, int button, int state, int x, int y)
         btnW = 300.0f * uiScale;
         startH = 60.0f * uiScale;
         subH = 50.0f * uiScale;
-        bx = g->width * 0.5f - btnW * 0.5f;
-        by = g->height * 0.30f;
+        bx = jogo->width * 0.5f - btnW * 0.5f;
+        by = jogo->height * 0.30f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + startH)
         {
-            jogo_reiniciar(g);
+            jogo_reiniciar(jogo);
             return;
         }
 
-        by = g->height * 0.40f;
+        by = jogo->height * 0.40f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
         {
-            g->screen = SCREEN_OPTIONS;
+            jogo->screen = SCREEN_OPTIONS;
             return;
         }
 
-        by = g->height * 0.50f;
+        by = jogo->height * 0.50f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
         {
-            g->screen = SCREEN_SCORES;
+            jogo->screen = SCREEN_SCORES;
             return;
         }
     }
 
-    if (g->screen == SCREEN_OPTIONS)
+    if (jogo->screen == SCREEN_OPTIONS)
     {
-        bx = g->width * 0.5f - 180.0f;
-        by = g->height * 0.56f;
+        bx = jogo->width * 0.5f - 180.0f;
+        by = jogo->height * 0.56f;
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
-            g->audioEnabled = !g->audioEnabled;
-            audio_definir_ativacao(g->audioEnabled);
-            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
-            interface_notificar(g, g->audioEnabled ? "Audio ON" : "Audio OFF");
+            jogo->audioEnabled = !jogo->audioEnabled;
+            audio_definir_ativacao(jogo->audioEnabled);
+            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
+            interface_notificar(jogo, jogo->audioEnabled ? "Audio ON" : "Audio OFF");
             return;
         }
 
-        by = g->height * 0.46f;
+        by = jogo->height * 0.46f;
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
-            g->difficulty = (g->difficulty + 1) % 3;
-            persistencia_salvar_configuracoes(g->audioEnabled, g->difficulty);
+            jogo->difficulty = (jogo->difficulty + 1) % 3;
+            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(g->difficulty));
-                interface_notificar(g, msg);
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->difficulty));
+                interface_notificar(jogo, msg);
             }
             return;
         }
 
-        bx = g->width * 0.5f - 110.0f;
-        by = g->height * 0.31f;
+        bx = jogo->width * 0.5f - 110.0f;
+        by = jogo->height * 0.31f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
             return;
         }
     }
 
-    if (g->screen == SCREEN_SCORES)
+    if (jogo->screen == SCREEN_SCORES)
     {
-        int pageCount = (g->allScoreCount + g->scorePageSize - 1) / g->scorePageSize;
+        int pageCount = (jogo->allScoreCount + jogo->scorePageSize - 1) / jogo->scorePageSize;
         if (pageCount <= 0)
         {
             pageCount = 1;
         }
 
-        bx = g->width * 0.5f - 255.0f;
-        by = g->height * 0.20f;
+        bx = jogo->width * 0.5f - 255.0f;
+        by = jogo->height * 0.20f;
         if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
         {
-            g->scorePage--;
-            if (g->scorePage < 0)
+            jogo->scorePage--;
+            if (jogo->scorePage < 0)
             {
-                g->scorePage = 0;
+                jogo->scorePage = 0;
             }
             return;
         }
 
-        bx = g->width * 0.5f + 95.0f;
+        bx = jogo->width * 0.5f + 95.0f;
         if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
         {
-            g->scorePage++;
-            if (g->scorePage > pageCount - 1)
+            jogo->scorePage++;
+            if (jogo->scorePage > pageCount - 1)
             {
-                g->scorePage = pageCount - 1;
+                jogo->scorePage = pageCount - 1;
             }
             return;
         }
 
-        bx = g->width * 0.5f - 110.0f;
+        bx = jogo->width * 0.5f - 110.0f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
         {
             persistencia_limpar_pontuacoes();
-            interface_refrescar_pontuacoes_maximas(g);
-            interface_refrescar_pontuacoes(g);
-            g->scorePage = 0;
-            interface_notificar(g, "Score history cleared");
+            interface_refrescar_pontuacoes_maximas(jogo);
+            interface_refrescar_pontuacoes(jogo);
+            jogo->scorePage = 0;
+            interface_notificar(jogo, "Score history cleared");
             return;
         }
 
-        by = g->height * 0.11f;
+        by = jogo->height * 0.11f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
         {
-            g->screen = SCREEN_MENU;
+            jogo->screen = SCREEN_MENU;
             return;
         }
     }
 
-    if (g->screen == SCREEN_UPGRADE)
+    if (jogo->screen == SCREEN_UPGRADE)
     {
-        float uiScale = (float)g->width / 1280.0f;
-        float hScale = (float)g->height / 720.0f;
-        float centerX = g->width * 0.5f;
+        float uiScale = (float)jogo->width / 1280.0f;
+        float hScale = (float)jogo->height / 720.0f;
+        float centerX = jogo->width * 0.5f;
         float cardW;
         float cardH;
         float cardGap;
@@ -1085,7 +1137,7 @@ void jogo_mouse_pressionado(Game *g, int button, int state, int x, int y)
         cardGap = 20.0f * uiScale;
         totalW = cardW * MAXIMO_OPCOES_UPGRADE + cardGap * (MAXIMO_OPCOES_UPGRADE - 1);
         startX = centerX - totalW * 0.5f;
-        cardY = g->height * 0.36f;
+        cardY = jogo->height * 0.36f;
 
         rerollW = 220.0f * uiScale;
         rerollH = 44.0f * uiScale;
@@ -1098,94 +1150,42 @@ void jogo_mouse_pressionado(Game *g, int button, int state, int x, int y)
             by = cardY;
             if (wx >= bx && wx <= bx + cardW && wy >= by && wy <= by + cardH)
             {
-                melhorias_escolher(g, i);
+                melhorias_escolher(jogo, i);
                 return;
             }
         }
 
         bx = rerollX;
         by = rerollY;
-        if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && g->gold >= 3)
+        if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && jogo->gold >= 3)
         {
-            g->gold -= 3;
-            melhorias_rolar_opcoes(g);
-            interface_notificar(g, "Upgrade rerolled (-3 gold)");
+            jogo->gold -= 3;
+            melhorias_rolar_opcoes(jogo);
+            interface_notificar(jogo, "Upgrade rerolled (-3 gold)");
             return;
         }
     }
 
-    if ((g->screen == SCREEN_WIN || g->screen == SCREEN_LOSE) && g->nameSaved)
+    if ((jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE) && jogo->nameSaved)
     {
-        bx = g->width * 0.5f - 110.0f;
-        by = g->height * 0.45f;
+        bx = jogo->width * 0.5f - 110.0f;
+        by = jogo->height * 0.45f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
         {
-            g->screen = SCREEN_MENU;
-            g->enteringName = 0;
+            jogo->screen = SCREEN_MENU;
+            jogo->enteringName = 0;
         }
     }
 }
 
-void jogo_mouse_movido(Game *g, int x, int y)
+void jogo_mouse_movido(Game *jogo, int x, int y)
 {
-    g->input.mouseX = x;
-    g->input.mouseY = y;
+    jogo->input.mouseX = x;
+    jogo->input.mouseY = y;
 }
 
-void jogo_renderizar(Game *g)
+void jogo_iniciar_frame(Game *jogo)
 {
-    int i;
-
-    glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    renderizar_perspectiva_ortografica(g);
-    renderizar_fundo(g);
-
-    if (g->screen == SCREEN_MENU)
-        desenhar_menu(g);
-
-    if (g->screen == SCREEN_SCORES)
-        desenhar_placar(g);
-
-    if (g->screen == SCREEN_OPTIONS)
-        desenhar_opcoes(g);
-
-    if (g->screen == SCREEN_PLAYING || g->screen == SCREEN_PAUSED || g->screen == SCREEN_UPGRADE || g->screen == SCREEN_WIN || g->screen == SCREEN_LOSE)
-    {
-        renderizar_plataformas(g);
-        for (i = 0; i < MAXIMO_INIMIGOS; ++i)
-        {
-            if (g->enemies[i].active)
-                renderizar_inimigo(&g->enemies[i]);
-        }
-        renderizar_projeteis(g);
-        renderizar_particulas(g);
-        renderizar_jogador(g);
-        desenhar_hud(g);
-        desenhar_vida_boss(g);
-        if (g->screen == SCREEN_PLAYING)
-            desenhar_mira(g);
-    }
-
-    if (g->screen == SCREEN_PAUSED)
-        desenhar_pausa(g);
-
-    if (g->screen == SCREEN_UPGRADE)
-        desenhar_melhorias_tela(g);
-
-    if (g->screen == SCREEN_WIN || g->screen == SCREEN_LOSE)
-        desenhar_fim(g);
-
-    desenhar_flash(g);
-
-    glutSwapBuffers();
-}
-
-void jogo_iniciar_frame(Game *g)
-{
-    memset(g->input.keysPressed, 0, sizeof(g->input.keysPressed));
-    memset(g->input.mousePressed, 0, sizeof(g->input.mousePressed));
+    memset(jogo->input.keysPressed, 0, sizeof(jogo->input.keysPressed));
+    memset(jogo->input.mousePressed, 0, sizeof(jogo->input.mousePressed));
 }
