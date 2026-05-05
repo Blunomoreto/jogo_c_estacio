@@ -1,5 +1,5 @@
-#ifndef UPGRADES_H
-#define UPGRADES_H
+#ifndef MELHORIAS_H
+#define MELHORIAS_H
 
 #include "jogo.h"
 

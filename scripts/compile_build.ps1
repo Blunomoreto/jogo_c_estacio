@@ -33,6 +33,8 @@ Write-Host "[2/2] Compilando jogo..."
     -I"$glutInclude" `
     (Join-Path $ProjectRoot "lib\main.c") `
     (Join-Path $ProjectRoot "lib\jogo.c") `
+    (Join-Path $ProjectRoot "lib\gameplay.c") `
+    (Join-Path $ProjectRoot "lib\entrada.c") `
     (Join-Path $ProjectRoot "lib\matematica.c") `
     (Join-Path $ProjectRoot "lib\renderizar.c") `
     (Join-Path $ProjectRoot "lib\desenhar.c") `

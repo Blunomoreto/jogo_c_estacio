@@ -1,4 +1,5 @@
 #include "configuracao.h"
+#include "entrada.h"
 #include "jogo.h"
 #include "pastas.h"
 
@@ -37,39 +38,39 @@ static void main_timer_cb(int value)
 
     g_game.lastTicks = ticks;
     jogo_atualizar(&g_game, dt);
-    jogo_iniciar_frame(&g_game);
+    entrada_iniciar_frame(&g_game);
     glutPostRedisplay();
     glutTimerFunc(ALVO_DELAY_FRAMES_MS, main_timer_cb, value + 1);
 }
 
 static void main_keyboard_down_cb(unsigned char key, int x, int y)
 {
-    jogo_tecla_pressionada(&g_game, key, x, y);
+    entrada_tecla_pressionada(&g_game, key, x, y);
 }
 
 static void main_keyboard_up_cb(unsigned char key, int x, int y)
 {
-    jogo_tecla_levantada(&g_game, key, x, y);
+    entrada_tecla_levantada(&g_game, key, x, y);
 }
 
 static void main_special_down_cb(int key, int x, int y)
 {
-    jogo_especial_pressionado(&g_game, key, x, y);
+    entrada_especial_pressionado(&g_game, key, x, y);
 }
 
 static void main_special_up_cb(int key, int x, int y)
 {
-    jogo_especial_levantado(&g_game, key, x, y);
+    entrada_especial_levantado(&g_game, key, x, y);
 }
 
 static void main_mouse_cb(int button, int state, int x, int y)
 {
-    jogo_mouse_pressionado(&g_game, button, state, x, y);
+    entrada_mouse_pressionado(&g_game, button, state, x, y);
 }
 
 static void main_motion_cb(int x, int y)
 {
-    jogo_mouse_movido(&g_game, x, y);
+    entrada_mouse_movido(&g_game, x, y);
 }
 
 int main(int argc, char **argv)

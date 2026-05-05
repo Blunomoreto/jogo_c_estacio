@@ -55,7 +55,7 @@ A raíz do repositório contém apenas arquivos instrucionais e de setup.
 
 O sistema de build é composto por dois scripts PowerShell em `scripts/`:
 
-**1. Setup inicial** — baixa e compila FreeGLUT (execute uma vez):
+**1. Setup inicial** - baixa e compila FreeGLUT (execute uma vez):
 
 powershell -ExecutionPolicy Bypass -File .\scripts\setup_libs.ps1
 
@@ -103,7 +103,7 @@ Sem assets, o jogo continua funcional com fallback visual/silencioso.
 
 ## Matriz de conformidade (JSON de requisitos)
 
-| Requisito         | Status | Evidência no jogo                                           |
+| Requisito         | Status  | Evidência no jogo                                           |
 | Linguagem C       | ✅       | Projeto completo em C estruturado                           |
 | OpenGL + GLUT     | ✅       | Renderização, input e loop via GLUT/OpenGL                  |
 | Mínimo 5 figuras  | ✅       | Círculo, retângulo, triângulo, losango, estrela             |
