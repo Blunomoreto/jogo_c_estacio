@@ -1,7 +1,7 @@
 #ifndef MELHORIAS_H
 #define MELHORIAS_H
 
-#include "jogo.h"
+#include "tipos.h"
 
 void melhorias_preencher_opcoes(UpgradeOption *opcoes, UpgradeType tipo);
 void melhorias_rolar_opcoes(Game *jogo);

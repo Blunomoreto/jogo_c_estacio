@@ -1,8 +1,6 @@
 #ifndef JOGO_H
 #define JOGO_H
 
-#include "configuracao.h"
-#include "persistencia.h"
 #include "tipos.h"
 
 void jogo_iniciar(Game *jogo, int largura, int altura);

@@ -1,7 +1,7 @@
 #ifndef DESENHAR_H
 #define DESENHAR_H
 
-#include "jogo.h"
+#include "tipos.h"
 
 void desenhar_texto(float x, float y, const char *texto, void *fonte, float r, float g, float b);
 void desenhar_texto_limites(float x, float y, const char *texto, void *fonte, float r, float g, float b, float largMax);
