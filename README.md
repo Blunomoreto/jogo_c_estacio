@@ -1,6 +1,6 @@
 # Orbit Siege (C + OpenGL/GLUT)
 
-Jogo 2D platformer com ação em C estruturado (sem OO), onde você controla um humano em um cenário extraterrestre com gravidade e mecânicas de pulo, survivalidade com melhorias.
+Jogo 2D plataformer com ação em C estruturado (sem OO), onde você controla um humano em um cenário extraterrestre com gravidade e mecânicas de pulo, survivalidade com melhorias.
 
 ## Estrutura do repositório
 
