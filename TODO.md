@@ -25,14 +25,6 @@ Atualmente os itens do menu possuem keybinds para ativação (comportamento espe
 
 ## Back
 
-### Renomeação
-
-Variáveis devem explicar a função delas e utilizar português (hp -> vida, score -> pontuacao etc.)
-
-### Utilizar e reutilizar funções
-
-Devem ser utilizadas e reutilizadas as novas funções clamp criadas e também outras funções aplicáveis
-
 ### Abstrair código
 
 Código deve ser abstraído para utilizar a máxima quantidade de funções possível que digam exatamente os que o blocos fazem

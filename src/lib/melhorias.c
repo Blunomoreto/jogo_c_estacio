@@ -24,11 +24,11 @@ void melhorias_preencher_opcoes(OpcaoMelhoria *opcoes, TipoMelhoria tipo)
         break;
     case MELHORIA_CURA:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Aumento de Vida");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Recupera e adiciona mais 50 de vida");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Recupera a vida e adiciona mais 50 ao total");
         break;
     case MELHORIA_TEMPO:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Aumento de Tempo");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Acrescenta 20 segundos ao timer");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Acrescenta 100 segundos ao timer");
         break;
     case MELHORIA_GUIANCA_PP:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Balas Guiadas");
@@ -101,7 +101,7 @@ void melhorias_aplicar(Jogo *jogo, TipoMelhoria t)
         jogo->jogador.vida = jogo->jogador.vida_maxima;
         break;
     case MELHORIA_TEMPO:
-        jogo->tempo_restante += 20.0f;
+        jogo->tempo_restante += 100.0f;
         break;
     case MELHORIA_GUIANCA_PP:
         jogo->jogador.tem_guianca_pp = 1;
