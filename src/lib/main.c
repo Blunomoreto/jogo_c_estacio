@@ -4,7 +4,7 @@
 
 #include <GL/glut.h>
 
-static Jogo g_game;
+static Game g_game;
 
 static void main_display_cb(void)
 {
@@ -17,15 +17,15 @@ static void main_reshape_cb(int w, int h)
     {
         h = 1;
     }
-    g_game.largura = w;
-    g_game.altura = h;
+    g_game.width = w;
+    g_game.height = h;
     glViewport(0, 0, w, h);
 }
 
 static void main_timer_cb(int value)
 {
     int ticks = glutGet(GLUT_ELAPSED_TIME);
-    float dt = (float)(ticks - g_game.ultimosTicks) / 1000.0f;
+    float dt = (float)(ticks - g_game.lastTicks) / 1000.0f;
     if (dt < 0.0f)
     {
         dt = 0.0f;
@@ -35,7 +35,7 @@ static void main_timer_cb(int value)
         dt = 0.033f;
     }
 
-    g_game.ultimosTicks = ticks;
+    g_game.lastTicks = ticks;
     jogo_atualizar(&g_game, dt);
     jogo_iniciar_frame(&g_game);
     glutPostRedisplay();
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     glutCreateWindow("Orbit Siege - C + GLUT");
 
     jogo_iniciar(&g_game, JANELA_LARGURA, JANELA_ALTURA);
-    g_game.ultimosTicks = glutGet(GLUT_ELAPSED_TIME);
+    g_game.lastTicks = glutGet(GLUT_ELAPSED_TIME);
 
     glutDisplayFunc(main_display_cb);
     glutReshapeFunc(main_reshape_cb);

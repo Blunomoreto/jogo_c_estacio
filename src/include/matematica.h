@@ -8,7 +8,7 @@ Vetor2D matematica_vetor2d_adicao(Vetor2D a, Vetor2D b);
 Vetor2D matematica_vetor2d_subtracao(Vetor2D a, Vetor2D b);
 Vetor2D matematica_vetor2d_multiplicacao(Vetor2D v, float s);
 Vetor2D matematica_vetor2d_normalizar(Vetor2D v);
-Vetor2D matematica_mouse_para_mundo(Jogo *g);
+Vetor2D matematica_mouse_para_mundo(Game *g);
 
 float matematica_float_aleatorio(float minV, float maxV);
 float matematica_vetor2d_len(Vetor2D v);

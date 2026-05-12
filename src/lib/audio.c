@@ -8,16 +8,16 @@
 
 static int s_audioAtivado = 1;
 
-void inicializar_audio(void)
+void audio_inicializar(void)
 {
 }
 
-void definir_audio_ativado(int ativado)
+void audio_definir_ativacao(int ativado)
 {
     s_audioAtivado = ativado ? 1 : 0;
 
     if (!s_audioAtivado)
-        parar_musica();
+        audio_parar_musica();
 }
 
 int audio_esta_ativado(void)
@@ -25,7 +25,7 @@ int audio_esta_ativado(void)
     return s_audioAtivado;
 }
 
-void tocar_musica(void)
+void audio_tocar_musica(void)
 {
     if (!s_audioAtivado)
         return;
@@ -35,14 +35,14 @@ void tocar_musica(void)
 #endif
 }
 
-void parar_musica(void)
+void audio_parar_musica(void)
 {
 #ifdef _WIN32
     PlaySoundA(NULL, NULL, 0);
 #endif
 }
 
-void tocar_som_tiro(void)
+void audio_tocar_som_tiro_disparo(void)
 {
     if (!s_audioAtivado)
         return;
@@ -52,7 +52,7 @@ void tocar_som_tiro(void)
 #endif
 }
 
-void tocar_som_impacto(void)
+void audio_tocar_som_tiro_atingido(void)
 {
     if (!s_audioAtivado)
         return;
@@ -62,7 +62,7 @@ void tocar_som_impacto(void)
 #endif
 }
 
-void tocar_som_pulo_inicio(void)
+void audio_tocar_som_pulo_inicio(void)
 {
     if (!s_audioAtivado)
         return;
@@ -72,7 +72,7 @@ void tocar_som_pulo_inicio(void)
 #endif
 }
 
-void tocar_som_pulo_fim(void)
+void audio_tocar_som_pulo_fim(void)
 {
     if (!s_audioAtivado)
         return;

@@ -3,16 +3,16 @@
 
 #include "tipos.h"
 
-Vetor2D inimigo_posicao(const Inimigo *e);
+Vetor2D inimigo_posicao(const Enemy *e);
 
-const char *inimigo_nome_dificuldade(int dificuldade);
+const char *inimigo_nome_dificuldade(int difficulty);
 
-float inimigo_multiplicador_vida(int dificuldade);
-float inimigo_multiplicador_dano(int dificuldade);
-float inimigo_multiplicador_pontos(int dificuldade);
-float inimigo_taxa_disparo(int dificuldade);
-float inimigo_tempo_inicio(int dificuldade);
+float inimigo_multiplicador_vida(int difficulty);
+float inimigo_multiplicador_dano(int difficulty);
+float inimigo_multiplicador_pontos(int difficulty);
+float inimigo_taxa_disparo(int difficulty);
+float inimigo_tempo_inicio(int difficulty);
 
-int inimigo_ondas_vitoria(int dificuldade);
+int inimigo_ondas_vitoria(int difficulty);
 
 #endif

@@ -44,7 +44,7 @@ void persistencia_apor_pontuacao(const char *name, int score, int wave)
     fclose(f);
 }
 
-int persistencia_carregar_pontuacoes_altas(EntradaPontuacao *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntries)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
@@ -55,7 +55,7 @@ int persistencia_carregar_pontuacoes_altas(EntradaPontuacao *outEntries, int max
         return 0;
     }
 
-    memset(outEntries, 0, sizeof(EntradaPontuacao) * (size_t)maxEntries);
+    memset(outEntries, 0, sizeof(ScoreEntry) * (size_t)maxEntries);
 
     if (!f)
     {
@@ -64,19 +64,19 @@ int persistencia_carregar_pontuacoes_altas(EntradaPontuacao *outEntries, int max
 
     while (fgets(line, sizeof(line), f))
     {
-        EntradaPontuacao entry;
+        ScoreEntry entry;
         int inserted = 0;
         int i;
 
         memset(&entry, 0, sizeof(entry));
-        if (sscanf(line, "%23[^;];%d;%d", entry.nome, &entry.pontuacao, &entry.onda) != 3)
+        if (sscanf(line, "%23[^;];%d;%d", entry.name, &entry.score, &entry.wave) != 3)
         {
             continue;
         }
 
         for (i = 0; i < count; ++i)
         {
-            if (entry.pontuacao > outEntries[i].pontuacao)
+            if (entry.score > outEntries[i].score)
             {
                 int j;
                 int limit = (count < maxEntries) ? count : maxEntries - 1;
@@ -104,7 +104,7 @@ int persistencia_carregar_pontuacoes_altas(EntradaPontuacao *outEntries, int max
     return count;
 }
 
-int persistencia_carregar_pontuacoes(EntradaPontuacao *outEntries, int maxEntries)
+int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries)
 {
     FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
     char line[160];
@@ -115,7 +115,7 @@ int persistencia_carregar_pontuacoes(EntradaPontuacao *outEntries, int maxEntrie
         return 0;
     }
 
-    memset(outEntries, 0, sizeof(EntradaPontuacao) * (size_t)maxEntries);
+    memset(outEntries, 0, sizeof(ScoreEntry) * (size_t)maxEntries);
 
     if (!f)
     {
@@ -124,19 +124,19 @@ int persistencia_carregar_pontuacoes(EntradaPontuacao *outEntries, int maxEntrie
 
     while (fgets(line, sizeof(line), f))
     {
-        EntradaPontuacao entry;
+        ScoreEntry entry;
         int inserted = 0;
         int i;
 
         memset(&entry, 0, sizeof(entry));
-        if (sscanf(line, "%23[^;];%d;%d", entry.nome, &entry.pontuacao, &entry.onda) != 3)
+        if (sscanf(line, "%23[^;];%d;%d", entry.name, &entry.score, &entry.wave) != 3)
         {
             continue;
         }
 
         for (i = 0; i < count; ++i)
         {
-            if (entry.pontuacao > outEntries[i].pontuacao)
+            if (entry.score > outEntries[i].score)
             {
                 int j;
                 int limit = (count < maxEntries) ? count : maxEntries - 1;

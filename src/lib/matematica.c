@@ -47,9 +47,9 @@ Vetor2D matematica_vetor2d_normalizar(Vetor2D v)
     return matematica_vetor2d(v.x / len, v.y / len);
 }
 
-Vetor2D matematica_mouse_para_mundo(Jogo *g)
+Vetor2D matematica_mouse_para_mundo(Game *g)
 {
-    return matematica_vetor2d((float)g->entrada.mouseX, (float)g->entrada.mouseY);
+    return matematica_vetor2d((float)g->input.mouseX, (float)g->input.mouseY);
 }
 
 float matematica_vetor2d_distance_sq(Vetor2D a, Vetor2D b)
