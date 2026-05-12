@@ -92,7 +92,7 @@ void jogo_atualizar(Jogo *jogo, float delta_tempo)
 
 void jogo_renderizar(Jogo *jogo)
 {
-    int i;
+    int indice_inimigo;
 
     glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -115,10 +115,10 @@ void jogo_renderizar(Jogo *jogo)
         jogo->tela == TELA_MELHORIA || jogo->tela == TELA_VITORIA || jogo->tela == TELA_DERROTA)
     {
         renderizar_plataformas(jogo);
-        for (i = 0; i < MAXIMO_INIMIGOS; ++i)
+        for (indice_inimigo = 0; indice_inimigo < MAXIMO_INIMIGOS; ++indice_inimigo)
         {
-            if (jogo->inimigos[i].ativo)
-                renderizar_inimigo(&jogo->inimigos[i]);
+            if (jogo->inimigos[indice_inimigo].ativo)
+                renderizar_inimigo(&jogo->inimigos[indice_inimigo]);
         }
         renderizar_projeteis(jogo);
         renderizar_particulas(jogo);

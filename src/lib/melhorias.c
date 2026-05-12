@@ -51,37 +51,37 @@ void melhorias_preencher_opcoes(OpcaoMelhoria *opcoes, TipoMelhoria tipo)
 
 void melhorias_rolar_opcoes(Jogo *jogo)
 {
-    int i;
-    int used[MELHORIA_CONTADOR] = {0};
+    int indice_opcao;
+    int tipos_usados[MELHORIA_CONTADOR] = {0};
 
     if (jogo->jogador.tem_guianca_pp)
-        used[MELHORIA_GUIANCA_PP] = 1;
+        tipos_usados[MELHORIA_GUIANCA_PP] = 1;
     if (jogo->jogador.tem_guianca_apn)
-        used[MELHORIA_GUIANCA_APN] = 1;
+        tipos_usados[MELHORIA_GUIANCA_APN] = 1;
 
-    for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
+    for (indice_opcao = 0; indice_opcao < MAXIMO_OPCOES_UPGRADE; ++indice_opcao)
     {
-        TipoMelhoria t;
-        int guard = 0;
+        TipoMelhoria tipo_sorteado;
+        int contador_tentativas = 0;
         do
         {
-            t = (TipoMelhoria)(rand() % MELHORIA_CONTADOR);
-            if (t == MELHORIA_GUIANCA_APN && !jogo->jogador.tem_guianca_pp)
-                t = MELHORIA_DANO;
-            if ((t == MELHORIA_MUNICAO) && (!jogo->jogador.tem_guianca_pp && !jogo->jogador.tem_guianca_apn))
+            tipo_sorteado = (TipoMelhoria)(rand() % MELHORIA_CONTADOR);
+            if (tipo_sorteado == MELHORIA_GUIANCA_APN && !jogo->jogador.tem_guianca_pp)
+                tipo_sorteado = MELHORIA_DANO;
+            if ((tipo_sorteado == MELHORIA_MUNICAO) && (!jogo->jogador.tem_guianca_pp && !jogo->jogador.tem_guianca_apn))
             {
-                t = MELHORIA_DANO;
+                tipo_sorteado = MELHORIA_DANO;
             }
-            guard++;
-        } while (used[t] && guard < 32);
-        used[t] = 1;
-        melhorias_preencher_opcoes(&jogo->melhorias[i], t);
+            contador_tentativas++;
+        } while (tipos_usados[tipo_sorteado] && contador_tentativas < 32);
+        tipos_usados[tipo_sorteado] = 1;
+        melhorias_preencher_opcoes(&jogo->melhorias[indice_opcao], tipo_sorteado);
     }
 }
 
-void melhorias_aplicar(Jogo *jogo, TipoMelhoria t)
+void melhorias_aplicar(Jogo *jogo, TipoMelhoria tipo)
 {
-    switch (t)
+    switch (tipo)
     {
     case MELHORIA_DANO:
         jogo->jogador.dano += 7.5f;

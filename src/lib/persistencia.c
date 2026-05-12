@@ -6,89 +6,89 @@
 
 void persistencia_carregar_stats(int *pontuacao_maxima, int *onda_maxima)
 {
-    FILE *f = fopen(ARQUIVO_STATS, "r");
-    if (!f)
+    FILE *arquivo = fopen(ARQUIVO_STATS, "r");
+    if (!arquivo)
     {
         *pontuacao_maxima = 0;
         *onda_maxima = 0;
         return;
     }
 
-    if (fscanf(f, "%d %d", pontuacao_maxima, onda_maxima) != 2)
+    if (fscanf(arquivo, "%d %d", pontuacao_maxima, onda_maxima) != 2)
     {
         *pontuacao_maxima = 0;
         *onda_maxima = 0;
     }
-    fclose(f);
+    fclose(arquivo);
 }
 
 void persistencia_salvar_stats(int pontuacao_maxima, int onda_maxima)
 {
-    FILE *f = fopen(ARQUIVO_STATS, "w");
-    if (!f)
+    FILE *arquivo = fopen(ARQUIVO_STATS, "w");
+    if (!arquivo)
     {
         return;
     }
-    fprintf(f, "%d %d\n", pontuacao_maxima, onda_maxima);
-    fclose(f);
+    fprintf(arquivo, "%d %d\n", pontuacao_maxima, onda_maxima);
+    fclose(arquivo);
 }
 
 void persistencia_apor_pontuacao(const char *nome, int pontuacao, int onda)
 {
-    FILE *f = fopen(ARQUIVO_SCOREBOARD, "a");
-    if (!f)
+    FILE *arquivo = fopen(ARQUIVO_SCOREBOARD, "a");
+    if (!arquivo)
     {
         return;
     }
-    fprintf(f, "%s;%d;%d\n", nome, pontuacao, onda);
-    fclose(f);
+    fprintf(arquivo, "%s;%d;%d\n", nome, pontuacao, onda);
+    fclose(arquivo);
 }
 
 void persistencia_limpar_pontuacoes(void)
 {
-    FILE *f = fopen(ARQUIVO_SCOREBOARD, "w");
-    if (!f)
+    FILE *arquivo = fopen(ARQUIVO_SCOREBOARD, "w");
+    if (!arquivo)
     {
         return;
     }
-    fclose(f);
+    fclose(arquivo);
 }
 
 void persistencia_carregar_configuracoes(int *audio_ativado, int *dificuldade)
 {
-    FILE *f = fopen(ARQUIVO_SETTINGS, "r");
-    int a = 1;
-    int d = 1;
+    FILE *arquivo = fopen(ARQUIVO_SETTINGS, "r");
+    int valor_audio = 1;
+    int valor_dificuldade = 1;
 
-    if (f)
+    if (arquivo)
     {
-        if (fscanf(f, "%d %d", &a, &d) != 2)
+        if (fscanf(arquivo, "%d %d", &valor_audio, &valor_dificuldade) != 2)
         {
-            a = 1;
-            d = 1;
+            valor_audio = 1;
+            valor_dificuldade = 1;
         }
-        fclose(f);
+        fclose(arquivo);
     }
 
-    if (d < 0)
-        d = 0;
-    if (d > 2)
-        d = 2;
+    if (valor_dificuldade < 0)
+        valor_dificuldade = 0;
+    if (valor_dificuldade > 2)
+        valor_dificuldade = 2;
 
     if (audio_ativado)
     {
-        *audio_ativado = a ? 1 : 0;
+        *audio_ativado = valor_audio ? 1 : 0;
     }
     if (dificuldade)
     {
-        *dificuldade = d;
+        *dificuldade = valor_dificuldade;
     }
 }
 
 void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade)
 {
-    FILE *f = fopen(ARQUIVO_SETTINGS, "w");
-    if (!f)
+    FILE *arquivo = fopen(ARQUIVO_SETTINGS, "w");
+    if (!arquivo)
     {
         return;
     }
@@ -96,15 +96,15 @@ void persistencia_salvar_configuracoes(int audio_ativado, int dificuldade)
         dificuldade = 0;
     if (dificuldade > 2)
         dificuldade = 2;
-    fprintf(f, "%d %d\n", audio_ativado ? 1 : 0, dificuldade);
-    fclose(f);
+    fprintf(arquivo, "%d %d\n", audio_ativado ? 1 : 0, dificuldade);
+    fclose(arquivo);
 }
 
 int persistencia_carregar_pontuacoes_altas(RegistroPontuacao *entradas_fora_lista, int entradas_maximas)
 {
-    FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
-    char line[160];
-    int count = 0;
+    FILE *arquivo = fopen(ARQUIVO_SCOREBOARD, "r");
+    char linha_lida[160];
+    int quantidade_carregada = 0;
 
     if (!entradas_fora_lista || entradas_maximas <= 0)
     {
@@ -113,58 +113,58 @@ int persistencia_carregar_pontuacoes_altas(RegistroPontuacao *entradas_fora_list
 
     memset(entradas_fora_lista, 0, sizeof(RegistroPontuacao) * (size_t)entradas_maximas);
 
-    if (!f)
+    if (!arquivo)
     {
         return 0;
     }
 
-    while (fgets(line, sizeof(line), f))
+    while (fgets(linha_lida, sizeof(linha_lida), arquivo))
     {
-        RegistroPontuacao entry;
-        int inserted = 0;
-        int i;
+        RegistroPontuacao registro;
+        int foi_inserido = 0;
+        int indice_entrada;
 
-        memset(&entry, 0, sizeof(entry));
-        if (sscanf(line, "%23[^;];%d;%d", entry.nome, &entry.pontuacao, &entry.onda) != 3)
+        memset(&registro, 0, sizeof(registro));
+        if (sscanf(linha_lida, "%23[^;];%d;%d", registro.nome, &registro.pontuacao, &registro.onda) != 3)
         {
             continue;
         }
 
-        for (i = 0; i < count; ++i)
+        for (indice_entrada = 0; indice_entrada < quantidade_carregada; ++indice_entrada)
         {
-            if (entry.pontuacao > entradas_fora_lista[i].pontuacao)
+            if (registro.pontuacao > entradas_fora_lista[indice_entrada].pontuacao)
             {
-                int j;
-                int limit = (count < entradas_maximas) ? count : entradas_maximas - 1;
-                for (j = limit; j > i; --j)
+                int indice_deslocamento;
+                int limite_deslocamento = (quantidade_carregada < entradas_maximas) ? quantidade_carregada : entradas_maximas - 1;
+                for (indice_deslocamento = limite_deslocamento; indice_deslocamento > indice_entrada; --indice_deslocamento)
                 {
-                    entradas_fora_lista[j] = entradas_fora_lista[j - 1];
+                    entradas_fora_lista[indice_deslocamento] = entradas_fora_lista[indice_deslocamento - 1];
                 }
-                entradas_fora_lista[i] = entry;
-                if (count < entradas_maximas)
+                entradas_fora_lista[indice_entrada] = registro;
+                if (quantidade_carregada < entradas_maximas)
                 {
-                    count++;
+                    quantidade_carregada++;
                 }
-                inserted = 1;
+                foi_inserido = 1;
                 break;
             }
         }
 
-        if (!inserted && count < entradas_maximas)
+        if (!foi_inserido && quantidade_carregada < entradas_maximas)
         {
-            entradas_fora_lista[count++] = entry;
+            entradas_fora_lista[quantidade_carregada++] = registro;
         }
     }
 
-    fclose(f);
-    return count;
+    fclose(arquivo);
+    return quantidade_carregada;
 }
 
 int persistencia_carregar_pontuacoes(RegistroPontuacao *entradas_fora_lista, int entradas_maximas)
 {
-    FILE *f = fopen(ARQUIVO_SCOREBOARD, "r");
-    char line[160];
-    int count = 0;
+    FILE *arquivo = fopen(ARQUIVO_SCOREBOARD, "r");
+    char linha_lida[160];
+    int quantidade_carregada = 0;
 
     if (!entradas_fora_lista || entradas_maximas <= 0)
     {
@@ -173,49 +173,49 @@ int persistencia_carregar_pontuacoes(RegistroPontuacao *entradas_fora_lista, int
 
     memset(entradas_fora_lista, 0, sizeof(RegistroPontuacao) * (size_t)entradas_maximas);
 
-    if (!f)
+    if (!arquivo)
     {
         return 0;
     }
 
-    while (fgets(line, sizeof(line), f))
+    while (fgets(linha_lida, sizeof(linha_lida), arquivo))
     {
-        RegistroPontuacao entry;
-        int inserted = 0;
-        int i;
+        RegistroPontuacao registro;
+        int foi_inserido = 0;
+        int indice_entrada;
 
-        memset(&entry, 0, sizeof(entry));
-        if (sscanf(line, "%23[^;];%d;%d", entry.nome, &entry.pontuacao, &entry.onda) != 3)
+        memset(&registro, 0, sizeof(registro));
+        if (sscanf(linha_lida, "%23[^;];%d;%d", registro.nome, &registro.pontuacao, &registro.onda) != 3)
         {
             continue;
         }
 
-        for (i = 0; i < count; ++i)
+        for (indice_entrada = 0; indice_entrada < quantidade_carregada; ++indice_entrada)
         {
-            if (entry.pontuacao > entradas_fora_lista[i].pontuacao)
+            if (registro.pontuacao > entradas_fora_lista[indice_entrada].pontuacao)
             {
-                int j;
-                int limit = (count < entradas_maximas) ? count : entradas_maximas - 1;
-                for (j = limit; j > i; --j)
+                int indice_deslocamento;
+                int limite_deslocamento = (quantidade_carregada < entradas_maximas) ? quantidade_carregada : entradas_maximas - 1;
+                for (indice_deslocamento = limite_deslocamento; indice_deslocamento > indice_entrada; --indice_deslocamento)
                 {
-                    entradas_fora_lista[j] = entradas_fora_lista[j - 1];
+                    entradas_fora_lista[indice_deslocamento] = entradas_fora_lista[indice_deslocamento - 1];
                 }
-                entradas_fora_lista[i] = entry;
-                if (count < entradas_maximas)
+                entradas_fora_lista[indice_entrada] = registro;
+                if (quantidade_carregada < entradas_maximas)
                 {
-                    count++;
+                    quantidade_carregada++;
                 }
-                inserted = 1;
+                foi_inserido = 1;
                 break;
             }
         }
 
-        if (!inserted && count < entradas_maximas)
+        if (!foi_inserido && quantidade_carregada < entradas_maximas)
         {
-            entradas_fora_lista[count++] = entry;
+            entradas_fora_lista[quantidade_carregada++] = registro;
         }
     }
 
-    fclose(f);
-    return count;
+    fclose(arquivo);
+    return quantidade_carregada;
 }

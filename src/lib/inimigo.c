@@ -65,14 +65,14 @@ float inimigo_tempo_inicio(int dificuldade)
 
 int inimigo_ondas_vitoria(int dificuldade)
 {
-    int v;
+    int ondas_para_vencer;
     if (dificuldade <= 0)
-        v = ONDAS_TOTAIS + DIFICULDADE_FACIL_AJUSTE_ONDAS_MAXIMAS;
+        ondas_para_vencer = ONDAS_TOTAIS + DIFICULDADE_FACIL_AJUSTE_ONDAS_MAXIMAS;
     else if (dificuldade >= 2)
-        v = ONDAS_TOTAIS + DIFICULDADE_DIFICIL_AJUSTE_ONDAS_MAXIMAS;
+        ondas_para_vencer = ONDAS_TOTAIS + DIFICULDADE_DIFICIL_AJUSTE_ONDAS_MAXIMAS;
     else
-        v = ONDAS_TOTAIS + DIFICULDADE_NORMAL_AJUSTE_ONDAS_MAXIMAS;
-    if (v < 1)
-        v = 1;
-    return v;
+        ondas_para_vencer = ONDAS_TOTAIS + DIFICULDADE_NORMAL_AJUSTE_ONDAS_MAXIMAS;
+    if (ondas_para_vencer < 1)
+        ondas_para_vencer = 1;
+    return ondas_para_vencer;
 }

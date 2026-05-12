@@ -57,9 +57,9 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
     {
         if (tecla == '1' || tecla == '2' || tecla == '3')
         {
-            int idx = tecla - '1';
-            if (idx >= 0 && idx < MAXIMO_OPCOES_UPGRADE)
-                melhorias_escolher(jogo, idx);
+            int indice_opcao = tecla - '1';
+            if (indice_opcao >= 0 && indice_opcao < MAXIMO_OPCOES_UPGRADE)
+                melhorias_escolher(jogo, indice_opcao);
         }
         else if (tecla == 'r' || tecla == 'R')
         {
@@ -90,9 +90,9 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
             jogo->dificuldade = (jogo->dificuldade + 1) % 3;
             persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
             {
-                char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
-                interface_notificar(jogo, msg);
+                char texto_mensagem[64];
+                snprintf(texto_mensagem, sizeof(texto_mensagem), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
+                interface_notificar(jogo, texto_mensagem);
             }
         }
         else if (tecla == 13 || tecla == 'm' || tecla == 'M')
@@ -103,9 +103,9 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
 
     if (jogo->tela == TELA_PONTUACOES)
     {
-        int pageCount = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
-        if (pageCount <= 0)
-            pageCount = 1;
+        int total_paginas = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
+        if (total_paginas <= 0)
+            total_paginas = 1;
 
         if (tecla == 'a' || tecla == 'A')
         {
@@ -116,8 +116,8 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
         else if (tecla == 'd' || tecla == 'D')
         {
             jogo->pagina_pontuacao++;
-            if (jogo->pagina_pontuacao > pageCount - 1)
-                jogo->pagina_pontuacao = pageCount - 1;
+            if (jogo->pagina_pontuacao > total_paginas - 1)
+                jogo->pagina_pontuacao = total_paginas - 1;
         }
         else if (tecla == 'c' || tecla == 'C')
         {
@@ -135,11 +135,11 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
 
     if ((jogo->tela == TELA_VITORIA || jogo->tela == TELA_DERROTA) && jogo->inserindo_nome)
     {
-        int len = (int)strlen(jogo->nome_jogador);
+        int comprimento_nome = (int)strlen(jogo->nome_jogador);
 
-        if (tecla == 8 && len > 0)
+        if (tecla == 8 && comprimento_nome > 0)
         {
-            jogo->nome_jogador[len - 1] = '\0';
+            jogo->nome_jogador[comprimento_nome - 1] = '\0';
             return;
         }
 
@@ -155,10 +155,10 @@ void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
             return;
         }
 
-        if ((isalnum(tecla) || tecla == ' ' || tecla == '_') && len < (int)sizeof(jogo->nome_jogador) - 1)
+        if ((isalnum(tecla) || tecla == ' ' || tecla == '_') && comprimento_nome < (int)sizeof(jogo->nome_jogador) - 1)
         {
-            jogo->nome_jogador[len] = (char)tecla;
-            jogo->nome_jogador[len + 1] = '\0';
+            jogo->nome_jogador[comprimento_nome] = (char)tecla;
+            jogo->nome_jogador[comprimento_nome + 1] = '\0';
         }
 
         if (jogo->nome_salvo && (tecla == 'm' || tecla == 'M' || tecla == 13))
@@ -186,13 +186,13 @@ void entrada_especial_pressionado(Jogo *jogo, int tecla, int x, int y)
 
     if (tecla == GLUT_KEY_F12)
     {
-        time_t t = time(NULL);
-        struct tm *tmv = localtime(&t);
-        char filename[128];
-        snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
-                 tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
-                 tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
-        if (imagem_salvar_ppm(filename, jogo->largura, jogo->altura))
+        time_t tempo_atual = time(NULL);
+        struct tm *tempo_local = localtime(&tempo_atual);
+        char nome_arquivo[128];
+        snprintf(nome_arquivo, sizeof(nome_arquivo), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
+                 tempo_local->tm_year + 1900, tempo_local->tm_mon + 1, tempo_local->tm_mday,
+                 tempo_local->tm_hour, tempo_local->tm_min, tempo_local->tm_sec);
+        if (imagem_salvar_ppm(nome_arquivo, jogo->largura, jogo->altura))
             interface_notificar(jogo, "Screenshot saved");
         else
             interface_notificar(jogo, "Screenshot failed");
@@ -209,10 +209,10 @@ void entrada_especial_levantado(Jogo *jogo, int tecla, int x, int y)
 
 void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 {
-    float wx;
-    float wy;
-    float bx;
-    float by;
+    float clique_x;
+    float clique_y;
+    float pos_x_botao;
+    float pos_y_botao;
 
     jogo->entrada.mouse_x = x;
     jogo->entrada.mouse_y = y;
@@ -230,46 +230,46 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
         }
     }
 
-    wx = (float)x;
-    wy = (float)y;
+    clique_x = (float)x;
+    clique_y = (float)y;
 
     if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN)
         return;
 
     if (jogo->tela == TELA_MENU)
     {
-        float uiScale = (float)jogo->largura / 1280.0f;
-        float hScale = (float)jogo->altura / 720.0f;
-        float btnW;
-        float startH;
-        float subH;
-        if (hScale < uiScale)
-            uiScale = hScale;
-        if (uiScale < 0.75f)
-            uiScale = 0.75f;
-        if (uiScale > 1.15f)
-            uiScale = 1.15f;
+        float escala_ui = (float)jogo->largura / 1280.0f;
+        float escala_altura = (float)jogo->altura / 720.0f;
+        float largura_botao;
+        float altura_botao_inicio;
+        float altura_botao_sub;
+        if (escala_altura < escala_ui)
+            escala_ui = escala_altura;
+        if (escala_ui < 0.75f)
+            escala_ui = 0.75f;
+        if (escala_ui > 1.15f)
+            escala_ui = 1.15f;
 
-        btnW = 300.0f * uiScale;
-        startH = 60.0f * uiScale;
-        subH = 50.0f * uiScale;
-        bx = jogo->largura * 0.5f - btnW * 0.5f;
-        by = jogo->altura * 0.30f;
-        if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + startH)
+        largura_botao = 300.0f * escala_ui;
+        altura_botao_inicio = 60.0f * escala_ui;
+        altura_botao_sub = 50.0f * escala_ui;
+        pos_x_botao = jogo->largura * 0.5f - largura_botao * 0.5f;
+        pos_y_botao = jogo->altura * 0.30f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + largura_botao && clique_y >= pos_y_botao && clique_y <= pos_y_botao + altura_botao_inicio)
         {
             jogo_reiniciar(jogo);
             return;
         }
 
-        by = jogo->altura * 0.40f;
-        if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
+        pos_y_botao = jogo->altura * 0.40f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + largura_botao && clique_y >= pos_y_botao && clique_y <= pos_y_botao + altura_botao_sub)
         {
             jogo->tela = TELA_OPCOES;
             return;
         }
 
-        by = jogo->altura * 0.50f;
-        if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
+        pos_y_botao = jogo->altura * 0.50f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + largura_botao && clique_y >= pos_y_botao && clique_y <= pos_y_botao + altura_botao_sub)
         {
             jogo->tela = TELA_PONTUACOES;
             return;
@@ -278,9 +278,9 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 
     if (jogo->tela == TELA_OPCOES)
     {
-        bx = jogo->largura * 0.5f - 180.0f;
-        by = jogo->altura * 0.56f;
-        if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
+        pos_x_botao = jogo->largura * 0.5f - 180.0f;
+        pos_y_botao = jogo->altura * 0.56f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 360.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 56.0f)
         {
             jogo->audio_habilitado = !jogo->audio_habilitado;
             audio_definir_ativacao(jogo->audio_habilitado);
@@ -289,22 +289,22 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
             return;
         }
 
-        by = jogo->altura * 0.46f;
-        if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
+        pos_y_botao = jogo->altura * 0.46f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 360.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 56.0f)
         {
             jogo->dificuldade = (jogo->dificuldade + 1) % 3;
             persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
             {
-                char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
-                interface_notificar(jogo, msg);
+                char texto_mensagem[64];
+                snprintf(texto_mensagem, sizeof(texto_mensagem), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
+                interface_notificar(jogo, texto_mensagem);
             }
             return;
         }
 
-        bx = jogo->largura * 0.5f - 110.0f;
-        by = jogo->altura * 0.31f;
-        if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
+        pos_x_botao = jogo->largura * 0.5f - 110.0f;
+        pos_y_botao = jogo->altura * 0.31f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 220.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 50.0f)
         {
             jogo->tela = TELA_MENU;
             return;
@@ -313,13 +313,13 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 
     if (jogo->tela == TELA_PONTUACOES)
     {
-        int pageCount = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
-        if (pageCount <= 0)
-            pageCount = 1;
+        int total_paginas = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
+        if (total_paginas <= 0)
+            total_paginas = 1;
 
-        bx = jogo->largura * 0.5f - 255.0f;
-        by = jogo->altura * 0.20f;
-        if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
+        pos_x_botao = jogo->largura * 0.5f - 255.0f;
+        pos_y_botao = jogo->altura * 0.20f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 160.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 44.0f)
         {
             jogo->pagina_pontuacao--;
             if (jogo->pagina_pontuacao < 0)
@@ -327,17 +327,17 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
             return;
         }
 
-        bx = jogo->largura * 0.5f + 95.0f;
-        if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
+        pos_x_botao = jogo->largura * 0.5f + 95.0f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 160.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 44.0f)
         {
             jogo->pagina_pontuacao++;
-            if (jogo->pagina_pontuacao > pageCount - 1)
-                jogo->pagina_pontuacao = pageCount - 1;
+            if (jogo->pagina_pontuacao > total_paginas - 1)
+                jogo->pagina_pontuacao = total_paginas - 1;
             return;
         }
 
-        bx = jogo->largura * 0.5f - 110.0f;
-        if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
+        pos_x_botao = jogo->largura * 0.5f - 110.0f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 220.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 44.0f)
         {
             persistencia_limpar_pontuacoes();
             interface_refrescar_pontuacoes_maximas(jogo);
@@ -347,8 +347,8 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
             return;
         }
 
-        by = jogo->altura * 0.11f;
-        if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
+        pos_y_botao = jogo->altura * 0.11f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 220.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 44.0f)
         {
             jogo->tela = TELA_MENU;
             return;
@@ -357,54 +357,54 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 
     if (jogo->tela == TELA_MELHORIA)
     {
-        float uiScale = (float)jogo->largura / 1280.0f;
-        float hScale = (float)jogo->altura / 720.0f;
-        float centerX = jogo->largura * 0.5f;
-        float cardW;
-        float cardH;
-        float cardGap;
-        float totalW;
-        float startX;
-        float cardY;
-        float rerollW;
-        float rerollH;
-        float rerollX;
-        float rerollY;
-        int i;
+        float escala_ui = (float)jogo->largura / 1280.0f;
+        float escala_altura = (float)jogo->altura / 720.0f;
+        float centro_x = jogo->largura * 0.5f;
+        float largura_cartao;
+        float altura_cartao;
+        float espacamento_cartao;
+        float largura_total_cartoes;
+        float pos_x_inicio_cartoes;
+        float pos_y_cartoes;
+        float largura_rerolar;
+        float altura_rerolar;
+        float pos_x_rerolar;
+        float pos_y_rerolar;
+        int indice_opcao;
 
-        if (hScale < uiScale)
-            uiScale = hScale;
-        if (uiScale < 0.78f)
-            uiScale = 0.78f;
-        if (uiScale > 1.08f)
-            uiScale = 1.08f;
+        if (escala_altura < escala_ui)
+            escala_ui = escala_altura;
+        if (escala_ui < 0.78f)
+            escala_ui = 0.78f;
+        if (escala_ui > 1.08f)
+            escala_ui = 1.08f;
 
-        cardW = 170.0f * uiScale;
-        cardH = 130.0f * uiScale;
-        cardGap = 20.0f * uiScale;
-        totalW = cardW * MAXIMO_OPCOES_UPGRADE + cardGap * (MAXIMO_OPCOES_UPGRADE - 1);
-        startX = centerX - totalW * 0.5f;
-        cardY = jogo->altura * 0.36f;
+        largura_cartao = 170.0f * escala_ui;
+        altura_cartao = 130.0f * escala_ui;
+        espacamento_cartao = 20.0f * escala_ui;
+        largura_total_cartoes = largura_cartao * MAXIMO_OPCOES_UPGRADE + espacamento_cartao * (MAXIMO_OPCOES_UPGRADE - 1);
+        pos_x_inicio_cartoes = centro_x - largura_total_cartoes * 0.5f;
+        pos_y_cartoes = jogo->altura * 0.36f;
 
-        rerollW = 220.0f * uiScale;
-        rerollH = 44.0f * uiScale;
-        rerollX = centerX - rerollW * 0.5f;
-        rerollY = cardY + cardH + 20.0f * uiScale;
+        largura_rerolar = 220.0f * escala_ui;
+        altura_rerolar = 44.0f * escala_ui;
+        pos_x_rerolar = centro_x - largura_rerolar * 0.5f;
+        pos_y_rerolar = pos_y_cartoes + altura_cartao + 20.0f * escala_ui;
 
-        for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
+        for (indice_opcao = 0; indice_opcao < MAXIMO_OPCOES_UPGRADE; ++indice_opcao)
         {
-            bx = startX + i * (cardW + cardGap);
-            by = cardY;
-            if (wx >= bx && wx <= bx + cardW && wy >= by && wy <= by + cardH)
+            pos_x_botao = pos_x_inicio_cartoes + indice_opcao * (largura_cartao + espacamento_cartao);
+            pos_y_botao = pos_y_cartoes;
+            if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + largura_cartao && clique_y >= pos_y_botao && clique_y <= pos_y_botao + altura_cartao)
             {
-                melhorias_escolher(jogo, i);
+                melhorias_escolher(jogo, indice_opcao);
                 return;
             }
         }
 
-        bx = rerollX;
-        by = rerollY;
-        if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && jogo->ouro >= 3)
+        pos_x_botao = pos_x_rerolar;
+        pos_y_botao = pos_y_rerolar;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + largura_rerolar && clique_y >= pos_y_botao && clique_y <= pos_y_botao + altura_rerolar && jogo->ouro >= 3)
         {
             jogo->ouro -= 3;
             melhorias_rolar_opcoes(jogo);
@@ -415,9 +415,9 @@ void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 
     if ((jogo->tela == TELA_VITORIA || jogo->tela == TELA_DERROTA) && jogo->nome_salvo)
     {
-        bx = jogo->largura * 0.5f - 110.0f;
-        by = jogo->altura * 0.45f;
-        if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
+        pos_x_botao = jogo->largura * 0.5f - 110.0f;
+        pos_y_botao = jogo->altura * 0.45f;
+        if (clique_x >= pos_x_botao && clique_x <= pos_x_botao + 220.0f && clique_y >= pos_y_botao && clique_y <= pos_y_botao + 50.0f)
         {
             jogo->tela = TELA_MENU;
             jogo->inserindo_nome = 0;

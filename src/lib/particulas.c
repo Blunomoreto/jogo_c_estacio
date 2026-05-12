@@ -5,23 +5,23 @@
 
 void particulas_criar(Jogo *jogo, Vetor2D vetor, int quantidade, Cor cor)
 {
-    int i;
-    for (i = 0; i < quantidade; ++i)
+    int indice_criacao;
+    for (indice_criacao = 0; indice_criacao < quantidade; ++indice_criacao)
     {
-        int j;
-        for (j = 0; j < MAXIMO_PARTICULAS; ++j)
+        int indice_particula;
+        for (indice_particula = 0; indice_particula < MAXIMO_PARTICULAS; ++indice_particula)
         {
-            Particula *pt = &jogo->particulas[j];
-            if (!pt->ativo)
+            Particula *particula = &jogo->particulas[indice_particula];
+            if (!particula->ativo)
             {
-                float ang = matematica_float_aleatorio_alcance(0.0f, 2.0f * (float)M_PI);
-                float spd = matematica_float_aleatorio_alcance(30.0f, 180.0f);
-                pt->ativo = 1;
-                pt->pos = vetor;
-                pt->vel = matematica_vetor2d(cosf(ang) * spd, sinf(ang) * spd);
-                pt->tamanho = matematica_float_aleatorio_alcance(2.0f, 5.0f);
-                pt->vida = matematica_float_aleatorio_alcance(0.2f, 0.6f);
-                pt->cor = cor;
+                float angulo_aleatorio = matematica_float_aleatorio_alcance(0.0f, 2.0f * (float)M_PI);
+                float velocidade_aleatoria = matematica_float_aleatorio_alcance(30.0f, 180.0f);
+                particula->ativo = 1;
+                particula->pos = vetor;
+                particula->vel = matematica_vetor2d(cosf(angulo_aleatorio) * velocidade_aleatoria, sinf(angulo_aleatorio) * velocidade_aleatoria);
+                particula->tamanho = matematica_float_aleatorio_alcance(2.0f, 5.0f);
+                particula->vida = matematica_float_aleatorio_alcance(0.2f, 0.6f);
+                particula->cor = cor;
                 break;
             }
         }
