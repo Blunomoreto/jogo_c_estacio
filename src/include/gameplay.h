@@ -3,6 +3,6 @@
 
 #include "tipos.h"
 
-void gameplay_atualizar_playing(Game *jogo, float delta_tempo);
+void gameplay_atualizar_playing(Jogo *jogo, float delta_tempo);
 
 #endif

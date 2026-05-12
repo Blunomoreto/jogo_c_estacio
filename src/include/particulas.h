@@ -3,6 +3,6 @@
 
 #include "tipos.h"
 
-void particulas_criar(Game *jogo, Vetor2D vetor, int quantidade, Color cor);
+void particulas_criar(Jogo *jogo, Vetor2D vetor, int quantidade, Cor cor);
 
 #endif

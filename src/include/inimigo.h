@@ -3,7 +3,7 @@
 
 #include "tipos.h"
 
-Vetor2D inimigo_posicao(const Enemy *inimigo);
+Vetor2D inimigo_posicao(const Inimigo *inimigo);
 
 const char *inimigo_nome_dificuldade(int dificuldade);
 

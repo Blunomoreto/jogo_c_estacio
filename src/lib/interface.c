@@ -5,35 +5,35 @@
 #include <stdio.h>
 #include <string.h>
 
-void interface_refrescar_pontuacoes_maximas(Game *jogo)
+void interface_refrescar_pontuacoes_maximas(Jogo *jogo)
 {
-    jogo->topScoreCount = persistencia_carregar_pontuacoes_altas(jogo->topScores, 5);
+    jogo->numero_melhores_pontuacoes = persistencia_carregar_pontuacoes_altas(jogo->melhores_pontuacoes, 5);
 }
 
-void interface_refrescar_pontuacoes(Game *jogo)
+void interface_refrescar_pontuacoes(Jogo *jogo)
 {
-    jogo->allScoreCount = persistencia_carregar_pontuacoes(jogo->allScores, 64);
-    if (jogo->scorePage < 0)
-        jogo->scorePage = 0;
+    jogo->numero_todas_pontuacoes = persistencia_carregar_pontuacoes(jogo->todas_pontuacoes, 64);
+    if (jogo->pagina_pontuacao < 0)
+        jogo->pagina_pontuacao = 0;
 }
 
-void interface_notificar(Game *jogo, const char *mensagem)
+void interface_notificar(Jogo *jogo, const char *mensagem)
 {
-    snprintf(jogo->toastMessage, sizeof(jogo->toastMessage), "%s", mensagem ? mensagem : "");
-    jogo->toastTimer = 2.2f;
+    snprintf(jogo->mensagem_toast, sizeof(jogo->mensagem_toast), "%s", mensagem ? mensagem : "");
+    jogo->temporizador_toast = 2.2f;
 }
 
-void interface_encerrar_partida(Game *jogo, GameScreen fim)
+void interface_encerrar_partida(Jogo *jogo, TelaJogo fim)
 {
     audio_parar_musica();
-    jogo->screen = fim;
-    jogo->enteringName = 1;
-    jogo->nameSaved = 0;
+    jogo->tela = fim;
+    jogo->inserindo_nome = 1;
+    jogo->nome_salvo = 0;
 
-    if (jogo->score > jogo->highScore)
-        jogo->highScore = jogo->score;
-    if (jogo->wave > jogo->maxWaveEver)
-        jogo->maxWaveEver = jogo->wave;
-    persistencia_salvar_stats(jogo->highScore, jogo->maxWaveEver);
+    if (jogo->pontuacao > jogo->recorde_pontuacao_maxima)
+        jogo->recorde_pontuacao_maxima = jogo->pontuacao;
+    if (jogo->onda > jogo->recorde_onda_maxima)
+        jogo->recorde_onda_maxima = jogo->onda;
+    persistencia_salvar_stats(jogo->recorde_pontuacao_maxima, jogo->recorde_onda_maxima);
     interface_refrescar_pontuacoes_maximas(jogo);
 }

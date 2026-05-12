@@ -13,47 +13,47 @@
 #include <string.h>
 #include <time.h>
 
-void entrada_tecla_pressionada(Game *jogo, unsigned char tecla, int x, int y)
+void entrada_tecla_pressionada(Jogo *jogo, unsigned char tecla, int x, int y)
 {
     (void)x;
     (void)y;
 
     if (tecla < 256)
     {
-        jogo->input.keys[tecla] = 1;
-        jogo->input.keysPressed[tecla] = 1;
+        jogo->entrada.teclas[tecla] = 1;
+        jogo->entrada.teclas_pressionadas[tecla] = 1;
     }
 
     if (tecla == 27)
     {
-        if (jogo->screen == SCREEN_PLAYING)
-            jogo->screen = SCREEN_PAUSED;
-        else if (jogo->screen == SCREEN_PAUSED)
-            jogo->screen = SCREEN_PLAYING;
-        else if (jogo->screen == SCREEN_OPTIONS)
-            jogo->screen = SCREEN_MENU;
-        else if (jogo->screen == SCREEN_SCORES)
-            jogo->screen = SCREEN_MENU;
+        if (jogo->tela == TELA_JOGANDO)
+            jogo->tela = TELA_PAUSADA;
+        else if (jogo->tela == TELA_PAUSADA)
+            jogo->tela = TELA_JOGANDO;
+        else if (jogo->tela == TELA_OPCOES)
+            jogo->tela = TELA_MENU;
+        else if (jogo->tela == TELA_PONTUACOES)
+            jogo->tela = TELA_MENU;
     }
 
-    if ((tecla == 'p' || tecla == 'P') && jogo->screen == SCREEN_PLAYING)
-        jogo->screen = SCREEN_PAUSED;
-    else if ((tecla == 'p' || tecla == 'P') && jogo->screen == SCREEN_PAUSED)
-        jogo->screen = SCREEN_PLAYING;
+    if ((tecla == 'p' || tecla == 'P') && jogo->tela == TELA_JOGANDO)
+        jogo->tela = TELA_PAUSADA;
+    else if ((tecla == 'p' || tecla == 'P') && jogo->tela == TELA_PAUSADA)
+        jogo->tela = TELA_JOGANDO;
 
-    if (jogo->screen == SCREEN_MENU && (tecla == 13 || tecla == ' '))
+    if (jogo->tela == TELA_MENU && (tecla == 13 || tecla == ' '))
         jogo_reiniciar(jogo);
 
-    if (jogo->screen == SCREEN_MENU && (tecla == 'o' || tecla == 'O'))
-        jogo->screen = SCREEN_OPTIONS;
+    if (jogo->tela == TELA_MENU && (tecla == 'o' || tecla == 'O'))
+        jogo->tela = TELA_OPCOES;
 
-    if (jogo->screen == SCREEN_MENU && (tecla == 'l' || tecla == 'L'))
-        jogo->screen = SCREEN_SCORES;
+    if (jogo->tela == TELA_MENU && (tecla == 'l' || tecla == 'L'))
+        jogo->tela = TELA_PONTUACOES;
 
-    if (jogo->screen == SCREEN_PAUSED && tecla == 13)
-        jogo->screen = SCREEN_PLAYING;
+    if (jogo->tela == TELA_PAUSADA && tecla == 13)
+        jogo->tela = TELA_JOGANDO;
 
-    if (jogo->screen == SCREEN_UPGRADE)
+    if (jogo->tela == TELA_MELHORIA)
     {
         if (tecla == '1' || tecla == '2' || tecla == '3')
         {
@@ -63,9 +63,9 @@ void entrada_tecla_pressionada(Game *jogo, unsigned char tecla, int x, int y)
         }
         else if (tecla == 'r' || tecla == 'R')
         {
-            if (jogo->gold >= 3)
+            if (jogo->ouro >= 3)
             {
-                jogo->gold -= 3;
+                jogo->ouro -= 3;
                 melhorias_rolar_opcoes(jogo);
                 interface_notificar(jogo, "Upgrade rerolled (-3 gold)");
             }
@@ -76,113 +76,113 @@ void entrada_tecla_pressionada(Game *jogo, unsigned char tecla, int x, int y)
         }
     }
 
-    if (jogo->screen == SCREEN_OPTIONS)
+    if (jogo->tela == TELA_OPCOES)
     {
         if (tecla == 'a' || tecla == 'A')
         {
-            jogo->audioEnabled = !jogo->audioEnabled;
-            audio_definir_ativacao(jogo->audioEnabled);
-            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
-            interface_notificar(jogo, jogo->audioEnabled ? "Audio ON" : "Audio OFF");
+            jogo->audio_habilitado = !jogo->audio_habilitado;
+            audio_definir_ativacao(jogo->audio_habilitado);
+            persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
+            interface_notificar(jogo, jogo->audio_habilitado ? "Audio ON" : "Audio OFF");
         }
         else if (tecla == 'd' || tecla == 'D')
         {
-            jogo->difficulty = (jogo->difficulty + 1) % 3;
-            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
+            jogo->dificuldade = (jogo->dificuldade + 1) % 3;
+            persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->difficulty));
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
                 interface_notificar(jogo, msg);
             }
         }
         else if (tecla == 13 || tecla == 'm' || tecla == 'M')
         {
-            jogo->screen = SCREEN_MENU;
+            jogo->tela = TELA_MENU;
         }
     }
 
-    if (jogo->screen == SCREEN_SCORES)
+    if (jogo->tela == TELA_PONTUACOES)
     {
-        int pageCount = (jogo->allScoreCount + jogo->scorePageSize - 1) / jogo->scorePageSize;
+        int pageCount = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
         if (pageCount <= 0)
             pageCount = 1;
 
         if (tecla == 'a' || tecla == 'A')
         {
-            jogo->scorePage--;
-            if (jogo->scorePage < 0)
-                jogo->scorePage = 0;
+            jogo->pagina_pontuacao--;
+            if (jogo->pagina_pontuacao < 0)
+                jogo->pagina_pontuacao = 0;
         }
         else if (tecla == 'd' || tecla == 'D')
         {
-            jogo->scorePage++;
-            if (jogo->scorePage > pageCount - 1)
-                jogo->scorePage = pageCount - 1;
+            jogo->pagina_pontuacao++;
+            if (jogo->pagina_pontuacao > pageCount - 1)
+                jogo->pagina_pontuacao = pageCount - 1;
         }
         else if (tecla == 'c' || tecla == 'C')
         {
             persistencia_limpar_pontuacoes();
             interface_refrescar_pontuacoes_maximas(jogo);
             interface_refrescar_pontuacoes(jogo);
-            jogo->scorePage = 0;
+            jogo->pagina_pontuacao = 0;
             interface_notificar(jogo, "Score history cleared");
         }
         else if (tecla == 'm' || tecla == 'M' || tecla == 13)
         {
-            jogo->screen = SCREEN_MENU;
+            jogo->tela = TELA_MENU;
         }
     }
 
-    if ((jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE) && jogo->enteringName)
+    if ((jogo->tela == TELA_VITORIA || jogo->tela == TELA_DERROTA) && jogo->inserindo_nome)
     {
-        int len = (int)strlen(jogo->playerName);
+        int len = (int)strlen(jogo->nome_jogador);
 
         if (tecla == 8 && len > 0)
         {
-            jogo->playerName[len - 1] = '\0';
+            jogo->nome_jogador[len - 1] = '\0';
             return;
         }
 
-        if (tecla == 13 && !jogo->nameSaved)
+        if (tecla == 13 && !jogo->nome_salvo)
         {
-            if (strlen(jogo->playerName) == 0)
-                snprintf(jogo->playerName, sizeof(jogo->playerName), "Player");
-            persistencia_apor_pontuacao(jogo->playerName, jogo->score, jogo->wave);
-            jogo->nameSaved = 1;
+            if (strlen(jogo->nome_jogador) == 0)
+                snprintf(jogo->nome_jogador, sizeof(jogo->nome_jogador), "Player");
+            persistencia_apor_pontuacao(jogo->nome_jogador, jogo->pontuacao, jogo->onda);
+            jogo->nome_salvo = 1;
             interface_refrescar_pontuacoes_maximas(jogo);
             interface_refrescar_pontuacoes(jogo);
             interface_notificar(jogo, "Score saved");
             return;
         }
 
-        if ((isalnum(tecla) || tecla == ' ' || tecla == '_') && len < (int)sizeof(jogo->playerName) - 1)
+        if ((isalnum(tecla) || tecla == ' ' || tecla == '_') && len < (int)sizeof(jogo->nome_jogador) - 1)
         {
-            jogo->playerName[len] = (char)tecla;
-            jogo->playerName[len + 1] = '\0';
+            jogo->nome_jogador[len] = (char)tecla;
+            jogo->nome_jogador[len + 1] = '\0';
         }
 
-        if (jogo->nameSaved && (tecla == 'm' || tecla == 'M' || tecla == 13))
+        if (jogo->nome_salvo && (tecla == 'm' || tecla == 'M' || tecla == 13))
         {
-            jogo->screen = SCREEN_MENU;
-            jogo->enteringName = 0;
+            jogo->tela = TELA_MENU;
+            jogo->inserindo_nome = 0;
         }
     }
 }
 
-void entrada_tecla_levantada(Game *jogo, unsigned char tecla, int x, int y)
+void entrada_tecla_levantada(Jogo *jogo, unsigned char tecla, int x, int y)
 {
     (void)x;
     (void)y;
     if (tecla < 256)
-        jogo->input.keys[tecla] = 0;
+        jogo->entrada.teclas[tecla] = 0;
 }
 
-void entrada_especial_pressionado(Game *jogo, int tecla, int x, int y)
+void entrada_especial_pressionado(Jogo *jogo, int tecla, int x, int y)
 {
     (void)x;
     (void)y;
     if (tecla < 256)
-        jogo->input.special[tecla] = 1;
+        jogo->entrada.especiais[tecla] = 1;
 
     if (tecla == GLUT_KEY_F12)
     {
@@ -192,41 +192,41 @@ void entrada_especial_pressionado(Game *jogo, int tecla, int x, int y)
         snprintf(filename, sizeof(filename), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
                  tmv->tm_year + 1900, tmv->tm_mon + 1, tmv->tm_mday,
                  tmv->tm_hour, tmv->tm_min, tmv->tm_sec);
-        if (imagem_salvar_ppm(filename, jogo->width, jogo->height))
+        if (imagem_salvar_ppm(filename, jogo->largura, jogo->altura))
             interface_notificar(jogo, "Screenshot saved");
         else
             interface_notificar(jogo, "Screenshot failed");
     }
 }
 
-void entrada_especial_levantado(Game *jogo, int tecla, int x, int y)
+void entrada_especial_levantado(Jogo *jogo, int tecla, int x, int y)
 {
     (void)x;
     (void)y;
     if (tecla < 256)
-        jogo->input.special[tecla] = 0;
+        jogo->entrada.especiais[tecla] = 0;
 }
 
-void entrada_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
+void entrada_mouse_pressionado(Jogo *jogo, int botao, int estado, int x, int y)
 {
     float wx;
     float wy;
     float bx;
     float by;
 
-    jogo->input.mouseX = x;
-    jogo->input.mouseY = y;
+    jogo->entrada.mouse_x = x;
+    jogo->entrada.mouse_y = y;
 
     if (botao >= 0 && botao < 3)
     {
         if (estado == GLUT_DOWN)
         {
-            jogo->input.mouseDown[botao] = 1;
-            jogo->input.mousePressed[botao] = 1;
+            jogo->entrada.mouse_segurado[botao] = 1;
+            jogo->entrada.mouse_clicado[botao] = 1;
         }
         else
         {
-            jogo->input.mouseDown[botao] = 0;
+            jogo->entrada.mouse_segurado[botao] = 0;
         }
     }
 
@@ -236,10 +236,10 @@ void entrada_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
     if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN)
         return;
 
-    if (jogo->screen == SCREEN_MENU)
+    if (jogo->tela == TELA_MENU)
     {
-        float uiScale = (float)jogo->width / 1280.0f;
-        float hScale = (float)jogo->height / 720.0f;
+        float uiScale = (float)jogo->largura / 1280.0f;
+        float hScale = (float)jogo->altura / 720.0f;
         float btnW;
         float startH;
         float subH;
@@ -253,113 +253,113 @@ void entrada_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
         btnW = 300.0f * uiScale;
         startH = 60.0f * uiScale;
         subH = 50.0f * uiScale;
-        bx = jogo->width * 0.5f - btnW * 0.5f;
-        by = jogo->height * 0.30f;
+        bx = jogo->largura * 0.5f - btnW * 0.5f;
+        by = jogo->altura * 0.30f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + startH)
         {
             jogo_reiniciar(jogo);
             return;
         }
 
-        by = jogo->height * 0.40f;
+        by = jogo->altura * 0.40f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
         {
-            jogo->screen = SCREEN_OPTIONS;
+            jogo->tela = TELA_OPCOES;
             return;
         }
 
-        by = jogo->height * 0.50f;
+        by = jogo->altura * 0.50f;
         if (wx >= bx && wx <= bx + btnW && wy >= by && wy <= by + subH)
         {
-            jogo->screen = SCREEN_SCORES;
+            jogo->tela = TELA_PONTUACOES;
             return;
         }
     }
 
-    if (jogo->screen == SCREEN_OPTIONS)
+    if (jogo->tela == TELA_OPCOES)
     {
-        bx = jogo->width * 0.5f - 180.0f;
-        by = jogo->height * 0.56f;
+        bx = jogo->largura * 0.5f - 180.0f;
+        by = jogo->altura * 0.56f;
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
-            jogo->audioEnabled = !jogo->audioEnabled;
-            audio_definir_ativacao(jogo->audioEnabled);
-            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
-            interface_notificar(jogo, jogo->audioEnabled ? "Audio ON" : "Audio OFF");
+            jogo->audio_habilitado = !jogo->audio_habilitado;
+            audio_definir_ativacao(jogo->audio_habilitado);
+            persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
+            interface_notificar(jogo, jogo->audio_habilitado ? "Audio ON" : "Audio OFF");
             return;
         }
 
-        by = jogo->height * 0.46f;
+        by = jogo->altura * 0.46f;
         if (wx >= bx && wx <= bx + 360.0f && wy >= by && wy <= by + 56.0f)
         {
-            jogo->difficulty = (jogo->difficulty + 1) % 3;
-            persistencia_salvar_configuracoes(jogo->audioEnabled, jogo->difficulty);
+            jogo->dificuldade = (jogo->dificuldade + 1) % 3;
+            persistencia_salvar_configuracoes(jogo->audio_habilitado, jogo->dificuldade);
             {
                 char msg[64];
-                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->difficulty));
+                snprintf(msg, sizeof(msg), "Difficulty: %s", inimigo_nome_dificuldade(jogo->dificuldade));
                 interface_notificar(jogo, msg);
             }
             return;
         }
 
-        bx = jogo->width * 0.5f - 110.0f;
-        by = jogo->height * 0.31f;
+        bx = jogo->largura * 0.5f - 110.0f;
+        by = jogo->altura * 0.31f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
         {
-            jogo->screen = SCREEN_MENU;
+            jogo->tela = TELA_MENU;
             return;
         }
     }
 
-    if (jogo->screen == SCREEN_SCORES)
+    if (jogo->tela == TELA_PONTUACOES)
     {
-        int pageCount = (jogo->allScoreCount + jogo->scorePageSize - 1) / jogo->scorePageSize;
+        int pageCount = (jogo->numero_todas_pontuacoes + jogo->itens_por_pagina_pontuacao - 1) / jogo->itens_por_pagina_pontuacao;
         if (pageCount <= 0)
             pageCount = 1;
 
-        bx = jogo->width * 0.5f - 255.0f;
-        by = jogo->height * 0.20f;
+        bx = jogo->largura * 0.5f - 255.0f;
+        by = jogo->altura * 0.20f;
         if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
         {
-            jogo->scorePage--;
-            if (jogo->scorePage < 0)
-                jogo->scorePage = 0;
+            jogo->pagina_pontuacao--;
+            if (jogo->pagina_pontuacao < 0)
+                jogo->pagina_pontuacao = 0;
             return;
         }
 
-        bx = jogo->width * 0.5f + 95.0f;
+        bx = jogo->largura * 0.5f + 95.0f;
         if (wx >= bx && wx <= bx + 160.0f && wy >= by && wy <= by + 44.0f)
         {
-            jogo->scorePage++;
-            if (jogo->scorePage > pageCount - 1)
-                jogo->scorePage = pageCount - 1;
+            jogo->pagina_pontuacao++;
+            if (jogo->pagina_pontuacao > pageCount - 1)
+                jogo->pagina_pontuacao = pageCount - 1;
             return;
         }
 
-        bx = jogo->width * 0.5f - 110.0f;
+        bx = jogo->largura * 0.5f - 110.0f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
         {
             persistencia_limpar_pontuacoes();
             interface_refrescar_pontuacoes_maximas(jogo);
             interface_refrescar_pontuacoes(jogo);
-            jogo->scorePage = 0;
+            jogo->pagina_pontuacao = 0;
             interface_notificar(jogo, "Score history cleared");
             return;
         }
 
-        by = jogo->height * 0.11f;
+        by = jogo->altura * 0.11f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 44.0f)
         {
-            jogo->screen = SCREEN_MENU;
+            jogo->tela = TELA_MENU;
             return;
         }
     }
 
-    if (jogo->screen == SCREEN_UPGRADE)
+    if (jogo->tela == TELA_MELHORIA)
     {
-        float uiScale = (float)jogo->width / 1280.0f;
-        float hScale = (float)jogo->height / 720.0f;
-        float centerX = jogo->width * 0.5f;
+        float uiScale = (float)jogo->largura / 1280.0f;
+        float hScale = (float)jogo->altura / 720.0f;
+        float centerX = jogo->largura * 0.5f;
         float cardW;
         float cardH;
         float cardGap;
@@ -384,7 +384,7 @@ void entrada_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
         cardGap = 20.0f * uiScale;
         totalW = cardW * MAXIMO_OPCOES_UPGRADE + cardGap * (MAXIMO_OPCOES_UPGRADE - 1);
         startX = centerX - totalW * 0.5f;
-        cardY = jogo->height * 0.36f;
+        cardY = jogo->altura * 0.36f;
 
         rerollW = 220.0f * uiScale;
         rerollH = 44.0f * uiScale;
@@ -404,35 +404,35 @@ void entrada_mouse_pressionado(Game *jogo, int botao, int estado, int x, int y)
 
         bx = rerollX;
         by = rerollY;
-        if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && jogo->gold >= 3)
+        if (wx >= bx && wx <= bx + rerollW && wy >= by && wy <= by + rerollH && jogo->ouro >= 3)
         {
-            jogo->gold -= 3;
+            jogo->ouro -= 3;
             melhorias_rolar_opcoes(jogo);
             interface_notificar(jogo, "Upgrade rerolled (-3 gold)");
             return;
         }
     }
 
-    if ((jogo->screen == SCREEN_WIN || jogo->screen == SCREEN_LOSE) && jogo->nameSaved)
+    if ((jogo->tela == TELA_VITORIA || jogo->tela == TELA_DERROTA) && jogo->nome_salvo)
     {
-        bx = jogo->width * 0.5f - 110.0f;
-        by = jogo->height * 0.45f;
+        bx = jogo->largura * 0.5f - 110.0f;
+        by = jogo->altura * 0.45f;
         if (wx >= bx && wx <= bx + 220.0f && wy >= by && wy <= by + 50.0f)
         {
-            jogo->screen = SCREEN_MENU;
-            jogo->enteringName = 0;
+            jogo->tela = TELA_MENU;
+            jogo->inserindo_nome = 0;
         }
     }
 }
 
-void entrada_mouse_movido(Game *jogo, int x, int y)
+void entrada_mouse_movido(Jogo *jogo, int x, int y)
 {
-    jogo->input.mouseX = x;
-    jogo->input.mouseY = y;
+    jogo->entrada.mouse_x = x;
+    jogo->entrada.mouse_y = y;
 }
 
-void entrada_iniciar_frame(Game *jogo)
+void entrada_iniciar_frame(Jogo *jogo)
 {
-    memset(jogo->input.keysPressed, 0, sizeof(jogo->input.keysPressed));
-    memset(jogo->input.mousePressed, 0, sizeof(jogo->input.mousePressed));
+    memset(jogo->entrada.teclas_pressionadas, 0, sizeof(jogo->entrada.teclas_pressionadas));
+    memset(jogo->entrada.mouse_clicado, 0, sizeof(jogo->entrada.mouse_clicado));
 }

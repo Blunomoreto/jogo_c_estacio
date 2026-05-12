@@ -9,13 +9,13 @@ typedef struct Vetor2D
     float y;
 } Vetor2D;
 
-typedef struct Color
+typedef struct Cor
 {
     float r;
     float g;
     float b;
     float a;
-} Color;
+} Cor;
 
 typedef enum TelaJogo
 {
@@ -32,12 +32,12 @@ typedef enum TelaJogo
 typedef enum TipoMelhoria
 {
     MELHORIA_DANO = 0,
-    MELHORIA_TAXA_DE_DISPARO,
+    MELHORIA_TAXA_DISPARO,
     MELHORIA_VELOCIDADE,
-    MELHORIA_CURAR,
+    MELHORIA_CURA,
     MELHORIA_TEMPO,
-    MELHORIA_ORIENTACAO_PONTO_PONTO,
-    MELHORIA_ORIENTACAO_ANGULO_PONTO,
+    MELHORIA_GUIANCA_PP,
+    MELHORIA_GUIANCA_APN,
     MELHORIA_MUNICAO,
     MELHORIA_CONTADOR
 } TipoMelhoria;
@@ -51,74 +51,74 @@ typedef enum TipoInimigo
     INIMIGO_PENTAGONO
 } TipoInimigo;
 
-typedef enum TipoOrientacao
+typedef enum TipoGuianca
 {
-    ORIENTACAO_NENHUMA = 0,
-    ORIENTACAO_PONTO_PONTO,
-    ORIENTACAO_ANGULO_PONTO
-} TipoOrientacao;
+    GUIANCA_NENHUMA = 0,
+    GUIANCA_PP,
+    GUIANCA_APN
+} TipoGuianca;
 
-typedef struct EntradaPontuacao
+typedef struct RegistroPontuacao
 {
     char nome[24];
     int pontuacao;
     int onda;
-} EntradaPontuacao;
+} RegistroPontuacao;
 
 typedef struct EstadoEntrada
 {
     unsigned char teclas[256];
-    unsigned char teclasPressionadas[256];
+    unsigned char teclas_pressionadas[256];
     unsigned char especiais[256];
-    unsigned char mouseApertado[3];
-    unsigned char mousePressionado[3];
-    int mouseX;
-    int mouseY;
+    unsigned char mouse_segurado[3];
+    unsigned char mouse_clicado[3];
+    int mouse_x;
+    int mouse_y;
 } EstadoEntrada;
 
-typedef struct Player
+typedef struct Jogador
 {
     Vetor2D pos;
     float tamanho;
     float vida;
-    float vidaMaxima;
+    float vida_maxima;
     float velocidade;
     float dano;
-    float taxaDeDisparo;
-    float tempoRecargaDisparo;
+    float taxa_disparo;
+    float tempo_recarga_disparo;
 
-    float velocidadeProjetil;
-    float velocidadeY;
-    int estaNoChao;
-    float tempoTeclaPuloPressionada;
+    float velocidade_projetil;
+    float velocidade_y;
+    int esta_no_chao;
+    float tempo_tecla_pulo_pressionada;
     Vetor2D vel;
     Vetor2D aceleracao;
 
-    int possuiPontoPonto;
-    int possuiAnguloPonto;
-    int municaoGuiada;
-    int municaoGuiadaMaxima;
-    float aceleracaoLateralMaxima;
-} Player;
+    int tem_guianca_pp;
+    int tem_guianca_apn;
+    int municao_guiada;
+    int municao_guiada_max;
+    float aceleracao_lateral_max;
+} Jogador;
 
 typedef struct Inimigo
 {
     int ativo;
-    int ehChefao;
+    int eh_chefao;
     TipoInimigo tipo;
     Vetor2D centro;
-    float raioOrbita;
+    float raio_orbita;
     float angulo;
-    float velocidadeAngular;
+    float velocidade_angular;
     float tamanho;
     float vida;
-    float vidaMaxima;
+    float vida_maxima;
     float dano;
-    float tempoRecargaDisparo;
-    float flashDano;
+    float tempo_recarga_disparo;
+    float flash_dano;
 
-    int contadorRajada;
-    float temporizadorRajada;
+    int contador_rajada;
+    float tempo_entre_rajada;
 
     Vetor2D vel;
     Vetor2D aceleracao;
@@ -127,21 +127,21 @@ typedef struct Inimigo
 typedef struct Projetil
 {
     int ativo;
-    int vemDoJogador;
+    int vem_do_jogador;
     Vetor2D pos;
     Vetor2D vel;
     float raio;
     float vida;
     float dano;
 
-    TipoOrientacao orientacao;
-    int indiceAlvo;
-    float aceleracaoLateralAtual;
-    float temporizadorCombustivel;
-    float distanciaAnterior;
+    TipoGuianca guianca;
+    int indice_alvo;
+    float aceleracao_lateral;
+    float tempo_com_combustivel;
+    float distancia_anterior;
     int errou;
-    float temporizadorDeteccao;
-    float aceleracaoLateralMaxima;
+    float temporizador_deteccao;
+    float aceleracao_lateral_max;
 } Projetil;
 
 typedef struct Particula
@@ -151,7 +151,7 @@ typedef struct Particula
     Vetor2D vel;
     float tamanho;
     float vida;
-    Color cor;
+    Cor cor;
 } Particula;
 
 typedef struct Obstaculo
@@ -179,50 +179,50 @@ typedef struct Jogo
     int altura;
 
     int executando;
-    int ultimosTicks;
-    float tempoDelta;
+    int ultimos_ticks;
+    float tempo_delta;
 
-    Player jogador;
+    Jogador jogador;
     Inimigo inimigos[MAXIMO_INIMIGOS];
     Projetil projetis[MAXIMO_PROJETEIS];
     Particula particulas[MAXIMO_PARTICULAS];
     Obstaculo obstaculos[MAXIMO_PLATAFORMAS];
 
     int onda;
-    int inimigosRestantes;
-    int ondasParaVencer;
+    int inimigos_restantes;
+    int ondas_para_vencer;
 
-    float tempoRestante;
-    float tempoDecorrido;
+    float tempo_restante;
+    float tempo_decorrido;
     int pontuacao;
     int ouro;
-    float flashDano;
-    float flashMelhoria;
-    int melhoriaSelecionada;
-    char ultimaMelhoria[64];
-    float temporizadorUltimaMelhoria;
-    char mensagemToast[128];
-    float temporizadorToast;
-    int audioHabilitado;
+    float flash_dano;
+    float flash_melhoria;
+    int melhoria_selecionada;
+    char ultima_melhoria[64];
+    float temporizador_ultima_melhoria;
+    char mensagem_toast[128];
+    float temporizador_toast;
+    int audio_habilitado;
     int dificuldade;
 
     OpcaoMelhoria melhorias[MAXIMO_OPCOES_UPGRADE];
 
-    int maiorPontuacao;
-    int maiorOndaAtingida;
-    EntradaPontuacao topPontuacoes[5];
-    int contadorTopPontuacoes;
-    EntradaPontuacao todasPontuacoes[64];
-    int contadorTodasPontuacoes;
-    int paginaPontuacao;
-    int tamanhoPaginaPontuacao;
+    int recorde_pontuacao_maxima;
+    int recorde_onda_maxima;
+    RegistroPontuacao melhores_pontuacoes[5];
+    int numero_melhores_pontuacoes;
+    RegistroPontuacao todas_pontuacoes[64];
+    int numero_todas_pontuacoes;
+    int pagina_pontuacao;
+    int itens_por_pagina_pontuacao;
 
-    char nomeJogador[24];
-    int inserindoNome;
-    int nomeSalvo;
+    char nome_jogador[24];
+    int inserindo_nome;
+    int nome_salvo;
 
-    unsigned int texturaFundo;
-    int texturaFundoCarregada;
+    unsigned int textura_fundo;
+    int textura_fundo_carregado;
 } Jogo;
 
 #endif

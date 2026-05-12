@@ -3,10 +3,10 @@
 
 #include <math.h>
 
-Vetor2D inimigo_posicao(const Enemy *inimigo)
+Vetor2D inimigo_posicao(const Inimigo *inimigo)
 {
-    return matematica_vetor2d(inimigo->center.x + cosf(inimigo->angle) * inimigo->orbitRadius,
-                              inimigo->center.y + sinf(inimigo->angle) * inimigo->orbitRadius);
+    return matematica_vetor2d(inimigo->centro.x + cosf(inimigo->angulo) * inimigo->raio_orbita,
+                              inimigo->centro.y + sinf(inimigo->angulo) * inimigo->raio_orbita);
 }
 
 const char *inimigo_nome_dificuldade(int dificuldade)

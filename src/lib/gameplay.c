@@ -13,129 +13,129 @@
 #include <GL/glut.h>
 #include <math.h>
 
-static void gameplay_atualizar_jogador_movimento(Game *jogo, float delta_tempo)
+static void gameplay_atualizar_jogador_movimento(Jogo *jogo, float delta_tempo)
 {
     int oi;
     float moveX = 0.0f;
 
-    if (jogo->input.keys['a'] || jogo->input.keys['A'] || jogo->input.special[GLUT_KEY_LEFT])
+    if (jogo->entrada.teclas['a'] || jogo->entrada.teclas['A'] || jogo->entrada.especiais[GLUT_KEY_LEFT])
         moveX -= 1.0f;
-    if (jogo->input.keys['d'] || jogo->input.keys['D'] || jogo->input.special[GLUT_KEY_RIGHT])
+    if (jogo->entrada.teclas['d'] || jogo->entrada.teclas['D'] || jogo->entrada.especiais[GLUT_KEY_RIGHT])
         moveX += 1.0f;
 
-    jogo->player.pos.x += moveX * jogo->player.speed * delta_tempo;
+    jogo->jogador.pos.x += moveX * jogo->jogador.velocidade * delta_tempo;
 
-    if (jogo->player.pos.x < jogo->player.size)
-        jogo->player.pos.x = jogo->player.size;
-    if (jogo->player.pos.x > jogo->width - jogo->player.size)
-        jogo->player.pos.x = jogo->width - jogo->player.size;
+    if (jogo->jogador.pos.x < jogo->jogador.tamanho)
+        jogo->jogador.pos.x = jogo->jogador.tamanho;
+    if (jogo->jogador.pos.x > jogo->largura - jogo->jogador.tamanho)
+        jogo->jogador.pos.x = jogo->largura - jogo->jogador.tamanho;
 
-    if (jogo->input.keys[' '] || jogo->input.keys['w'] || jogo->input.keys['W'])
+    if (jogo->entrada.teclas[' '] || jogo->entrada.teclas['w'] || jogo->entrada.teclas['W'])
     {
-        if (jogo->player.isOnGround)
+        if (jogo->jogador.esta_no_chao)
         {
-            jogo->player.velY = -JOGADOR_FORCA_PULO;
-            jogo->player.isOnGround = 0;
+            jogo->jogador.velocidade_y = -JOGADOR_FORCA_PULO;
+            jogo->jogador.esta_no_chao = 0;
             audio_tocar_som_pulo_inicio();
         }
     }
 
-    jogo->player.velY += GRAVIDADE * delta_tempo;
-    if (jogo->player.velY > 600.0f)
-        jogo->player.velY = 600.0f;
-    jogo->player.pos.y += jogo->player.velY * delta_tempo;
+    jogo->jogador.velocidade_y += GRAVIDADE * delta_tempo;
+    if (jogo->jogador.velocidade_y > 600.0f)
+        jogo->jogador.velocidade_y = 600.0f;
+    jogo->jogador.pos.y += jogo->jogador.velocidade_y * delta_tempo;
 
     {
         static Vetor2D prevP = {0, 0};
         static Vetor2D prevV = {0, 0};
         if (prevP.x == 0 && prevP.y == 0)
-            prevP = jogo->player.pos;
-        jogo->player.vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->player.pos, prevP), 1.0f / delta_tempo);
-        jogo->player.accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->player.vel, prevV), 1.0f / delta_tempo);
-        prevP = jogo->player.pos;
-        prevV = jogo->player.vel;
+            prevP = jogo->jogador.pos;
+        jogo->jogador.vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->jogador.pos, prevP), 1.0f / delta_tempo);
+        jogo->jogador.aceleracao = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(jogo->jogador.vel, prevV), 1.0f / delta_tempo);
+        prevP = jogo->jogador.pos;
+        prevV = jogo->jogador.vel;
     }
 
-    jogo->player.isOnGround = 0;
-    if (jogo->player.pos.y + jogo->player.size >= ALTURA_CHAO)
+    jogo->jogador.esta_no_chao = 0;
+    if (jogo->jogador.pos.y + jogo->jogador.tamanho >= ALTURA_CHAO)
     {
-        if (jogo->player.velY > 100.0f)
+        if (jogo->jogador.velocidade_y > 100.0f)
             audio_tocar_som_pulo_fim();
-        jogo->player.pos.y = ALTURA_CHAO - jogo->player.size;
-        jogo->player.velY = 0.0f;
-        jogo->player.isOnGround = 1;
+        jogo->jogador.pos.y = ALTURA_CHAO - jogo->jogador.tamanho;
+        jogo->jogador.velocidade_y = 0.0f;
+        jogo->jogador.esta_no_chao = 1;
     }
 
-    if (jogo->player.pos.y - jogo->player.size <= 20.0f)
+    if (jogo->jogador.pos.y - jogo->jogador.tamanho <= 20.0f)
     {
-        jogo->player.pos.y = 20.0f + jogo->player.size;
-        jogo->player.velY = 0.0f;
+        jogo->jogador.pos.y = 20.0f + jogo->jogador.tamanho;
+        jogo->jogador.velocidade_y = 0.0f;
     }
 
     for (oi = 0; oi < MAXIMO_PLATAFORMAS; ++oi)
     {
-        Obstacle *o = &jogo->obstacles[oi];
-        if (!o->active)
+        Obstaculo *o = &jogo->obstaculos[oi];
+        if (!o->ativo)
             continue;
-        if (colisao_circulo_vs_retangulo(jogo->player.pos, jogo->player.size,
+        if (colisao_circulo_vs_retangulo(jogo->jogador.pos, jogo->jogador.tamanho,
                                          matematica_vetor2d(o->x, o->y),
-                                         matematica_vetor2d(o->x + o->w, o->y + o->h)))
+                                         matematica_vetor2d(o->x + o->largura, o->y + o->altura)))
         {
-            float cx = o->x + o->w * 0.5f;
-            float cy = o->y + o->h * 0.5f;
-            float dx = fabsf(jogo->player.pos.x - cx);
-            float dy = fabsf(jogo->player.pos.y - cy);
+            float cx = o->x + o->largura * 0.5f;
+            float cy = o->y + o->altura * 0.5f;
+            float dx = fabsf(jogo->jogador.pos.x - cx);
+            float dy = fabsf(jogo->jogador.pos.y - cy);
 
-            if (jogo->player.pos.y - jogo->player.size < cy && jogo->player.velY >= 0.0f)
+            if (jogo->jogador.pos.y - jogo->jogador.tamanho < cy && jogo->jogador.velocidade_y >= 0.0f)
             {
-                if (jogo->player.velY > 50.0f)
+                if (jogo->jogador.velocidade_y > 50.0f)
                     audio_tocar_som_pulo_fim();
-                jogo->player.pos.y = o->y - jogo->player.size;
-                jogo->player.velY = 0.0f;
-                jogo->player.isOnGround = 1;
+                jogo->jogador.pos.y = o->y - jogo->jogador.tamanho;
+                jogo->jogador.velocidade_y = 0.0f;
+                jogo->jogador.esta_no_chao = 1;
             }
-            else if (jogo->player.pos.y - jogo->player.size >= cy && dx > dy)
+            else if (jogo->jogador.pos.y - jogo->jogador.tamanho >= cy && dx > dy)
             {
-                if (jogo->player.pos.x < cx)
-                    jogo->player.pos.x = o->x - jogo->player.size - 5.0f;
+                if (jogo->jogador.pos.x < cx)
+                    jogo->jogador.pos.x = o->x - jogo->jogador.tamanho - 5.0f;
                 else
-                    jogo->player.pos.x = o->x + o->w + jogo->player.size + 5.0f;
-                if (jogo->player.pos.x < jogo->player.size)
-                    jogo->player.pos.x = jogo->player.size;
-                if (jogo->player.pos.x > jogo->width - jogo->player.size)
-                    jogo->player.pos.x = jogo->width - jogo->player.size;
+                    jogo->jogador.pos.x = o->x + o->largura + jogo->jogador.tamanho + 5.0f;
+                if (jogo->jogador.pos.x < jogo->jogador.tamanho)
+                    jogo->jogador.pos.x = jogo->jogador.tamanho;
+                if (jogo->jogador.pos.x > jogo->largura - jogo->jogador.tamanho)
+                    jogo->jogador.pos.x = jogo->largura - jogo->jogador.tamanho;
             }
         }
     }
 }
 
-static void gameplay_atirar_jogador(Game *jogo, float delta_tempo)
+static void gameplay_atirar_jogador(Jogo *jogo, float delta_tempo)
 {
     int i;
-    jogo->player.fireCooldown -= delta_tempo;
+    jogo->jogador.tempo_recarga_disparo -= delta_tempo;
 
-    if (jogo->input.mouseDown[0] && jogo->player.fireCooldown <= 0.0f)
+    if (jogo->entrada.mouse_segurado[0] && jogo->jogador.tempo_recarga_disparo <= 0.0f)
     {
         Vetor2D target = matematica_mouse_para_mundo(jogo);
-        Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->player.pos));
-        projeteis_criar(jogo, jogo->player.pos, dir, 1, jogo->player.projectileSpeed, jogo->player.damage, 6.0f, 2.5f, GUIDANCE_NONE, -1, 0.0f);
-        particulas_criar(jogo, jogo->player.pos, 4, (Color){0.3f, 0.9f, 1.0f, 0.85f});
-        jogo->player.fireCooldown = jogo->player.fireRate;
+        Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->jogador.pos));
+        projeteis_criar(jogo, jogo->jogador.pos, dir, 1, jogo->jogador.velocidade_projetil, jogo->jogador.dano, 6.0f, 2.5f, GUIANCA_NENHUMA, -1, 0.0f);
+        particulas_criar(jogo, jogo->jogador.pos, 4, (Cor){0.3f, 0.9f, 1.0f, 0.85f});
+        jogo->jogador.tempo_recarga_disparo = jogo->jogador.taxa_disparo;
         audio_tocar_som_tiro_disparo();
     }
 
-    if (jogo->input.mouseDown[2] && jogo->player.fireCooldown <= 0.0f && jogo->player.guidedAmmo > 0)
+    if (jogo->entrada.mouse_segurado[2] && jogo->jogador.tempo_recarga_disparo <= 0.0f && jogo->jogador.municao_guiada > 0)
     {
-        if (jogo->player.hasPP || jogo->player.hasAPNG)
+        if (jogo->jogador.tem_guianca_pp || jogo->jogador.tem_guianca_apn)
         {
             Vetor2D target = matematica_mouse_para_mundo(jogo);
             int bestTarget = -1;
             float minD = 1000.0f;
             for (i = 0; i < MAXIMO_INIMIGOS; ++i)
             {
-                if (jogo->enemies[i].active)
+                if (jogo->inimigos[i].ativo)
                 {
-                    float d = matematica_vetor2d_len(matematica_vetor2d_subtracao(inimigo_posicao(&jogo->enemies[i]), target));
+                    float d = matematica_vetor2d_len(matematica_vetor2d_subtracao(inimigo_posicao(&jogo->inimigos[i]), target));
                     if (d < minD)
                     {
                         minD = d;
@@ -145,38 +145,38 @@ static void gameplay_atirar_jogador(Game *jogo, float delta_tempo)
             }
             if (bestTarget != -1)
             {
-                Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->player.pos));
-                GuidanceType law = jogo->player.hasAPNG ? GUIDANCE_APNG : GUIDANCE_PP;
-                projeteis_criar(jogo, jogo->player.pos, dir, 1, jogo->player.speed * 1.3f, jogo->player.damage * 3.0f, 8.0f, 5.0f, law, bestTarget, jogo->player.maxLatAccel);
-                jogo->player.guidedAmmo--;
-                jogo->player.fireCooldown = jogo->player.fireRate * 2.0f;
+                Vetor2D dir = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(target, jogo->jogador.pos));
+                TipoGuianca lei = jogo->jogador.tem_guianca_apn ? GUIANCA_APN : GUIANCA_PP;
+                projeteis_criar(jogo, jogo->jogador.pos, dir, 1, jogo->jogador.velocidade * 1.3f, jogo->jogador.dano * 3.0f, 8.0f, 5.0f, lei, bestTarget, jogo->jogador.aceleracao_lateral_max);
+                jogo->jogador.municao_guiada--;
+                jogo->jogador.tempo_recarga_disparo = jogo->jogador.taxa_disparo * 2.0f;
                 audio_tocar_som_tiro_disparo();
             }
         }
     }
 }
 
-static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
+static void gameplay_atualizar_projeteis_internos(Jogo *jogo, float delta_tempo)
 {
     int i;
     for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
-        Projectile *p = &jogo->projectiles[i];
+        Projetil *p = &jogo->projetis[i];
         int oi;
-        if (!p->active)
+        if (!p->ativo)
             continue;
 
-        if (p->guidance != GUIDANCE_NONE && p->missed)
+        if (p->guianca != GUIANCA_NENHUMA && p->errou)
         {
-            p->sdTimer -= delta_tempo;
-            if (p->sdTimer <= 0.0f)
-                p->active = 0;
-            p->life -= delta_tempo;
+            p->temporizador_deteccao -= delta_tempo;
+            if (p->temporizador_deteccao <= 0.0f)
+                p->ativo = 0;
+            p->vida -= delta_tempo;
             p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, delta_tempo));
             continue;
         }
 
-        if (p->guidance != GUIDANCE_NONE)
+        if (p->guianca != GUIANCA_NENHUMA)
         {
             float speed = matematica_vetor2d_len(p->vel);
             float gamma = atan2f(p->vel.y, p->vel.x);
@@ -184,22 +184,22 @@ static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
             Vetor2D targetPos, targetVel = {0, 0}, targetAccel = {0, 0};
             int targetValid = 0;
 
-            if (p->fromPlayer)
+            if (p->vem_do_jogador)
             {
-                if (p->targetIdx != -1 && jogo->enemies[p->targetIdx].active)
+                if (p->indice_alvo != -1 && jogo->inimigos[p->indice_alvo].ativo)
                 {
-                    Enemy *e = &jogo->enemies[p->targetIdx];
+                    Inimigo *e = &jogo->inimigos[p->indice_alvo];
                     targetPos = inimigo_posicao(e);
                     targetVel = e->vel;
-                    targetAccel = e->accel;
+                    targetAccel = e->aceleracao;
                     targetValid = 1;
                 }
             }
             else
             {
-                targetPos = jogo->player.pos;
-                targetVel = jogo->player.vel;
-                targetAccel = jogo->player.accel;
+                targetPos = jogo->jogador.pos;
+                targetVel = jogo->jogador.vel;
+                targetAccel = jogo->jogador.aceleracao;
                 targetValid = 1;
             }
 
@@ -210,27 +210,27 @@ static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
                 float los = atan2f(dPos.y, dPos.x);
                 float losRate = (dPos.x * (targetVel.y - p->vel.y) - dPos.y * (targetVel.x - p->vel.x)) / (dist * dist);
 
-                if (p->guidance == GUIDANCE_APNG && p->prevDist < 9999.0f &&
-                    dist > p->prevDist && dist < 250.0f && p->prevDist < 270.0f)
+                if (p->guianca == GUIANCA_APN && p->distancia_anterior < 9999.0f &&
+                    dist > p->distancia_anterior && dist < 250.0f && p->distancia_anterior < 270.0f)
                 {
-                    p->missed = 1;
-                    p->sdTimer = 0.2f;
+                    p->errou = 1;
+                    p->temporizador_deteccao = 0.2f;
                 }
 
-                if (p->guidance == GUIDANCE_PP && !p->missed && p->prevDist < 9999.0f)
+                if (p->guianca == GUIANCA_PP && !p->errou && p->distancia_anterior < 9999.0f)
                 {
-                    if (fabs(losRate) * speed > p->maxLatAccel && dist < 300.0f)
+                    if (fabs(losRate) * speed > p->aceleracao_lateral_max && dist < 300.0f)
                     {
-                        p->missed = 1;
-                        p->sdTimer = 0.2f;
+                        p->errou = 1;
+                        p->temporizador_deteccao = 0.2f;
                     }
                 }
 
-                p->prevDist = dist;
+                p->distancia_anterior = dist;
 
-                if (!p->missed)
+                if (!p->errou)
                 {
-                    if (p->guidance == GUIDANCE_APNG)
+                    if (p->guianca == GUIANCA_APN)
                     {
                         Vetor2D relV = matematica_vetor2d_subtracao(targetVel, p->vel);
                         float Vc = -(dPos.x * relV.x + dPos.y * relV.y) / dist;
@@ -239,7 +239,7 @@ static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
                         float N = MISSIL_GUIANCA_APN_GANHO;
                         aCmd = N * Vc * losRate_accel + (N * 0.5f) * a_t_perp;
                     }
-                    else if (p->guidance == GUIDANCE_PP)
+                    else if (p->guianca == GUIANCA_PP)
                     {
                         float err = los - gamma;
                         while (err > (float)M_PI)
@@ -249,19 +249,19 @@ static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
                         aCmd = MISSIL_GUIANCA_PP_GANHO * speed * err;
                     }
 
-                    if (aCmd > p->maxLatAccel)
-                        aCmd = p->maxLatAccel;
-                    if (aCmd < -p->maxLatAccel)
-                        aCmd = -p->maxLatAccel;
+                    if (aCmd > p->aceleracao_lateral_max)
+                        aCmd = p->aceleracao_lateral_max;
+                    if (aCmd < -p->aceleracao_lateral_max)
+                        aCmd = -p->aceleracao_lateral_max;
 
-                    p->actualLatAccel += (aCmd - p->actualLatAccel) * (delta_tempo / MISSIL_GUIANCA_LAG);
+                    p->aceleracao_lateral += (aCmd - p->aceleracao_lateral) * (delta_tempo / MISSIL_GUIANCA_LAG);
                 }
             }
 
-            if (!p->missed)
+            if (!p->errou)
             {
-                float a_x_lateral = -p->actualLatAccel * sinf(gamma);
-                float a_y_lateral = p->actualLatAccel * cosf(gamma);
+                float a_x_lateral = -p->aceleracao_lateral * sinf(gamma);
+                float a_y_lateral = p->aceleracao_lateral * cosf(gamma);
                 p->vel.x += a_x_lateral * delta_tempo;
                 p->vel.y += a_y_lateral * delta_tempo;
 
@@ -271,45 +271,45 @@ static void gameplay_atualizar_projeteis_internos(Game *jogo, float delta_tempo)
             }
         }
 
-        p->life -= delta_tempo;
+        p->vida -= delta_tempo;
         p->pos = matematica_vetor2d_adicao(p->pos, matematica_vetor2d_multiplicacao(p->vel, delta_tempo));
 
-        if (p->life <= 0.0f || p->pos.x < -20.0f || p->pos.x > jogo->width + 20.0f ||
-            p->pos.y < -20.0f || p->pos.y > jogo->height + 20.0f)
+        if (p->vida <= 0.0f || p->pos.x < -20.0f || p->pos.x > jogo->largura + 20.0f ||
+            p->pos.y < -20.0f || p->pos.y > jogo->altura + 20.0f)
         {
-            p->active = 0;
+            p->ativo = 0;
         }
 
-        for (oi = 0; oi < MAXIMO_PLATAFORMAS && p->active; ++oi)
+        for (oi = 0; oi < MAXIMO_PLATAFORMAS && p->ativo; ++oi)
         {
-            Obstacle *o = &jogo->obstacles[oi];
-            if (!o->active)
+            Obstaculo *o = &jogo->obstaculos[oi];
+            if (!o->ativo)
                 continue;
-            if (colisao_circulo_vs_retangulo(p->pos, p->radius,
+            if (colisao_circulo_vs_retangulo(p->pos, p->raio,
                                              matematica_vetor2d(o->x, o->y),
-                                             matematica_vetor2d(o->x + o->w, o->y + o->h)))
-                p->active = 0;
+                                             matematica_vetor2d(o->x + o->largura, o->y + o->altura)))
+                p->ativo = 0;
         }
     }
 }
 
-static int gameplay_atualizar_inimigos_internos(Game *jogo, float delta_tempo, float scoreMul)
+static int gameplay_atualizar_inimigos_internos(Jogo *jogo, float delta_tempo, float scoreMul)
 {
     int i;
     int tookHit = 0;
 
     for (i = 0; i < MAXIMO_INIMIGOS; ++i)
     {
-        Enemy *e = &jogo->enemies[i];
+        Inimigo *e = &jogo->inimigos[i];
         int j;
         Vetor2D ep;
-        if (!e->active)
+        if (!e->ativo)
             continue;
 
-        e->angle += e->angularSpeed * delta_tempo;
-        e->hitFlash -= delta_tempo * 4.0f;
-        if (e->hitFlash < 0.0f)
-            e->hitFlash = 0.0f;
+        e->angulo += e->velocidade_angular * delta_tempo;
+        e->flash_dano -= delta_tempo * 4.0f;
+        if (e->flash_dano < 0.0f)
+            e->flash_dano = 0.0f;
 
         ep = inimigo_posicao(e);
 
@@ -319,127 +319,127 @@ static int gameplay_atualizar_inimigos_internos(Game *jogo, float delta_tempo, f
             if (prevEnemyPos[i].x == 0 && prevEnemyPos[i].y == 0)
                 prevEnemyPos[i] = ep;
             e->vel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(ep, prevEnemyPos[i]), 1.0f / delta_tempo);
-            e->accel = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(e->vel, prevEnemyVel[i]), 1.0f / delta_tempo);
+            e->aceleracao = matematica_vetor2d_multiplicacao(matematica_vetor2d_subtracao(e->vel, prevEnemyVel[i]), 1.0f / delta_tempo);
             prevEnemyPos[i] = ep;
             prevEnemyVel[i] = e->vel;
         }
 
-        if (colisao_circulo_vs_circulo(jogo->player.pos, jogo->player.size * 0.8f, ep, e->size))
+        if (colisao_circulo_vs_circulo(jogo->jogador.pos, jogo->jogador.tamanho * 0.8f, ep, e->tamanho))
         {
-            jogo->player.hp = matematica_limite_min(jogo->player.hp -= e->damage * delta_tempo, 0);
+            jogo->jogador.vida = matematica_limite_min(jogo->jogador.vida -= e->dano * delta_tempo, 0);
             tookHit = 1;
-            particulas_criar(jogo, jogo->player.pos, 1, (Color){1.0f, 0.2f, 0.2f, 0.8f});
+            particulas_criar(jogo, jogo->jogador.pos, 1, (Cor){1.0f, 0.2f, 0.2f, 0.8f});
         }
 
-        e->shootCooldown -= delta_tempo;
-        if (e->shootCooldown <= 0.0f)
+        e->tempo_recarga_disparo -= delta_tempo;
+        if (e->tempo_recarga_disparo <= 0.0f)
         {
-            Vetor2D dirToPlayer = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(jogo->player.pos, ep));
+            Vetor2D dirToPlayer = matematica_vetor2d_normalizar(matematica_vetor2d_subtracao(jogo->jogador.pos, ep));
             float enemyShotSpeed;
             float enemyShotDamage;
 
-            if (e->type == ENEMY_DIAMOND)
+            if (e->tipo == INIMIGO_DIAMANTE)
             {
-                if (e->burstCount > 0)
+                if (e->contador_rajada > 0)
                 {
                     float ppOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 0.5f;
-                    projeteis_criar(jogo, ep, dirToPlayer, 0, 200.0f + jogo->wave * 10.0f, 25.0f + jogo->wave * 4.0f, 6.0f, 4.0f, GUIDANCE_PP, -1, ppOverload);
-                    e->burstCount--;
-                    e->shootCooldown = 0.5f;
-                    if (e->burstCount == 0)
+                    projeteis_criar(jogo, ep, dirToPlayer, 0, 200.0f + jogo->onda * 10.0f, 25.0f + jogo->onda * 4.0f, 6.0f, 4.0f, GUIANCA_PP, -1, ppOverload);
+                    e->contador_rajada--;
+                    e->tempo_recarga_disparo = 0.5f;
+                    if (e->contador_rajada == 0)
                     {
-                        e->shootCooldown = matematica_float_aleatorio_alcance(3.0f, 7.0f);
-                        e->burstCount = 2;
+                        e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(3.0f, 7.0f);
+                        e->contador_rajada = 2;
                     }
                 }
                 else
                 {
-                    e->shootCooldown = matematica_float_aleatorio_alcance(3.0f, 7.0f);
-                    e->burstCount = 2;
+                    e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(3.0f, 7.0f);
+                    e->contador_rajada = 2;
                 }
             }
-            else if (e->type == ENEMY_PENTAGON)
+            else if (e->tipo == INIMIGO_PENTAGONO)
             {
                 float apnOverload = JOGADOR_MAXIMO_ACELERACAO_LATERAL * 1.0f;
-                projeteis_criar(jogo, ep, dirToPlayer, 0, 300.0f + jogo->wave * 15.0f, 30.0f + jogo->wave * 5.0f, 6.0f, 6.0f, GUIDANCE_APNG, -1, apnOverload);
-                e->shootCooldown = matematica_float_aleatorio_alcance(2.5f, 4.0f);
+                projeteis_criar(jogo, ep, dirToPlayer, 0, 300.0f + jogo->onda * 15.0f, 30.0f + jogo->onda * 5.0f, 6.0f, 6.0f, GUIANCA_APN, -1, apnOverload);
+                e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(2.5f, 4.0f);
             }
-            else if (e->isBoss)
+            else if (e->eh_chefao)
             {
                 Vetor2D sideA = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f - dirToPlayer.y * 0.38f, dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
                 Vetor2D sideB = matematica_vetor2d_normalizar(matematica_vetor2d(dirToPlayer.x * 0.92f + dirToPlayer.y * 0.38f, -dirToPlayer.x * 0.38f + dirToPlayer.y * 0.92f));
-                enemyShotSpeed = 260.0f + jogo->wave * 18.0f;
-                enemyShotDamage = 9.5f + jogo->wave * 1.4f;
-                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIDANCE_NONE, -1, 0.0f);
-                projeteis_criar(jogo, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                projeteis_criar(jogo, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(0.8f, 1.8f) - jogo->wave * 0.05f;
+                enemyShotSpeed = 260.0f + jogo->onda * 18.0f;
+                enemyShotDamage = 9.5f + jogo->onda * 1.4f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 8.0f, 4.4f, GUIANCA_NENHUMA, -1, 0.0f);
+                projeteis_criar(jogo, ep, sideA, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIANCA_NENHUMA, -1, 0.0f);
+                projeteis_criar(jogo, ep, sideB, 0, enemyShotSpeed * 0.9f, enemyShotDamage * 0.85f, 7.0f, 4.0f, GUIANCA_NENHUMA, -1, 0.0f);
+                e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(0.8f, 1.8f) - jogo->onda * 0.05f;
             }
-            else if (e->type == ENEMY_SNIPER)
+            else if (e->tipo == INIMIGO_ATIRADOR)
             {
-                enemyShotSpeed = 330.0f + jogo->wave * 22.0f;
-                enemyShotDamage = 9.0f + jogo->wave * 1.6f;
-                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.0f, 2.1f) - jogo->wave * 0.04f;
+                enemyShotSpeed = 330.0f + jogo->onda * 22.0f;
+                enemyShotDamage = 9.0f + jogo->onda * 1.6f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 5.5f, 3.6f, GUIANCA_NENHUMA, -1, 0.0f);
+                e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(1.0f, 2.1f) - jogo->onda * 0.04f;
             }
-            else if (e->type == ENEMY_TANK)
+            else if (e->tipo == INIMIGO_TANQUE)
             {
-                enemyShotSpeed = 180.0f + jogo->wave * 14.0f;
-                enemyShotDamage = 11.0f + jogo->wave * 1.8f;
-                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.8f, 3.2f) - jogo->wave * 0.03f;
+                enemyShotSpeed = 180.0f + jogo->onda * 14.0f;
+                enemyShotDamage = 11.0f + jogo->onda * 1.8f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 9.0f, 4.8f, GUIANCA_NENHUMA, -1, 0.0f);
+                e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(1.8f, 3.2f) - jogo->onda * 0.03f;
             }
             else
             {
-                enemyShotSpeed = 220.0f + jogo->wave * 18.0f;
-                enemyShotDamage = 7.0f + jogo->wave * 1.4f;
-                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIDANCE_NONE, -1, 0.0f);
-                e->shootCooldown = matematica_float_aleatorio_alcance(1.1f, 2.6f) - jogo->wave * 0.05f;
+                enemyShotSpeed = 220.0f + jogo->onda * 18.0f;
+                enemyShotDamage = 7.0f + jogo->onda * 1.4f;
+                projeteis_criar(jogo, ep, dirToPlayer, 0, enemyShotSpeed, enemyShotDamage, 7.0f, 4.0f, GUIANCA_NENHUMA, -1, 0.0f);
+                e->tempo_recarga_disparo = matematica_float_aleatorio_alcance(1.1f, 2.6f) - jogo->onda * 0.05f;
             }
 
-            if (e->shootCooldown < 0.45f)
-                e->shootCooldown = 0.45f;
+            if (e->tempo_recarga_disparo < 0.45f)
+                e->tempo_recarga_disparo = 0.45f;
         }
 
         for (j = 0; j < MAXIMO_PROJETEIS; ++j)
         {
-            Projectile *p = &jogo->projectiles[j];
-            if (!p->active || !p->fromPlayer)
+            Projetil *p = &jogo->projetis[j];
+            if (!p->ativo || !p->vem_do_jogador)
                 continue;
 
-            if (colisao_circulo_vs_circulo(p->pos, p->radius, ep, e->size))
+            if (colisao_circulo_vs_circulo(p->pos, p->raio, ep, e->tamanho))
             {
-                p->active = 0;
-                e->hp = matematica_limite_min(e->hp -= p->damage, 0);
-                e->hitFlash = 1.0f;
-                particulas_criar(jogo, ep, 8, (Color){1.0f, 0.6f, 0.2f, 0.95f});
+                p->ativo = 0;
+                e->vida = matematica_limite_min(e->vida -= p->dano, 0);
+                e->flash_dano = 1.0f;
+                particulas_criar(jogo, ep, 8, (Cor){1.0f, 0.6f, 0.2f, 0.95f});
                 audio_tocar_som_tiro_atingido();
 
-                if (e->hp <= 0.0f)
+                if (e->vida <= 0.0f)
                 {
-                    e->active = 0;
-                    jogo->enemiesRemaining--;
-                    if (e->isBoss)
+                    e->ativo = 0;
+                    jogo->inimigos_restantes--;
+                    if (e->eh_chefao)
                     {
-                        jogo->score += (int)(1500.0f * scoreMul);
-                        jogo->gold += 6;
+                        jogo->pontuacao += (int)(1500.0f * scoreMul);
+                        jogo->ouro += 6;
                     }
-                    else if (e->type == ENEMY_TANK)
+                    else if (e->tipo == INIMIGO_TANQUE)
                     {
-                        jogo->score += (int)((230 + jogo->wave * 28) * scoreMul);
-                        jogo->gold += 2;
+                        jogo->pontuacao += (int)((230 + jogo->onda * 28) * scoreMul);
+                        jogo->ouro += 2;
                     }
-                    else if (e->type == ENEMY_SNIPER)
+                    else if (e->tipo == INIMIGO_ATIRADOR)
                     {
-                        jogo->score += (int)((150 + jogo->wave * 24) * scoreMul);
-                        jogo->gold += 1;
+                        jogo->pontuacao += (int)((150 + jogo->onda * 24) * scoreMul);
+                        jogo->ouro += 1;
                     }
                     else
                     {
-                        jogo->score += (int)((120 + jogo->wave * 20) * scoreMul);
-                        jogo->gold += 1;
+                        jogo->pontuacao += (int)((120 + jogo->onda * 20) * scoreMul);
+                        jogo->ouro += 1;
                     }
-                    particulas_criar(jogo, ep, 18, (Color){1.0f, 0.85f, 0.2f, 0.95f});
+                    particulas_criar(jogo, ep, 18, (Cor){1.0f, 0.85f, 0.2f, 0.95f});
                 }
                 break;
             }
@@ -448,48 +448,48 @@ static int gameplay_atualizar_inimigos_internos(Game *jogo, float delta_tempo, f
     return tookHit;
 }
 
-static int gameplay_verificar_projeteis_vs_jogador(Game *jogo)
+static int gameplay_verificar_projeteis_vs_jogador(Jogo *jogo)
 {
     int i;
     int tookHit = 0;
     for (i = 0; i < MAXIMO_PROJETEIS; ++i)
     {
-        Projectile *p = &jogo->projectiles[i];
-        if (!p->active || p->fromPlayer)
+        Projetil *p = &jogo->projetis[i];
+        if (!p->ativo || p->vem_do_jogador)
             continue;
 
-        if (colisao_circulo_vs_circulo(p->pos, p->radius, jogo->player.pos, jogo->player.size * 0.75f))
+        if (colisao_circulo_vs_circulo(p->pos, p->raio, jogo->jogador.pos, jogo->jogador.tamanho * 0.75f))
         {
-            p->active = 0;
-            jogo->player.hp = matematica_limite_min(jogo->player.hp -= p->damage, 0);
+            p->ativo = 0;
+            jogo->jogador.vida = matematica_limite_min(jogo->jogador.vida -= p->dano, 0);
             tookHit = 1;
-            particulas_criar(jogo, jogo->player.pos, 7, (Color){1.0f, 0.3f, 0.2f, 0.9f});
+            particulas_criar(jogo, jogo->jogador.pos, 7, (Cor){1.0f, 0.3f, 0.2f, 0.9f});
             audio_tocar_som_tiro_atingido();
         }
     }
     return tookHit;
 }
 
-static void gameplay_atualizar_particulas_internos(Game *jogo, float delta_tempo)
+static void gameplay_atualizar_particulas_internos(Jogo *jogo, float delta_tempo)
 {
     int i;
     for (i = 0; i < MAXIMO_PARTICULAS; ++i)
     {
-        Particle *pt = &jogo->particles[i];
-        if (!pt->active)
+        Particula *pt = &jogo->particulas[i];
+        if (!pt->ativo)
             continue;
-        pt->life -= delta_tempo;
+        pt->vida -= delta_tempo;
         pt->pos = matematica_vetor2d_adicao(pt->pos, matematica_vetor2d_multiplicacao(pt->vel, delta_tempo));
         pt->vel = matematica_vetor2d_multiplicacao(pt->vel, 0.96f);
-        if (pt->life <= 0.0f)
-            pt->active = 0;
+        if (pt->vida <= 0.0f)
+            pt->ativo = 0;
     }
 }
 
-void gameplay_atualizar_playing(Game *jogo, float delta_tempo)
+void gameplay_atualizar_playing(Jogo *jogo, float delta_tempo)
 {
     int tookHit;
-    float scoreMul = inimigo_multiplicador_pontos(jogo->difficulty);
+    float scoreMul = inimigo_multiplicador_pontos(jogo->dificuldade);
 
     gameplay_atualizar_jogador_movimento(jogo, delta_tempo);
     gameplay_atirar_jogador(jogo, delta_tempo);
@@ -498,33 +498,33 @@ void gameplay_atualizar_playing(Game *jogo, float delta_tempo)
     tookHit |= gameplay_verificar_projeteis_vs_jogador(jogo);
     gameplay_atualizar_particulas_internos(jogo, delta_tempo);
 
-    jogo->elapsed += delta_tempo;
-    jogo->timeLeft -= delta_tempo;
-    jogo->score += (int)(delta_tempo * 14.0f * scoreMul);
-    jogo->damageFlash -= delta_tempo * 2.4f;
-    if (jogo->damageFlash < 0.0f)
-        jogo->damageFlash = 0.0f;
+    jogo->tempo_decorrido += delta_tempo;
+    jogo->tempo_restante -= delta_tempo;
+    jogo->pontuacao += (int)(delta_tempo * 14.0f * scoreMul);
+    jogo->flash_dano -= delta_tempo * 2.4f;
+    if (jogo->flash_dano < 0.0f)
+        jogo->flash_dano = 0.0f;
     if (tookHit)
-        jogo->damageFlash = 0.9f;
+        jogo->flash_dano = 0.9f;
 
-    if (jogo->player.hp <= 0.0f || jogo->timeLeft <= 0.0f)
+    if (jogo->jogador.vida <= 0.0f || jogo->tempo_restante <= 0.0f)
     {
-        interface_encerrar_partida(jogo, SCREEN_LOSE);
+        interface_encerrar_partida(jogo, TELA_DERROTA);
         return;
     }
 
-    if (jogo->enemiesRemaining <= 0)
+    if (jogo->inimigos_restantes <= 0)
     {
-        if (jogo->wave >= jogo->wavesToWin)
+        if (jogo->onda >= jogo->ondas_para_vencer)
         {
-            interface_encerrar_partida(jogo, SCREEN_WIN);
+            interface_encerrar_partida(jogo, TELA_VITORIA);
         }
         else
         {
-            jogo->timeLeft += 6.0f;
-            jogo->score += (int)((180 + jogo->wave * 40) * scoreMul);
+            jogo->tempo_restante += 6.0f;
+            jogo->pontuacao += (int)((180 + jogo->onda * 40) * scoreMul);
             melhorias_rolar_opcoes(jogo);
-            jogo->screen = SCREEN_UPGRADE;
+            jogo->tela = TELA_MELHORIA;
         }
     }
 }
