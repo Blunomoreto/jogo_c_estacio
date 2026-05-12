@@ -17,212 +17,212 @@ typedef struct Color
     float a;
 } Color;
 
-typedef enum GameScreen
+typedef enum TelaJogo
 {
-    SCREEN_MENU = 0,
-    SCREEN_OPTIONS,
-    SCREEN_SCORES,
-    SCREEN_PLAYING,
-    SCREEN_PAUSED,
-    SCREEN_UPGRADE,
-    SCREEN_WIN,
-    SCREEN_LOSE
-} GameScreen;
+    TELA_MENU = 0,
+    TELA_OPCOES,
+    TELA_PONTUACOES,
+    TELA_JOGANDO,
+    TELA_PAUSADA,
+    TELA_MELHORIA,
+    TELA_VITORIA,
+    TELA_DERROTA
+} TelaJogo;
 
-typedef enum UpgradeType
+typedef enum TipoMelhoria
 {
-    UPGRADE_DAMAGE = 0,
-    UPGRADE_FIRE_RATE,
-    UPGRADE_SPEED,
-    UPGRADE_HEAL,
-    UPGRADE_TIME,
-    UPGRADE_GUIDANCE_PP,
-    UPGRADE_GUIDANCE_APNG,
-    UPGRADE_AMMO,
-    UPGRADE_COUNT
-} UpgradeType;
+    MELHORIA_DANO = 0,
+    MELHORIA_TAXA_DE_DISPARO,
+    MELHORIA_VELOCIDADE,
+    MELHORIA_CURAR,
+    MELHORIA_TEMPO,
+    MELHORIA_ORIENTACAO_PONTO_PONTO,
+    MELHORIA_ORIENTACAO_ANGULO_PONTO,
+    MELHORIA_MUNICAO,
+    MELHORIA_CONTADOR
+} TipoMelhoria;
 
-typedef enum EnemyType
+typedef enum TipoInimigo
 {
-    ENEMY_STANDARD = 0,
-    ENEMY_SNIPER,
-    ENEMY_TANK,
-    ENEMY_DIAMOND,
-    ENEMY_PENTAGON
-} EnemyType;
+    INIMIGO_PADRAO = 0,
+    INIMIGO_ATIRADOR,
+    INIMIGO_TANQUE,
+    INIMIGO_DIAMANTE,
+    INIMIGO_PENTAGONO
+} TipoInimigo;
 
-typedef enum GuidanceType
+typedef enum TipoOrientacao
 {
-    GUIDANCE_NONE = 0,
-    GUIDANCE_PP,
-    GUIDANCE_APNG
-} GuidanceType;
+    ORIENTACAO_NENHUMA = 0,
+    ORIENTACAO_PONTO_PONTO,
+    ORIENTACAO_ANGULO_PONTO
+} TipoOrientacao;
 
-typedef struct ScoreEntry
+typedef struct EntradaPontuacao
 {
-    char name[24];
-    int score;
-    int wave;
-} ScoreEntry;
+    char nome[24];
+    int pontuacao;
+    int onda;
+} EntradaPontuacao;
 
-typedef struct InputState
+typedef struct EstadoEntrada
 {
-    unsigned char keys[256];
-    unsigned char keysPressed[256];
-    unsigned char special[256];
-    unsigned char mouseDown[3];
-    unsigned char mousePressed[3];
+    unsigned char teclas[256];
+    unsigned char teclasPressionadas[256];
+    unsigned char especiais[256];
+    unsigned char mouseApertado[3];
+    unsigned char mousePressionado[3];
     int mouseX;
     int mouseY;
-} InputState;
+} EstadoEntrada;
 
 typedef struct Player
 {
     Vetor2D pos;
-    float size;
-    float hp;
-    float maxHp;
-    float speed;
-    float damage;
-    float fireRate;
-    float fireCooldown;
+    float tamanho;
+    float vida;
+    float vidaMaxima;
+    float velocidade;
+    float dano;
+    float taxaDeDisparo;
+    float tempoRecargaDisparo;
 
-    float projectileSpeed;
-    float velY;
-    int isOnGround;
-    float jumpPressedTime;
+    float velocidadeProjetil;
+    float velocidadeY;
+    int estaNoChao;
+    float tempoTeclaPuloPressionada;
     Vetor2D vel;
-    Vetor2D accel;
+    Vetor2D aceleracao;
 
-    int hasPP;
-    int hasAPNG;
-    int guidedAmmo;
-    int maxGuidedAmmo;
-    float maxLatAccel;
+    int possuiPontoPonto;
+    int possuiAnguloPonto;
+    int municaoGuiada;
+    int municaoGuiadaMaxima;
+    float aceleracaoLateralMaxima;
 } Player;
 
-typedef struct Enemy
+typedef struct Inimigo
 {
-    int active;
-    int isBoss;
-    EnemyType type;
-    Vetor2D center;
-    float orbitRadius;
-    float angle;
-    float angularSpeed;
-    float size;
-    float hp;
-    float maxHp;
-    float damage;
-    float shootCooldown;
-    float hitFlash;
+    int ativo;
+    int ehChefao;
+    TipoInimigo tipo;
+    Vetor2D centro;
+    float raioOrbita;
+    float angulo;
+    float velocidadeAngular;
+    float tamanho;
+    float vida;
+    float vidaMaxima;
+    float dano;
+    float tempoRecargaDisparo;
+    float flashDano;
 
-    int burstCount;
-    float burstTimer;
+    int contadorRajada;
+    float temporizadorRajada;
 
     Vetor2D vel;
-    Vetor2D accel;
-} Enemy;
+    Vetor2D aceleracao;
+} Inimigo;
 
-typedef struct Projectile
+typedef struct Projetil
 {
-    int active;
-    int fromPlayer;
+    int ativo;
+    int vemDoJogador;
     Vetor2D pos;
     Vetor2D vel;
-    float radius;
-    float life;
-    float damage;
+    float raio;
+    float vida;
+    float dano;
 
-    GuidanceType guidance;
-    int targetIdx;
-    float actualLatAccel;
-    float fuelTimer;
-    float prevDist;
-    int missed;
-    float sdTimer;
-    float maxLatAccel;
-} Projectile;
+    TipoOrientacao orientacao;
+    int indiceAlvo;
+    float aceleracaoLateralAtual;
+    float temporizadorCombustivel;
+    float distanciaAnterior;
+    int errou;
+    float temporizadorDeteccao;
+    float aceleracaoLateralMaxima;
+} Projetil;
 
-typedef struct Particle
+typedef struct Particula
 {
-    int active;
+    int ativo;
     Vetor2D pos;
     Vetor2D vel;
-    float size;
-    float life;
-    Color color;
-} Particle;
+    float tamanho;
+    float vida;
+    Color cor;
+} Particula;
 
-typedef struct Obstacle
+typedef struct Obstaculo
 {
-    int active;
+    int ativo;
     float x;
     float y;
-    float w;
-    float h;
-} Obstacle;
+    float largura;
+    float altura;
+} Obstaculo;
 
-typedef struct UpgradeOption
+typedef struct OpcaoMelhoria
 {
-    UpgradeType type;
-    char label[64];
-    char desc[96];
-} UpgradeOption;
+    TipoMelhoria tipo;
+    char rotulo[64];
+    char descricao[96];
+} OpcaoMelhoria;
 
-typedef struct Game
+typedef struct Jogo
 {
-    GameScreen screen;
-    InputState input;
+    TelaJogo tela;
+    EstadoEntrada entrada;
 
-    int width;
-    int height;
+    int largura;
+    int altura;
 
-    int running;
-    int lastTicks;
-    float deltaTime;
+    int executando;
+    int ultimosTicks;
+    float tempoDelta;
 
-    Player player;
-    Enemy enemies[MAXIMO_INIMIGOS];
-    Projectile projectiles[MAXIMO_PROJETEIS];
-    Particle particles[MAXIMO_PARTICULAS];
-    Obstacle obstacles[MAXIMO_PLATAFORMAS];
+    Player jogador;
+    Inimigo inimigos[MAXIMO_INIMIGOS];
+    Projetil projetis[MAXIMO_PROJETEIS];
+    Particula particulas[MAXIMO_PARTICULAS];
+    Obstaculo obstaculos[MAXIMO_PLATAFORMAS];
 
-    int wave;
-    int enemiesRemaining;
-    int wavesToWin;
+    int onda;
+    int inimigosRestantes;
+    int ondasParaVencer;
 
-    float timeLeft;
-    float elapsed;
-    int score;
-    int gold;
-    float damageFlash;
-    float upgradeFlash;
-    int upgradeHover;
-    char lastUpgrade[64];
-    float lastUpgradeTimer;
-    char toastMessage[128];
-    float toastTimer;
-    int audioEnabled;
-    int difficulty;
+    float tempoRestante;
+    float tempoDecorrido;
+    int pontuacao;
+    int ouro;
+    float flashDano;
+    float flashMelhoria;
+    int melhoriaSelecionada;
+    char ultimaMelhoria[64];
+    float temporizadorUltimaMelhoria;
+    char mensagemToast[128];
+    float temporizadorToast;
+    int audioHabilitado;
+    int dificuldade;
 
-    UpgradeOption upgrades[MAXIMO_OPCOES_UPGRADE];
+    OpcaoMelhoria melhorias[MAXIMO_OPCOES_UPGRADE];
 
-    int highScore;
-    int maxWaveEver;
-    ScoreEntry topScores[5];
-    int topScoreCount;
-    ScoreEntry allScores[64];
-    int allScoreCount;
-    int scorePage;
-    int scorePageSize;
+    int maiorPontuacao;
+    int maiorOndaAtingida;
+    EntradaPontuacao topPontuacoes[5];
+    int contadorTopPontuacoes;
+    EntradaPontuacao todasPontuacoes[64];
+    int contadorTodasPontuacoes;
+    int paginaPontuacao;
+    int tamanhoPaginaPontuacao;
 
-    char playerName[24];
-    int enteringName;
-    int nameSaved;
+    char nomeJogador[24];
+    int inserindoNome;
+    int nomeSalvo;
 
-    unsigned int bgTexture;
-    int bgTextureLoaded;
-} Game;
+    unsigned int texturaFundo;
+    int texturaFundoCarregada;
+} Jogo;
 
 #endif

@@ -5,148 +5,148 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void melhorias_preencher_opcoes(UpgradeOption *o, UpgradeType type)
+void melhorias_preencher_opcoes(OpcaoMelhoria *o, TipoMelhoria type)
 {
-    o->type = type;
+    o->tipo = type;
     switch (type)
     {
-    case UPGRADE_DAMAGE:
-        snprintf(o->label, sizeof(o->label), "Dano do Disparo");
-        snprintf(o->desc, sizeof(o->desc), "Aumenta o dano do disparo");
+    case MELHORIA_DANO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Dano do Disparo");
+        snprintf(o->descricao, sizeof(o->descricao), "Aumenta o dano do disparo");
         break;
-    case UPGRADE_FIRE_RATE:
-        snprintf(o->label, sizeof(o->label), "Taxa de Disparo");
-        snprintf(o->desc, sizeof(o->desc), "Aumenta a taxa de disparo");
+    case MELHORIA_TAXA_DE_DISPARO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Taxa de Disparo");
+        snprintf(o->descricao, sizeof(o->descricao), "Aumenta a taxa de disparo");
         break;
-    case UPGRADE_SPEED:
-        snprintf(o->label, sizeof(o->label), "Velocidade");
-        snprintf(o->desc, sizeof(o->desc), "Aumenta a velocidade de movimento");
+    case MELHORIA_VELOCIDADE:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Velocidade");
+        snprintf(o->descricao, sizeof(o->descricao), "Aumenta a velocidade de movimento");
         break;
-    case UPGRADE_HEAL:
-        snprintf(o->label, sizeof(o->label), "Aumento de Vida");
-        snprintf(o->desc, sizeof(o->desc), "Recupera e adiciona mais 50 de vida");
+    case MELHORIA_CURAR:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Aumento de Vida");
+        snprintf(o->descricao, sizeof(o->descricao), "Recupera e adiciona mais 50 de vida");
         break;
-    case UPGRADE_TIME:
-        snprintf(o->label, sizeof(o->label), "Aumento de Tempo");
-        snprintf(o->desc, sizeof(o->desc), "Acrescenta 20 segundos ao timer");
+    case MELHORIA_TEMPO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Aumento de Tempo");
+        snprintf(o->descricao, sizeof(o->descricao), "Acrescenta 20 segundos ao timer");
         break;
-    case UPGRADE_GUIDANCE_PP:
-        snprintf(o->label, sizeof(o->label), "Balas Guiadas");
-        snprintf(o->desc, sizeof(o->desc), "Desbloqueia projeteis guiados com 5 balas guiadas");
+    case MELHORIA_ORIENTACAO_PONTO_PONTO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Balas Guiadas");
+        snprintf(o->descricao, sizeof(o->descricao), "Desbloqueia projeteis guiados com 5 balas guiadas");
         break;
-    case UPGRADE_GUIDANCE_APNG:
-        snprintf(o->label, sizeof(o->label), "Balas Guiadas+");
-        snprintf(o->desc, sizeof(o->desc), "Melhora os projeteis guiados e adiciona mais 5 balas guiadas");
+    case MELHORIA_ORIENTACAO_ANGULO_PONTO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Balas Guiadas+");
+        snprintf(o->descricao, sizeof(o->descricao), "Melhora os projeteis guiados e adiciona mais 5 balas guiadas");
         break;
-    case UPGRADE_AMMO:
-        snprintf(o->label, sizeof(o->label), "Aumento de Municao");
-        snprintf(o->desc, sizeof(o->desc), "Adiciona mais 10 balas guiadas");
+    case MELHORIA_MUNICAO:
+        snprintf(o->rotulo, sizeof(o->rotulo), "Aumento de Municao");
+        snprintf(o->descricao, sizeof(o->descricao), "Adiciona mais 10 balas guiadas");
         break;
     default:
-        snprintf(o->label, sizeof(o->label), "Desconhecido");
-        snprintf(o->desc, sizeof(o->desc), "Efeito desconhecido");
+        snprintf(o->rotulo, sizeof(o->rotulo), "Desconhecido");
+        snprintf(o->descricao, sizeof(o->descricao), "Efeito desconhecido");
         break;
     }
 }
 
-void melhorias_rolar_opcoes(Game *g)
+void melhorias_rolar_opcoes(Jogo *g)
 {
     int i;
-    int used[UPGRADE_COUNT] = {0};
+    int used[MELHORIA_CONTADOR] = {0};
 
-    if (g->player.hasPP)
-        used[UPGRADE_GUIDANCE_PP] = 1;
-    if (g->player.hasAPNG)
-        used[UPGRADE_GUIDANCE_APNG] = 1;
+    if (g->jogador.possuiPontoPonto)
+        used[MELHORIA_ORIENTACAO_PONTO_PONTO] = 1;
+    if (g->jogador.possuiAnguloPonto)
+        used[MELHORIA_ORIENTACAO_ANGULO_PONTO] = 1;
 
     for (i = 0; i < MAXIMO_OPCOES_UPGRADE; ++i)
     {
-        UpgradeType t;
+        TipoMelhoria t;
         int guard = 0;
         do
         {
-            t = (UpgradeType)(rand() % UPGRADE_COUNT);
-            if (t == UPGRADE_GUIDANCE_APNG && !g->player.hasPP)
-                t = UPGRADE_DAMAGE;
-            if ((t == UPGRADE_AMMO) && (!g->player.hasPP && !g->player.hasAPNG))
+            t = (TipoMelhoria)(rand() % MELHORIA_CONTADOR);
+            if (t == MELHORIA_ORIENTACAO_ANGULO_PONTO && !g->jogador.possuiPontoPonto)
+                t = MELHORIA_DANO;
+            if ((t == MELHORIA_MUNICAO) && (!g->jogador.possuiPontoPonto && !g->jogador.possuiAnguloPonto))
             {
-                t = UPGRADE_DAMAGE;
+                t = MELHORIA_DANO;
             }
             guard++;
         } while (used[t] && guard < 32);
         used[t] = 1;
-        melhorias_preencher_opcoes(&g->upgrades[i], t);
+        melhorias_preencher_opcoes(&g->melhorias[i], t);
     }
 }
 
-void melhorias_aplicar(Game *g, UpgradeType t)
+void melhorias_aplicar(Jogo *g, TipoMelhoria t)
 {
     switch (t)
     {
-    case UPGRADE_DAMAGE:
-        g->player.damage += 7.5f;
+    case MELHORIA_DANO:
+        g->jogador.dano += 7.5f;
         break;
-    case UPGRADE_FIRE_RATE:
-        g->player.fireRate *= 0.8f;
-        if (g->player.fireRate < 0.1f)
+    case MELHORIA_TAXA_DE_DISPARO:
+        g->jogador.taxaDeDisparo *= 0.8f;
+        if (g->jogador.taxaDeDisparo < 0.1f)
         {
-            g->player.fireRate = 0.1f;
+            g->jogador.taxaDeDisparo = 0.1f;
         }
         break;
-    case UPGRADE_SPEED:
-        g->player.speed += 20.0f;
+    case MELHORIA_VELOCIDADE:
+        g->jogador.velocidade += 20.0f;
         break;
-    case UPGRADE_HEAL:
-        g->player.maxHp += 50.0f;
-        g->player.hp = g->player.maxHp;
+    case MELHORIA_CURAR:
+        g->jogador.vidaMaxima += 50.0f;
+        g->jogador.vida = g->jogador.vidaMaxima;
         break;
-    case UPGRADE_TIME:
-        g->timeLeft += 20.0f;
+    case MELHORIA_TEMPO:
+        g->tempoRestante += 20.0f;
         break;
-    case UPGRADE_GUIDANCE_PP:
-        g->player.hasPP = 1;
-        g->player.maxGuidedAmmo += 5;
-        g->player.guidedAmmo = g->player.maxGuidedAmmo;
-        if (g->player.maxLatAccel < 100.0f)
-            g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
+    case MELHORIA_ORIENTACAO_PONTO_PONTO:
+        g->jogador.possuiPontoPonto = 1;
+        g->jogador.municaoGuiadaMaxima += 5;
+        g->jogador.municaoGuiada = g->jogador.municaoGuiadaMaxima;
+        if (g->jogador.aceleracaoLateralMaxima < 100.0f)
+            g->jogador.aceleracaoLateralMaxima = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
-    case UPGRADE_GUIDANCE_APNG:
-        if (!g->player.hasPP)
+    case MELHORIA_ORIENTACAO_ANGULO_PONTO:
+        if (!g->jogador.possuiPontoPonto)
         {
-            g->player.hasPP = 1;
-            g->player.maxGuidedAmmo += 10;
+            g->jogador.possuiPontoPonto = 1;
+            g->jogador.municaoGuiadaMaxima += 10;
         }
-        g->player.hasAPNG = 1;
-        g->player.maxGuidedAmmo += 5;
-        g->player.guidedAmmo = g->player.maxGuidedAmmo;
-        if (g->player.maxLatAccel < 100.0f)
-            g->player.maxLatAccel = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
+        g->jogador.possuiAnguloPonto = 1;
+        g->jogador.municaoGuiadaMaxima += 5;
+        g->jogador.municaoGuiada = g->jogador.municaoGuiadaMaxima;
+        if (g->jogador.aceleracaoLateralMaxima < 100.0f)
+            g->jogador.aceleracaoLateralMaxima = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
-    case UPGRADE_AMMO:
-        g->player.maxGuidedAmmo += 10;
-        g->player.guidedAmmo = g->player.maxGuidedAmmo;
+    case MELHORIA_MUNICAO:
+        g->jogador.municaoGuiadaMaxima += 10;
+        g->jogador.municaoGuiada = g->jogador.municaoGuiadaMaxima;
         break;
     default:
         break;
     }
 }
 
-void melhorias_escolher(Game *g, int idx)
+void melhorias_escolher(Jogo *g, int idx)
 {
     if (idx < 0 || idx >= MAXIMO_OPCOES_UPGRADE)
     {
         return;
     }
 
-    melhorias_aplicar(g, g->upgrades[idx].type);
-    snprintf(g->lastUpgrade, sizeof(g->lastUpgrade), "%s", g->upgrades[idx].label);
-    g->lastUpgradeTimer = 2.5f;
-    g->upgradeFlash = 1.0f;
-    audio_tocar_som_tiro_disparo();
+    melhorias_aplicar(g, g->melhorias[idx].tipo);
+    snprintf(g->ultimaMelhoria, sizeof(g->ultimaMelhoria), "%s", g->melhorias[idx].rotulo);
+    g->temporizadorUltimaMelhoria = 2.5f;
+    g->flashMelhoria = 1.0f;
+    tocar_som_tiro();
 
-    g->player.guidedAmmo = g->player.maxGuidedAmmo;
+    g->jogador.municaoGuiada = g->jogador.municaoGuiadaMaxima;
 
-    g->wave += 1;
-    cenario_criar_onda(g);
-    g->screen = SCREEN_PLAYING;
+    g->onda += 1;
+    criar_onda(g);
+    g->tela = TELA_JOGANDO;
 }

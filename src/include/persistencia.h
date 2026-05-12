@@ -10,7 +10,7 @@ void persistencia_limpar_pontuacoes(void);
 void persistencia_carregar_configuracoes(int *audioEnabled, int *difficulty);
 void persistencia_salvar_configuracoes(int audioEnabled, int difficulty);
 
-int persistencia_carregar_pontuacoes_altas(ScoreEntry *outEntries, int maxEntries);
-int persistencia_carregar_pontuacoes(ScoreEntry *outEntries, int maxEntries);
+int persistencia_carregar_pontuacoes_altas(EntradaPontuacao *outEntries, int maxEntries);
+int persistencia_carregar_pontuacoes(EntradaPontuacao *outEntries, int maxEntries);
 
 #endif
