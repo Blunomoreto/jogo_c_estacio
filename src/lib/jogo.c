@@ -88,6 +88,8 @@ void jogo_atualizar(Jogo *jogo, float delta_tempo)
 
     if (jogo->tela == TELA_JOGANDO)
         gameplay_atualizar_playing(jogo, delta_tempo);
+
+    audio_atualizar(delta_tempo);
 }
 
 void jogo_renderizar(Jogo *jogo)
