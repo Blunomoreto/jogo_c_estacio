@@ -16,6 +16,12 @@ void desenhar_texto(float x, float y, const char *texto, void *fonte, float r, f
         glutBitmapCharacter(fonte, *p++);
 }
 
+void desenhar_texto_centralizado(float x, float y, const char *texto, void *fonte, float r, float g, float b)
+{
+    float largura_texto = (float)glutBitmapLength(fonte, (const unsigned char *)texto);
+    desenhar_texto(x - largura_texto * 0.5f, y, texto, fonte, r, g, b);
+}
+
 void desenhar_texto_limites(float x, float y, const char *texto, void *fonte, float r, float g, float b, float largMax)
 {
     const unsigned char *ponteiro_caractere = (const unsigned char *)texto;
@@ -124,7 +130,7 @@ void desenhar_vida_boss(Jogo *jogo)
                 percentual_vida = 0.0f;
             renderizar_retangulo(jogo->largura * 0.5f - 250.0f, 20.0f, 500.0f, 16.0f, (Cor){0.15f, 0.12f, 0.2f, 0.92f});
             renderizar_retangulo(jogo->largura * 0.5f - 250.0f, 20.0f, 500.0f * percentual_vida, 16.0f, (Cor){0.95f, 0.2f, 0.85f, 0.95f});
-            desenhar_texto(jogo->largura * 0.5f - 56.0f, 42.0f, "BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
+            desenhar_texto_centralizado(jogo->largura * 0.5f, 42.0f, "BOSS", GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 1.0f);
             break;
         }
     }
@@ -215,10 +221,10 @@ void desenhar_menu(Jogo *jogo)
         }
     }
 
-    desenhar_texto(centro_x - 160.0f, jogo->altura * 0.14f, "ORBIT SIEGE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.98f, 0.95f);
-    desenhar_texto(centro_x - 310.0f, jogo->altura * 0.20f, "A platformer action game with upgrades and survival mechanics", GLUT_BITMAP_HELVETICA_12, 0.75f, 0.82f, 0.95f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.14f, "ORBIT SIEGE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.98f, 0.95f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.20f, "A platformer action game with upgrades and survival mechanics", GLUT_BITMAP_HELVETICA_12, 0.75f, 0.82f, 0.95f);
     if (!interface_compacta)
-        desenhar_texto(centro_x - 138.0f, jogo->altura * 0.24f, "Press O for options or L for leaderboard", GLUT_BITMAP_HELVETICA_12, 0.72f, 0.80f, 0.92f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.24f, "Press O for options or L for leaderboard", GLUT_BITMAP_HELVETICA_12, 0.72f, 0.80f, 0.92f);
 
     if (animacao_hover_menu[0] > 0.01f)
         renderizar_retangulo(pos_x_botao_inicio - margem_sombra - 4.0f * escala_ui, pos_y_botao_inicio - 9.0f * escala_ui,
@@ -228,8 +234,8 @@ void desenhar_menu(Jogo *jogo)
                          (Cor){0.08f + 0.12f * animacao_hover_menu[0], 0.25f + 0.20f * animacao_hover_menu[0], 0.55f + 0.35f * animacao_hover_menu[0], 0.50f + 0.05f * animacao_hover_menu[0]});
     renderizar_retangulo(pos_x_botao_inicio, pos_y_botao_inicio, largura_botao, altura_botao_inicio,
                          (Cor){0.15f + 0.07f * animacao_hover_menu[0], 0.45f + 0.13f * animacao_hover_menu[0], 0.85f + 0.15f * animacao_hover_menu[0], 0.95f + 0.03f * animacao_hover_menu[0]});
-    desenhar_texto(centro_x - 52.0f * escala_ui, pos_y_botao_inicio + 20.0f * escala_ui, "START GAME", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
-    desenhar_texto(centro_x - 89.0f * escala_ui, pos_y_botao_inicio + 40.0f * escala_ui, "Press ENTER or click", GLUT_BITMAP_HELVETICA_10, 0.75f, 0.85f, 1.0f);
+    desenhar_texto_centralizado(centro_x, pos_y_botao_inicio + 20.0f * escala_ui, "START GAME", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, pos_y_botao_inicio + 40.0f * escala_ui, "Press ENTER or click", GLUT_BITMAP_HELVETICA_10, 0.75f, 0.85f, 1.0f);
 
     if (animacao_hover_menu[1] > 0.01f)
         renderizar_retangulo(pos_x_botao_opcoes - margem_sombra - 3.0f * escala_ui, pos_y_botao_opcoes - 8.0f * escala_ui,
@@ -239,7 +245,7 @@ void desenhar_menu(Jogo *jogo)
                          (Cor){0.26f + 0.15f * animacao_hover_menu[1], 0.12f + 0.07f * animacao_hover_menu[1], 0.36f + 0.24f * animacao_hover_menu[1], 0.50f + 0.05f * animacao_hover_menu[1]});
     renderizar_retangulo(pos_x_botao_opcoes, pos_y_botao_opcoes, largura_botao, altura_botao_sub,
                          (Cor){0.36f + 0.12f * animacao_hover_menu[1], 0.22f + 0.10f * animacao_hover_menu[1], 0.62f + 0.20f * animacao_hover_menu[1], 0.90f + 0.05f * animacao_hover_menu[1]});
-    desenhar_texto(centro_x - 52.0f * escala_ui, pos_y_botao_opcoes + 17.0f * escala_ui, "OPTIONS (O)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, pos_y_botao_opcoes + 17.0f * escala_ui, "OPTIONS (O)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_menu[2] > 0.01f)
         renderizar_retangulo(pos_x_botao_placar - margem_sombra - 3.0f * escala_ui, pos_y_botao_placar - 8.0f * escala_ui,
@@ -249,15 +255,15 @@ void desenhar_menu(Jogo *jogo)
                          (Cor){0.08f + 0.08f * animacao_hover_menu[2], 0.22f + 0.18f * animacao_hover_menu[2], 0.30f + 0.20f * animacao_hover_menu[2], 0.50f + 0.05f * animacao_hover_menu[2]});
     renderizar_retangulo(pos_x_botao_placar, pos_y_botao_placar, largura_botao, altura_botao_sub,
                          (Cor){0.16f + 0.10f * animacao_hover_menu[2], 0.36f + 0.16f * animacao_hover_menu[2], 0.50f + 0.18f * animacao_hover_menu[2], 0.90f + 0.05f * animacao_hover_menu[2]});
-    desenhar_texto(centro_x - 77.0f * escala_ui, pos_y_botao_placar + 17.0f * escala_ui, "LEADERBOARD (L)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, pos_y_botao_placar + 17.0f * escala_ui, "LEADERBOARD (L)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (hover_botao_inicio || hover_botao_opcoes || hover_botao_placar)
-        desenhar_texto(centro_x - 56.0f * escala_ui, jogo->altura * 0.57f, "Click to select", GLUT_BITMAP_HELVETICA_12, 0.9f, 0.96f, 1.0f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.57f, "Click to select", GLUT_BITMAP_HELVETICA_12, 0.9f, 0.96f, 1.0f);
 
     renderizar_retangulo(jogo->largura * 0.5f - 400.0f, jogo->altura * 0.90f, 800.0f, interface_compacta ? 40.0f : 60.0f, (Cor){0.0f, 0.0f, 0.0f, 0.25f});
-    desenhar_texto(jogo->largura * 0.5f - 380.0f, jogo->altura * 0.925f, "A/D or ARROWS: Move  |  SPACE or W: Jump  |  Mouse: Aim  |  LClick: Shoot", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.925f, "A/D or ARROWS: Move  |  SPACE or W: Jump  |  Mouse: Aim  |  LClick: Shoot", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
     if (!interface_compacta)
-        desenhar_texto(jogo->largura * 0.5f - 380.0f, jogo->altura * 0.95f, "P or ESC: Pause  |  F12: Screenshot  |  Enemy types: Orange (Standard), Diamond (Sniper), Heavy (Tank)", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.95f, "P or ESC: Pause  |  F12: Screenshot  |  Enemy types: Orange (Standard), Diamond (Sniper), Heavy (Tank)", GLUT_BITMAP_HELVETICA_10, 0.7f, 0.78f, 0.88f);
 
     renderizar_retangulo(30.0f, jogo->altura * 0.78f, 320.0f, 90.0f, (Cor){0.0f, 0.0f, 0.0f, 0.4f});
     {
@@ -278,7 +284,7 @@ void desenhar_menu(Jogo *jogo)
     }
 
     renderizar_retangulo(jogo->largura * 0.5f - 280.0f, jogo->altura * 0.60f, 560.0f, 140.0f, (Cor){0.05f, 0.08f, 0.15f, 0.7f});
-    desenhar_texto(jogo->largura * 0.5f - 150.0f, jogo->altura * 0.63f, "TOP 5 SCORES", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.9f, 0.5f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.63f, "TOP 5 SCORES", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.9f, 0.5f);
     for (s = 0; s < jogo->numero_melhores_pontuacoes && s < 5; ++s)
     {
         char linha_pontuacao[128];
@@ -323,7 +329,7 @@ void desenhar_placar(Jogo *jogo)
         indice_fim_pagina = jogo->numero_todas_pontuacoes;
 
     renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.0f, 0.0f, 0.0f, 0.67f});
-    desenhar_texto(jogo->largura * 0.5f - 78.0f, jogo->altura * 0.82f, "SCOREBOARD", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.82f, "SCOREBOARD", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
 
     renderizar_retangulo(jogo->largura * 0.5f - 300.0f, jogo->altura * 0.26f, 600.0f, 360.0f, (Cor){0.06f, 0.09f, 0.17f, 0.88f});
     desenhar_texto(jogo->largura * 0.5f - 270.0f, jogo->altura * 0.58f, "#   NAME                    SCORE       WAVE", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
@@ -345,31 +351,31 @@ void desenhar_placar(Jogo *jogo)
     }
 
     snprintf(texto_pagina, sizeof(texto_pagina), "Page %d/%d", jogo->pagina_pontuacao + 1, total_paginas);
-    desenhar_texto(jogo->largura * 0.5f - 40.0f, jogo->altura * 0.22f, texto_pagina, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.22f, texto_pagina, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
 
     if (animacao_hover_placar[0] > 0.01f)
         renderizar_retangulo(centro_x - 258.0f, jogo->altura * 0.20f - 3.0f, 166.0f, 50.0f, (Cor){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_placar[0]});
     renderizar_retangulo(jogo->largura * 0.5f - 255.0f, jogo->altura * 0.20f, 160.0f, 44.0f,
                          (Cor){0.20f + 0.08f * animacao_hover_placar[0], 0.30f + 0.10f * animacao_hover_placar[0], 0.52f + 0.16f * animacao_hover_placar[0], 0.90f + 0.05f * animacao_hover_placar[0]});
-    desenhar_texto(jogo->largura * 0.5f - 205.0f, jogo->altura * 0.228f, "PREV", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x - 175.0f, jogo->altura * 0.228f, "PREV", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_placar[1] > 0.01f)
         renderizar_retangulo(centro_x + 92.0f, jogo->altura * 0.20f - 3.0f, 166.0f, 50.0f, (Cor){0.48f, 0.68f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_placar[1]});
     renderizar_retangulo(jogo->largura * 0.5f + 95.0f, jogo->altura * 0.20f, 160.0f, 44.0f,
                          (Cor){0.20f + 0.08f * animacao_hover_placar[1], 0.30f + 0.10f * animacao_hover_placar[1], 0.52f + 0.16f * animacao_hover_placar[1], 0.90f + 0.05f * animacao_hover_placar[1]});
-    desenhar_texto(jogo->largura * 0.5f + 147.0f, jogo->altura * 0.228f, "NEXT", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x + 175.0f, jogo->altura * 0.228f, "NEXT", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_placar[2] > 0.01f)
         renderizar_retangulo(centro_x - 113.0f, jogo->altura * 0.20f - 3.0f, 226.0f, 50.0f, (Cor){1.0f, 0.52f, 0.54f, (0.10f + 0.12f * pulsacao) * animacao_hover_placar[2]});
     renderizar_retangulo(jogo->largura * 0.5f - 110.0f, jogo->altura * 0.20f, 220.0f, 44.0f,
                          (Cor){0.45f + 0.10f * animacao_hover_placar[2], 0.20f + 0.06f * animacao_hover_placar[2], 0.22f + 0.08f * animacao_hover_placar[2], 0.90f + 0.05f * animacao_hover_placar[2]});
-    desenhar_texto(jogo->largura * 0.5f - 78.0f, jogo->altura * 0.228f, "CLEAR (C)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.228f, "CLEAR (C)", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_placar[3] > 0.01f)
         renderizar_retangulo(centro_x - 113.0f, jogo->altura * 0.11f - 3.0f, 226.0f, 50.0f, (Cor){0.52f, 0.78f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_placar[3]});
     renderizar_retangulo(jogo->largura * 0.5f - 110.0f, jogo->altura * 0.11f, 220.0f, 44.0f,
                          (Cor){0.10f + 0.08f * animacao_hover_placar[3], 0.35f + 0.12f * animacao_hover_placar[3], 0.70f + 0.14f * animacao_hover_placar[3], 0.90f + 0.05f * animacao_hover_placar[3]});
-    desenhar_texto(jogo->largura * 0.5f - 82.0f, jogo->altura * 0.138f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.138f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 }
 
 void desenhar_opcoes(Jogo *jogo)
@@ -398,29 +404,29 @@ void desenhar_opcoes(Jogo *jogo)
     }
 
     renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.0f, 0.0f, 0.0f, 0.62f});
-    desenhar_texto(jogo->largura * 0.5f - 76.0f, jogo->altura * 0.73f, "OPTIONS", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.73f, "OPTIONS", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_opcoes[0] > 0.01f)
         renderizar_retangulo(centro_x - 183.0f, jogo->altura * 0.56f - 3.0f, 366.0f, 62.0f, (Cor){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_opcoes[0]});
     renderizar_retangulo(jogo->largura * 0.5f - 180.0f, jogo->altura * 0.56f, 360.0f, 56.0f,
                          (Cor){0.20f + 0.08f * animacao_hover_opcoes[0], 0.25f + 0.10f * animacao_hover_opcoes[0], 0.50f + 0.16f * animacao_hover_opcoes[0], 0.90f + 0.05f * animacao_hover_opcoes[0]});
     snprintf(texto_opcao, sizeof(texto_opcao), "Audio: %s  (click or A)", jogo->audio_habilitado ? "ON" : "OFF");
-    desenhar_texto(jogo->largura * 0.5f - 150.0f, jogo->altura * 0.595f, texto_opcao, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.595f, texto_opcao, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
     if (animacao_hover_opcoes[1] > 0.01f)
         renderizar_retangulo(centro_x - 183.0f, jogo->altura * 0.46f - 3.0f, 366.0f, 62.0f, (Cor){0.84f, 0.66f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_opcoes[1]});
     renderizar_retangulo(jogo->largura * 0.5f - 180.0f, jogo->altura * 0.46f, 360.0f, 56.0f,
                          (Cor){0.28f + 0.10f * animacao_hover_opcoes[1], 0.22f + 0.08f * animacao_hover_opcoes[1], 0.44f + 0.15f * animacao_hover_opcoes[1], 0.90f + 0.05f * animacao_hover_opcoes[1]});
     snprintf(texto_opcao, sizeof(texto_opcao), "Difficulty: %s  (click or D)", inimigo_nome_dificuldade(jogo->dificuldade));
-    desenhar_texto(jogo->largura * 0.5f - 150.0f, jogo->altura * 0.495f, texto_opcao, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.495f, texto_opcao, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 
-    desenhar_texto(jogo->largura * 0.5f - 180.0f, jogo->altura * 0.40f, "Easy: less damage + more time | Hard: stronger/faster enemies", GLUT_BITMAP_HELVETICA_12, 0.92f, 0.92f, 0.92f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.40f, "Easy: less damage + more time | Hard: stronger/faster enemies", GLUT_BITMAP_HELVETICA_12, 0.92f, 0.92f, 0.92f);
 
     if (animacao_hover_opcoes[2] > 0.01f)
         renderizar_retangulo(centro_x - 113.0f, jogo->altura * 0.31f - 3.0f, 226.0f, 56.0f, (Cor){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_opcoes[2]});
     renderizar_retangulo(jogo->largura * 0.5f - 110.0f, jogo->altura * 0.31f, 220.0f, 50.0f,
                          (Cor){0.10f + 0.08f * animacao_hover_opcoes[2], 0.35f + 0.12f * animacao_hover_opcoes[2], 0.70f + 0.14f * animacao_hover_opcoes[2], 0.90f + 0.05f * animacao_hover_opcoes[2]});
-    desenhar_texto(jogo->largura * 0.5f - 76.0f, jogo->altura * 0.342f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.342f, "BACK MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
 }
 
 void desenhar_pausa(Jogo *jogo)
@@ -429,10 +435,10 @@ void desenhar_pausa(Jogo *jogo)
     int interface_compacta = (jogo->largura < 1100 || jogo->altura < 680);
     renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.0f, 0.0f, 0.0f, 0.56f});
     renderizar_retangulo(centro_x - 240.0f, jogo->altura * 0.42f, 480.0f, interface_compacta ? 110.0f : 140.0f, (Cor){0.06f, 0.10f, 0.18f, 0.88f});
-    desenhar_texto(centro_x - 64.0f, jogo->altura * 0.47f, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
-    desenhar_texto(centro_x - 150.0f, jogo->altura * 0.53f, "Press P or ENTER to continue", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.47f, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.53f, "Press P or ENTER to continue", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
     if (!interface_compacta)
-        desenhar_texto(centro_x - 120.0f, jogo->altura * 0.58f, "ESC also resumes the game", GLUT_BITMAP_HELVETICA_12, 0.78f, 0.86f, 0.98f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.58f, "ESC also resumes the game", GLUT_BITMAP_HELVETICA_12, 0.78f, 0.86f, 0.98f);
 }
 
 void desenhar_melhorias_tela(Jogo *jogo)
@@ -471,9 +477,9 @@ void desenhar_melhorias_tela(Jogo *jogo)
     renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.0f, 0.0f, 0.0f, 0.58f});
     renderizar_retangulo(centro_x - largura_total_cartoes * 0.5f - 40.0f * escala_ui, pos_y_cartoes - 70.0f * escala_ui,
                          largura_total_cartoes + 80.0f * escala_ui, altura_cartao + 190.0f * escala_ui, (Cor){0.07f, 0.10f, 0.18f, 0.86f});
-    desenhar_texto(centro_x - 92.0f, pos_y_cartoes - 34.0f * escala_ui, "CHOOSE UPGRADE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
+    desenhar_texto_centralizado(centro_x, pos_y_cartoes - 34.0f * escala_ui, "CHOOSE UPGRADE", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f);
     if (!interface_compacta)
-        desenhar_texto(centro_x - 155.0f, pos_y_cartoes - 12.0f * escala_ui, "Select with mouse click or keys 1, 2, 3", GLUT_BITMAP_HELVETICA_12, 0.80f, 0.88f, 1.0f);
+        desenhar_texto_centralizado(centro_x, pos_y_cartoes - 12.0f * escala_ui, "Select with mouse click or keys 1, 2, 3", GLUT_BITMAP_HELVETICA_12, 0.80f, 0.88f, 1.0f);
     jogo->melhoria_selecionada = -1;
 
     for (indice_opcao = 0; indice_opcao < MAXIMO_OPCOES_UPGRADE; ++indice_opcao)
@@ -495,7 +501,7 @@ void desenhar_melhorias_tela(Jogo *jogo)
         renderizar_retangulo(pos_x_cartao, pos_y_cartao, largura_cartao, altura_cartao,
                              (Cor){0.14f + 0.06f * animacao_hover_melhoria[indice_opcao], 0.20f + indice_opcao * 0.07f + 0.06f * animacao_hover_melhoria[indice_opcao], 0.45f + 0.10f * animacao_hover_melhoria[indice_opcao], 0.92f + 0.04f * animacao_hover_melhoria[indice_opcao]});
         desenhar_icone_melhoria(jogo->melhorias[indice_opcao].tipo, pos_x_cartao + largura_cartao - 25.0f * escala_ui, pos_y_cartao + altura_cartao - 26.0f * escala_ui);
-        desenhar_texto(pos_x_cartao + 12.0f * escala_ui, pos_y_cartao + 34.0f * escala_ui, jogo->melhorias[indice_opcao].rotulo, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        desenhar_texto_centralizado(pos_x_cartao + largura_cartao * 0.5f, pos_y_cartao + 34.0f * escala_ui, jogo->melhorias[indice_opcao].rotulo, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
         desenhar_texto_limites(pos_x_cartao + 12.0f * escala_ui, pos_y_cartao + 62.0f * escala_ui, jogo->melhorias[indice_opcao].descricao, GLUT_BITMAP_HELVETICA_12, 0.88f, 0.95f, 1.0f, largura_cartao - 32.0f * escala_ui);
         {
             char numero_indice[8];
@@ -517,13 +523,13 @@ void desenhar_melhorias_tela(Jogo *jogo)
                                  (Cor){0.75f, 0.64f, 1.0f, (0.08f + 0.12f * pulsacao) * animacao_hover_rerolar});
         renderizar_retangulo(pos_x_rerolar, pos_y_rerolar, largura_rerolar, altura_rerolar,
                              (Cor){0.22f + 0.10f * animacao_hover_rerolar, 0.18f + 0.08f * animacao_hover_rerolar, 0.35f + 0.12f * animacao_hover_rerolar, 0.92f + 0.04f * animacao_hover_rerolar});
-        desenhar_texto(centro_x - 90.0f * escala_ui, pos_y_rerolar + 26.0f * escala_ui, "Reroll (R) - Cost: 3 gold", GLUT_BITMAP_HELVETICA_12, 1.0f, 0.95f, 0.9f);
+        desenhar_texto_centralizado(centro_x, pos_y_rerolar + 26.0f * escala_ui, "Reroll (R) - Cost: 3 gold", GLUT_BITMAP_HELVETICA_12, 1.0f, 0.95f, 0.9f);
     }
 
     if (jogo->melhoria_selecionada >= 0 && jogo->melhoria_selecionada < MAXIMO_OPCOES_UPGRADE)
     {
         renderizar_retangulo(centro_x - 240.0f * escala_ui, pos_y_rerolar + altura_rerolar + 12.0f * escala_ui, 480.0f * escala_ui, 40.0f * escala_ui, (Cor){0.08f, 0.12f, 0.24f, 0.85f});
-        desenhar_texto(centro_x - 220.0f * escala_ui, pos_y_rerolar + altura_rerolar + 36.0f * escala_ui, jogo->melhorias[jogo->melhoria_selecionada].descricao, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.98f, 1.0f);
+        desenhar_texto_centralizado(centro_x, pos_y_rerolar + altura_rerolar + 36.0f * escala_ui, jogo->melhorias[jogo->melhoria_selecionada].descricao, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.98f, 1.0f);
     }
 }
 
@@ -546,29 +552,29 @@ void desenhar_fim(Jogo *jogo)
 
     renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.0f, 0.0f, 0.0f, 0.62f});
     renderizar_retangulo(centro_x - 280.0f, jogo->altura * 0.38f, 560.0f, 260.0f, (Cor){0.08f, 0.10f, 0.18f, 0.86f});
-    desenhar_texto(centro_x - 60.0f, jogo->altura * 0.44f, texto_titulo, GLUT_BITMAP_TIMES_ROMAN_24,
-                   jogo->tela == TELA_VITORIA ? 0.9f : 1.0f,
-                   jogo->tela == TELA_VITORIA ? 1.0f : 0.85f,
-                   jogo->tela == TELA_VITORIA ? 0.9f : 0.85f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.44f, texto_titulo, GLUT_BITMAP_TIMES_ROMAN_24,
+                                jogo->tela == TELA_VITORIA ? 0.9f : 1.0f,
+                                jogo->tela == TELA_VITORIA ? 1.0f : 0.85f,
+                                jogo->tela == TELA_VITORIA ? 0.9f : 0.85f);
 
     snprintf(texto_linha, sizeof(texto_linha), "Score: %d  |  Wave: %d", jogo->pontuacao, jogo->onda);
-    desenhar_texto(centro_x - 100.0f, jogo->altura * 0.50f, texto_linha, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
+    desenhar_texto_centralizado(centro_x, jogo->altura * 0.50f, texto_linha, GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 1.0f);
 
     if (!jogo->nome_salvo)
     {
-        desenhar_texto(centro_x - 190.0f, jogo->altura * 0.57f, "Type name and press ENTER to save score:", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.57f, "Type name and press ENTER to save score:", GLUT_BITMAP_HELVETICA_18, 0.95f, 0.95f, 0.95f);
         renderizar_retangulo(centro_x - 170.0f, jogo->altura * 0.61f, 340.0f, 40.0f, (Cor){0.12f, 0.12f, 0.2f, 0.9f});
-        desenhar_texto(centro_x - 160.0f, jogo->altura * 0.635f, jogo->nome_jogador, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 0.8f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.635f, jogo->nome_jogador, GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 0.8f);
     }
     else
     {
-        desenhar_texto(centro_x - 170.0f, jogo->altura * 0.57f, "Saved. Press ENTER or M to go menu.", GLUT_BITMAP_HELVETICA_18, 0.95f, 1.0f, 0.85f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.57f, "Saved. Press ENTER or M to go menu.", GLUT_BITMAP_HELVETICA_18, 0.95f, 1.0f, 0.85f);
         if (animacao_hover_menu_fim > 0.01f)
             renderizar_retangulo(centro_x - 113.0f, jogo->altura * 0.45f - 3.0f, 226.0f, 56.0f,
                                  (Cor){0.52f, 0.80f, 1.0f, (0.10f + 0.12f * pulsacao) * animacao_hover_menu_fim});
         renderizar_retangulo(centro_x - 110.0f, jogo->altura * 0.45f, 220.0f, 50.0f,
                              (Cor){0.10f + 0.10f * animacao_hover_menu_fim, 0.35f + 0.12f * animacao_hover_menu_fim, 0.70f + 0.14f * animacao_hover_menu_fim, 0.90f + 0.05f * animacao_hover_menu_fim});
-        desenhar_texto(centro_x - 72.0f, jogo->altura * 0.482f, "MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
+        desenhar_texto_centralizado(centro_x, jogo->altura * 0.482f, "MENU", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f);
     }
 }
 

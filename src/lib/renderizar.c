@@ -94,11 +94,13 @@ void renderizar_fundo(struct Jogo *jogo)
 {
     float deslocamento_fundo = fmodf(jogo->tempo_decorrido * 20.0f, (float)jogo->largura);
 
+    renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.04f, 0.06f, 0.11f, 1.0f});
+
     if (jogo->textura_fundo_carregado)
     {
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, jogo->textura_fundo);
-        glColor4f(1.0f, 1.0f, 1.0f, 0.28f);
+        glColor4f(1.0f, 1.0f, 1.0f, 0.35f);
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f + deslocamento_fundo / jogo->largura, 0.0f);
         glVertex2f(0.0f, 0.0f);
@@ -111,8 +113,6 @@ void renderizar_fundo(struct Jogo *jogo)
         glEnd();
         glDisable(GL_TEXTURE_2D);
     }
-
-    renderizar_retangulo(0.0f, 0.0f, (float)jogo->largura, (float)jogo->altura, (Cor){0.04f, 0.06f, 0.11f, 1.0f});
 
     renderizar_circulo(matematica_vetor2d(jogo->largura * 0.85f, jogo->altura * 0.25f), 60.0f, (Cor){0.95f, 0.95f, 0.90f, 0.8f}, 24);
     renderizar_circulo(matematica_vetor2d(jogo->largura * 0.88f, jogo->altura * 0.22f), 58.0f, (Cor){0.04f, 0.06f, 0.11f, 0.9f}, 24);

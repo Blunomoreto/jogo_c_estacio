@@ -189,10 +189,10 @@ void entrada_especial_pressionado(Jogo *jogo, int tecla, int x, int y)
         time_t tempo_atual = time(NULL);
         struct tm *tempo_local = localtime(&tempo_atual);
         char nome_arquivo[128];
-        snprintf(nome_arquivo, sizeof(nome_arquivo), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.ppm",
+        snprintf(nome_arquivo, sizeof(nome_arquivo), "assets/screenshots/shot_%04d%02d%02d_%02d%02d%02d.png",
                  tempo_local->tm_year + 1900, tempo_local->tm_mon + 1, tempo_local->tm_mday,
                  tempo_local->tm_hour, tempo_local->tm_min, tempo_local->tm_sec);
-        if (imagem_salvar_ppm(nome_arquivo, jogo->largura, jogo->altura))
+        if (imagem_salvar_png(nome_arquivo, jogo->largura, jogo->altura))
             interface_notificar(jogo, "Screenshot saved");
         else
             interface_notificar(jogo, "Screenshot failed");

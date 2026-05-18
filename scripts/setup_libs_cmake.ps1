@@ -22,9 +22,10 @@ $buildDir     = Join-Path $thirdParty "freeglut-build"
 $freeglutBase = Join-Path $thirdParty "freeglut\freeglut"
 $tarball      = Join-Path $thirdParty "freeglut-3.8.0.tar.gz"
 
-if (Test-Path (Join-Path $freeglutBase "bin\x64\libfreeglut.dll")) {
+$existingDll = Get-ChildItem -Path (Join-Path $freeglutBase "bin\x64") -Filter "*freeglut*.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($existingDll) {
     Write-Host "FreeGLUT ja instalado em $freeglutBase - pulando setup."
-    Copy-Item -Force (Join-Path $freeglutBase "bin\x64\libfreeglut.dll") (Join-Path $ProjectRoot "libfreeglut.dll")
+    Copy-Item -Force $existingDll.FullName (Join-Path $ProjectRoot $existingDll.Name)
     exit 0
 }
 
@@ -66,7 +67,30 @@ if (-not $builtLib) { throw "libfreeglut.dll.a nao encontrada no diretorio de bu
 Copy-Item -Force $builtLib.FullName (Join-Path $freeglutBase "lib\x64\libfreeglut.a")
 Copy-Item -Force $builtLib.FullName (Join-Path $freeglutBase "lib\libfreeglut.a")
 
-Copy-Item -Force (Join-Path $freeglutBase "bin\x64\libfreeglut.dll") (Join-Path $ProjectRoot "libfreeglut.dll")
+$builtDlls = Get-ChildItem -Path (Join-Path $freeglutBase "bin\x64") -Filter "*freeglut*.dll"
+foreach ($d in $builtDlls) {
+    Copy-Item -Force $d.FullName (Join-Path $ProjectRoot $d.Name)
+}
 
 Write-Host "FreeGLUT instalado em: $freeglutBase"
+
+$stbDir    = Join-Path $thirdParty "stb"
+$stbImage  = Join-Path $stbDir "stb_image.h"
+$stbWrite  = Join-Path $stbDir "stb_image_write.h"
+
+if ((Test-Path $stbImage) -and (Test-Path $stbWrite)) {
+    Write-Host "STB headers ja presentes em $stbDir - pulando download."
+} else {
+    Write-Host "Baixando STB headers..."
+    New-Item -ItemType Directory -Force -Path $stbDir | Out-Null
+    $stbBase = "https://raw.githubusercontent.com/nothings/stb/master"
+    try {
+        Invoke-WebRequest -Uri "$stbBase/stb_image.h"       -OutFile $stbImage -UseBasicParsing -ErrorAction Stop
+        Invoke-WebRequest -Uri "$stbBase/stb_image_write.h" -OutFile $stbWrite -UseBasicParsing -ErrorAction Stop
+        Write-Host "STB headers instalados em $stbDir"
+    } catch {
+        throw "Falha ao baixar STB headers: $_"
+    }
+}
+
 Write-Host "Execute scripts\compile_build.ps1 para compilar o jogo."

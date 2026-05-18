@@ -24,23 +24,23 @@ void melhorias_preencher_opcoes(OpcaoMelhoria *opcoes, TipoMelhoria tipo)
         break;
     case MELHORIA_CURA:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Aumento de Vida");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Recupera a vida e adiciona mais 50 ao total");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Recupera a vida e adiciona mais 100 ao total");
         break;
     case MELHORIA_TEMPO:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Aumento de Tempo");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Acrescenta 100 segundos ao timer");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Acrescenta 200 segundos ao timer");
         break;
     case MELHORIA_GUIANCA_PP:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Balas Guiadas");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Desbloqueia projeteis guiados com 5 balas guiadas");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Desbloqueia projeteis guiados com 8 balas guiadas");
         break;
     case MELHORIA_GUIANCA_APN:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Balas Guiadas+");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Melhora os projeteis guiados e adiciona mais 5 balas guiadas");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Melhora os projeteis guiados e adiciona mais 8 balas guiadas");
         break;
     case MELHORIA_MUNICAO:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Aumento de Municao");
-        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Adiciona mais 10 balas guiadas");
+        snprintf(opcoes->descricao, sizeof(opcoes->descricao), "Adiciona mais 16 balas guiadas");
         break;
     default:
         snprintf(opcoes->rotulo, sizeof(opcoes->rotulo), "Desconhecido");
@@ -84,28 +84,28 @@ void melhorias_aplicar(Jogo *jogo, TipoMelhoria tipo)
     switch (tipo)
     {
     case MELHORIA_DANO:
-        jogo->jogador.dano += 7.5f;
+        jogo->jogador.dano += 10.0f;
         break;
     case MELHORIA_TAXA_DISPARO:
-        jogo->jogador.taxa_disparo *= 0.8f;
-        if (jogo->jogador.taxa_disparo < 0.1f)
+        jogo->jogador.taxa_disparo *= 0.6f;
+        if (jogo->jogador.taxa_disparo < 0.05f)
         {
-            jogo->jogador.taxa_disparo = 0.1f;
+            jogo->jogador.taxa_disparo = 0.05f;
         }
         break;
     case MELHORIA_VELOCIDADE:
         jogo->jogador.velocidade += 20.0f;
         break;
     case MELHORIA_CURA:
-        jogo->jogador.vida_maxima += 50.0f;
+        jogo->jogador.vida_maxima += 100.0f;
         jogo->jogador.vida = jogo->jogador.vida_maxima;
         break;
     case MELHORIA_TEMPO:
-        jogo->tempo_restante += 100.0f;
+        jogo->tempo_restante += 200.0f;
         break;
     case MELHORIA_GUIANCA_PP:
         jogo->jogador.tem_guianca_pp = 1;
-        jogo->jogador.municao_guiada_max += 5;
+        jogo->jogador.municao_guiada_max += 8;
         jogo->jogador.municao_guiada = jogo->jogador.municao_guiada_max;
         if (jogo->jogador.aceleracao_lateral_max < 100.0f)
             jogo->jogador.aceleracao_lateral_max = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
@@ -114,16 +114,16 @@ void melhorias_aplicar(Jogo *jogo, TipoMelhoria tipo)
         if (!jogo->jogador.tem_guianca_pp)
         {
             jogo->jogador.tem_guianca_pp = 1;
-            jogo->jogador.municao_guiada_max += 10;
+            jogo->jogador.municao_guiada_max += 8;
         }
         jogo->jogador.tem_guianca_apn = 1;
-        jogo->jogador.municao_guiada_max += 5;
+        jogo->jogador.municao_guiada_max += 8;
         jogo->jogador.municao_guiada = jogo->jogador.municao_guiada_max;
         if (jogo->jogador.aceleracao_lateral_max < 100.0f)
             jogo->jogador.aceleracao_lateral_max = JOGADOR_MAXIMO_ACELERACAO_LATERAL;
         break;
     case MELHORIA_MUNICAO:
-        jogo->jogador.municao_guiada_max += 10;
+        jogo->jogador.municao_guiada_max += 16;
         jogo->jogador.municao_guiada = jogo->jogador.municao_guiada_max;
         break;
     default:

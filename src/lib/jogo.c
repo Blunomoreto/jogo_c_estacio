@@ -64,7 +64,7 @@ void jogo_iniciar(Jogo *jogo, int largura, int altura)
     interface_refrescar_pontuacoes_maximas(jogo);
     interface_refrescar_pontuacoes(jogo);
 
-    jogo->textura_fundo = imagem_carregar_ppm("assets/images/background.ppm", &jogo->textura_fundo_carregado);
+    jogo->textura_fundo = imagem_carregar_fundo(&jogo->textura_fundo_carregado);
     audio_inicializar();
     audio_definir_ativacao(jogo->audio_habilitado);
 }

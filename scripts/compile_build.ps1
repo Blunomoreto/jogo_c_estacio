@@ -6,55 +6,75 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "[1/2] Validando GCC..."
-$gcc = Get-Command gcc -ErrorAction SilentlyContinue
-if (-not $gcc) {
-    throw "gcc nao encontrado no PATH. Instale MinGW-w64 standalone e reabra o terminal."
+$gccCmd = Get-Command gcc -ErrorAction SilentlyContinue
+if (-not $gccCmd) {
+    throw "gcc nao encontrado no PATH. Instale MinGW-w64 e reabra o terminal."
 }
-
 gcc --version | Select-Object -First 1 | Out-Host
 
-$thirdParty  = Join-Path $ProjectRoot "third_party"
-$extractPath = Join-Path $thirdParty "freeglut"
+$thirdParty = Join-Path $ProjectRoot "third_party"
+$includeDir = Join-Path $ProjectRoot "include"
+$stbInclude = Join-Path $thirdParty "stb"
+$outExe     = Join-Path $ProjectRoot "orbit_siege.exe"
 
-$includeDir  = Join-Path $ProjectRoot "include"
-$glutInclude = Join-Path $extractPath "freeglut\include"
-$glutLib     = Join-Path $extractPath "freeglut\lib\x64"
-$glutDll     = Join-Path $extractPath "freeglut\bin\x64\libfreeglut.dll"
-$outExe      = Join-Path $ProjectRoot "orbit_siege.exe"
-$outDll      = Join-Path $ProjectRoot "libfreeglut.dll"
+# Detect GCC runtime: MSYS2 ucrt64/mingw64 vs standalone MinGW
+$gccPath      = $gccCmd.Source
+$isMsys2Ucrt  = $gccPath -match '[\\/]ucrt64[\\/]'
+$isMsys2Mingw = $gccPath -match '[\\/]mingw64[\\/]'
+$isMsys2      = $isMsys2Ucrt -or $isMsys2Mingw
 
-if (-not (Test-Path $glutDll)) {
-    throw "freeglut.dll nao encontrado em $glutDll. Execute scripts\setup_libs.ps1 primeiro."
+if ($isMsys2) {
+    # For MSYS2, freeglut is installed system-wide via pacman.
+    # GCC's default search paths cover both headers and libs — no -I or -L needed.
+    $msys2Root  = $gccPath -replace '[\\/](ucrt64|mingw64)[\\/].*', ''
+    $mingwEnv   = if ($isMsys2Ucrt) { Join-Path $msys2Root "ucrt64" } else { Join-Path $msys2Root "mingw64" }
+    $glutLib    = $null   # no -L flag: GCC finds it via its own system lib path
+    $glutInclude = $null  # no -I flag: GCC finds it via its own system include path
+    $glutDlls   = Get-ChildItem -Path (Join-Path $mingwEnv "bin") -Filter "*freeglut*.dll" `
+                      -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike "*.dll.a" }
+    if (-not $glutDlls) {
+        throw "FreeGLUT nao encontrado em $mingwEnv\bin. Execute scripts\setup_libs.ps1 primeiro."
+    }
+} else {
+    # Standalone MinGW: use our third_party copy
+    $extractPath = Join-Path $thirdParty "freeglut"
+    $glutInclude = Join-Path $extractPath "freeglut\include"
+    $glutLib     = Join-Path $extractPath "freeglut\lib\x64"
+    $glutDlls    = Get-ChildItem -Path (Join-Path $extractPath "freeglut\bin\x64") `
+                       -Filter "*freeglut*.dll" -ErrorAction SilentlyContinue
+    if (-not $glutDlls) {
+        throw "FreeGLUT nao encontrado em $extractPath\freeglut\bin\x64. Execute scripts\setup_libs.ps1 primeiro."
+    }
 }
 
+$stbImageH = Join-Path $stbInclude "stb_image.h"
+$stbWriteH = Join-Path $stbInclude "stb_image_write.h"
+if (-not (Test-Path $stbImageH) -or -not (Test-Path $stbWriteH)) {
+    throw "STB headers nao encontrados em $stbInclude. Execute scripts\setup_libs.ps1 primeiro."
+}
+
+$sourceFiles = @(
+    "lib\main.c", "lib\jogo.c", "lib\gameplay.c", "lib\entrada.c",
+    "lib\matematica.c", "lib\renderizar.c", "lib\desenhar.c", "lib\inimigo.c",
+    "lib\particulas.c", "lib\projeteis.c", "lib\melhorias.c", "lib\cenario.c",
+    "lib\interface.c", "lib\colisao.c", "lib\persistencia.c",
+    "lib\audio.c", "lib\imagem.c", "lib\imagem_stb.c", "lib\pastas.c"
+) | ForEach-Object { Join-Path $ProjectRoot $_ }
+
 Write-Host "[2/2] Compilando jogo..."
-& gcc `
-    -I"$includeDir" `
-    -I"$glutInclude" `
-    (Join-Path $ProjectRoot "lib\main.c") `
-    (Join-Path $ProjectRoot "lib\jogo.c") `
-    (Join-Path $ProjectRoot "lib\gameplay.c") `
-    (Join-Path $ProjectRoot "lib\entrada.c") `
-    (Join-Path $ProjectRoot "lib\matematica.c") `
-    (Join-Path $ProjectRoot "lib\renderizar.c") `
-    (Join-Path $ProjectRoot "lib\desenhar.c") `
-    (Join-Path $ProjectRoot "lib\inimigo.c") `
-    (Join-Path $ProjectRoot "lib\particulas.c") `
-    (Join-Path $ProjectRoot "lib\projeteis.c") `
-    (Join-Path $ProjectRoot "lib\melhorias.c") `
-    (Join-Path $ProjectRoot "lib\cenario.c") `
-    (Join-Path $ProjectRoot "lib\interface.c") `
-    (Join-Path $ProjectRoot "lib\colisao.c") `
-    (Join-Path $ProjectRoot "lib\persistencia.c") `
-    (Join-Path $ProjectRoot "lib\audio.c") `
-    (Join-Path $ProjectRoot "lib\imagem.c") `
-    (Join-Path $ProjectRoot "lib\pastas.c") `
-    -L"$glutLib" `
-    -o "$outExe" `
-    -lopengl32 -lglu32 -lfreeglut -lwinmm -lm
+
+$gccArgs  = @("-I$includeDir", "-I$stbInclude")
+if ($glutInclude) { $gccArgs += "-I$glutInclude" }
+$gccArgs += $sourceFiles
+if ($glutLib)     { $gccArgs += "-L$glutLib" }
+$gccArgs += @("-o", $outExe, "-lopengl32", "-lglu32", "-lfreeglut", "-lwinmm", "-lm")
+
+& gcc @gccArgs
 if ($LASTEXITCODE -ne 0) { throw "Compilacao falhou." }
 
-Copy-Item -Force $glutDll $outDll
+foreach ($dll in $glutDlls) {
+    Copy-Item -Force $dll.FullName (Join-Path $ProjectRoot $dll.Name)
+}
 Write-Host "Compilacao concluida: $outExe"
 
 if ($RunSmokeTest) {

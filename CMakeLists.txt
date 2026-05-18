@@ -5,6 +5,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 include_directories(src/include)
+include_directories(src/third_party/stb)
 
 set(SOURCES
     src/lib/main.c
@@ -22,6 +23,7 @@ set(SOURCES
     src/lib/persistencia.c
     src/lib/audio.c
     src/lib/imagem.c
+    src/lib/imagem_stb.c
     src/lib/pastas.c
 )
 
