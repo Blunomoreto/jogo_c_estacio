@@ -17,26 +17,22 @@ $includeDir = Join-Path $ProjectRoot "include"
 $stbInclude = Join-Path $thirdParty "stb"
 $outExe     = Join-Path $ProjectRoot "orbit_siege.exe"
 
-# Detect GCC runtime: MSYS2 ucrt64/mingw64 vs standalone MinGW
 $gccPath      = $gccCmd.Source
 $isMsys2Ucrt  = $gccPath -match '[\\/]ucrt64[\\/]'
 $isMsys2Mingw = $gccPath -match '[\\/]mingw64[\\/]'
 $isMsys2      = $isMsys2Ucrt -or $isMsys2Mingw
 
 if ($isMsys2) {
-    # For MSYS2, freeglut is installed system-wide via pacman.
-    # GCC's default search paths cover both headers and libs — no -I or -L needed.
     $msys2Root  = $gccPath -replace '[\\/](ucrt64|mingw64)[\\/].*', ''
     $mingwEnv   = if ($isMsys2Ucrt) { Join-Path $msys2Root "ucrt64" } else { Join-Path $msys2Root "mingw64" }
-    $glutLib    = $null   # no -L flag: GCC finds it via its own system lib path
-    $glutInclude = $null  # no -I flag: GCC finds it via its own system include path
+    $glutLib    = $null
+    $glutInclude = $null
     $glutDlls   = Get-ChildItem -Path (Join-Path $mingwEnv "bin") -Filter "*freeglut*.dll" `
                       -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike "*.dll.a" }
     if (-not $glutDlls) {
         throw "FreeGLUT nao encontrado em $mingwEnv\bin. Execute scripts\setup_libs.ps1 primeiro."
     }
 } else {
-    # Standalone MinGW: use our third_party copy
     $extractPath = Join-Path $thirdParty "freeglut"
     $glutInclude = Join-Path $extractPath "freeglut\include"
     $glutLib     = Join-Path $extractPath "freeglut\lib\x64"

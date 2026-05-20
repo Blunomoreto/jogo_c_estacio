@@ -12,15 +12,12 @@ gcc --version | Select-Object -First 1 | Out-Host
 
 $thirdParty = Join-Path $ProjectRoot "third_party"
 
-# Detect GCC runtime: MSYS2 ucrt64/mingw64 vs standalone MinGW
 $gccPath      = $gccCmd.Source
 $isMsys2Ucrt  = $gccPath -match '[\\/]ucrt64[\\/]'
 $isMsys2Mingw = $gccPath -match '[\\/]mingw64[\\/]'
 $isMsys2      = $isMsys2Ucrt -or $isMsys2Mingw
 
 if ($isMsys2) {
-    # MSYS2: install via pacman into the system environment.
-    # pacman --needed is idempotent; no file copying needed.
     $msys2Root = $gccPath -replace '[\\/](ucrt64|mingw64)[\\/].*', ''
     $pacman    = Join-Path $msys2Root "usr\bin\pacman.exe"
     if (-not (Test-Path $pacman)) {
@@ -33,7 +30,6 @@ if ($isMsys2) {
     if ($LASTEXITCODE -ne 0) { throw "pacman falhou ao instalar $pkg." }
     Write-Host "FreeGLUT disponivel em $msys2Root."
 } else {
-    # Standalone MinGW (WinLibs etc.): use pre-compiled MSVCRT-compatible zip
     $freeglutBase = Join-Path $thirdParty "freeglut\freeglut"
 
     $existingDll = Get-ChildItem -Path (Join-Path $freeglutBase "bin\x64") -Filter "*freeglut*.dll" `
@@ -96,7 +92,6 @@ if ($isMsys2) {
     }
 }
 
-# Download STB headers (both environments need this)
 $stbDir   = Join-Path $thirdParty "stb"
 $stbImage = Join-Path $stbDir "stb_image.h"
 $stbWrite = Join-Path $stbDir "stb_image_write.h"
