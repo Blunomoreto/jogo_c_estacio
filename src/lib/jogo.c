@@ -10,6 +10,7 @@
 #include "persistencia.h"
 #include "gameplay.h"
 #include "renderizar.h"
+#include "vulkan.h"
 
 #include <GL/glut.h>
 #include <stdio.h>
@@ -17,7 +18,48 @@
 #include <string.h>
 #include <time.h>
 
-static void game_reset_player(Jogo *jogo)
+#define VULKAN_SOBREPOSICAO_LARGURA 220
+#define VULKAN_SOBREPOSICAO_ALTURA 60
+
+static void jogo_carregar_sobreposicao_vulkan(Jogo *jogo)
+{
+    unsigned char *pixels_sobreposicao;
+    int sucesso_geracao;
+    GLuint identificador_textura = 0;
+
+    jogo->sobreposicao_vulkan_carregada = 0;
+    jogo->textura_sobreposicao_vulkan = 0;
+
+    pixels_sobreposicao = (unsigned char *)malloc((size_t)VULKAN_SOBREPOSICAO_LARGURA * (size_t)VULKAN_SOBREPOSICAO_ALTURA * 4);
+    if (!pixels_sobreposicao)
+        return;
+
+    if (vulkan_inicializar())
+        printf("[vulkan] inicializacao OK - gerando sobreposicao via Vulkan\n");
+    else
+        printf("[vulkan] nao foi possivel inicializar - usando padrao alternativo CPU\n");
+
+    sucesso_geracao = vulkan_gerar_sobreposicao_rgba(pixels_sobreposicao, VULKAN_SOBREPOSICAO_LARGURA, VULKAN_SOBREPOSICAO_ALTURA);
+    if (!sucesso_geracao)
+    {
+        free(pixels_sobreposicao);
+        return;
+    }
+
+    glGenTextures(1, &identificador_textura);
+    glBindTexture(GL_TEXTURE_2D, identificador_textura);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 0x812F);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 0x812F);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, VULKAN_SOBREPOSICAO_LARGURA, VULKAN_SOBREPOSICAO_ALTURA, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels_sobreposicao);
+
+    jogo->textura_sobreposicao_vulkan = identificador_textura;
+    jogo->sobreposicao_vulkan_carregada = 1;
+    free(pixels_sobreposicao);
+}
+
+static void jogo_resetar_jogador(Jogo *jogo)
 {
     memset(&jogo->jogador, 0, sizeof(jogo->jogador));
 
@@ -65,6 +107,7 @@ void jogo_iniciar(Jogo *jogo, int largura, int altura)
     interface_refrescar_pontuacoes(jogo);
 
     jogo->textura_fundo = imagem_carregar_fundo(&jogo->textura_fundo_carregado);
+    jogo_carregar_sobreposicao_vulkan(jogo);
     audio_inicializar();
     audio_definir_ativacao(jogo->audio_habilitado);
 }
@@ -141,13 +184,14 @@ void jogo_renderizar(Jogo *jogo)
         desenhar_fim(jogo);
 
     desenhar_flash(jogo);
+    renderizar_sobreposicao_vulkan(jogo);
 
     glutSwapBuffers();
 }
 
 void jogo_reiniciar(Jogo *jogo)
 {
-    game_reset_player(jogo);
+    jogo_resetar_jogador(jogo);
     cenario_limpar_entidades(jogo);
 
     jogo->onda = 1;
@@ -170,6 +214,10 @@ void jogo_reiniciar(Jogo *jogo)
 
     memset(jogo->nome_jogador, 0, sizeof(jogo->nome_jogador));
     snprintf(jogo->nome_jogador, sizeof(jogo->nome_jogador), "Player");
+
+    jogo->angulo_chao = ROTACAO_INICIAL_CHAO_GRAUS;
+    jogo->angulo_global_plataformas = ROTACAO_INICIAL_PLATAFORMAS_GRAUS;
+    jogo->angulo_visual_jogador = ROTACAO_INICIAL_JOGADOR_GRAUS;
 
     cenario_criar_onda(jogo);
     audio_tocar_musica();

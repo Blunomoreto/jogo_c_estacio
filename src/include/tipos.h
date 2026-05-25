@@ -161,6 +161,7 @@ typedef struct Obstaculo
     float y;
     float largura;
     float altura;
+    float angulo;
 } Obstaculo;
 
 typedef struct OpcaoMelhoria
@@ -223,6 +224,13 @@ typedef struct Jogo
 
     unsigned int textura_fundo;
     int textura_fundo_carregado;
+
+    float angulo_chao;
+    float angulo_global_plataformas;
+    float angulo_visual_jogador;
+
+    unsigned int textura_sobreposicao_vulkan;
+    int sobreposicao_vulkan_carregada;
 } Jogo;
 
 #endif

@@ -92,6 +92,56 @@ if ($isMsys2) {
     }
 }
 
+$vulkanInclude = Join-Path $thirdParty "vulkan\include"
+$vulkanHeader  = Join-Path $vulkanInclude "vulkan\vulkan.h"
+
+if (Test-Path $vulkanHeader) {
+    Write-Host "Vulkan headers ja presentes em $vulkanInclude - pulando download."
+} else {
+    Write-Host "Baixando Vulkan-Headers (apenas headers, ~2MB; runtime vulkan-1.dll ja vem com o driver da GPU)..."
+    $vulkanZip   = Join-Path $thirdParty "vulkan-headers.zip"
+    $vulkanTemp  = Join-Path $thirdParty "vulkan-temp"
+    $vulkanUrls  = @(
+        "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.3.280.zip",
+        "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.3.275.zip"
+    )
+    $vkBaixou = $false
+    foreach ($uri in $vulkanUrls) {
+        try {
+            Write-Host "  Tentando: $uri"
+            Invoke-WebRequest -Uri $uri -OutFile $vulkanZip -UseBasicParsing -ErrorAction Stop
+            $vkBaixou = $true
+            break
+        } catch {
+            Write-Host "  Falhou: $_"
+        }
+    }
+    if (-not $vkBaixou) {
+        throw "Nenhuma URL de Vulkan-Headers funcionou. Verifique sua conexao com a internet."
+    } else {
+        Remove-Item -Recurse -Force $vulkanTemp -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force -Path $vulkanTemp     | Out-Null
+        Expand-Archive -Path $vulkanZip -DestinationPath $vulkanTemp -Force
+        $extractedRoot = Get-ChildItem -Path $vulkanTemp -Directory | Select-Object -First 1
+        if ($extractedRoot) {
+            $sourceInclude = Join-Path $extractedRoot.FullName "include"
+            if (Test-Path (Join-Path $sourceInclude "vulkan\vulkan.h")) {
+                New-Item -ItemType Directory -Force -Path $vulkanInclude | Out-Null
+                Copy-Item -Recurse -Force (Join-Path $sourceInclude "*") $vulkanInclude
+                Write-Host "Vulkan headers instalados em $vulkanInclude"
+            } else {
+                Write-Host "AVISO: vulkan.h nao encontrado dentro do zip extraido."
+            }
+        }
+        Remove-Item -Recurse -Force $vulkanTemp -ErrorAction SilentlyContinue
+        Remove-Item -Force $vulkanZip -ErrorAction SilentlyContinue
+    }
+
+    if (-not (Test-Path "C:\Windows\System32\vulkan-1.dll")) {
+        Write-Host "AVISO: vulkan-1.dll nao encontrado em C:\Windows\System32 (driver da GPU sem suporte Vulkan?). O jogo usara o fallback CPU."
+    }
+}
+
 $stbDir   = Join-Path $thirdParty "stb"
 $stbImage = Join-Path $stbDir "stb_image.h"
 $stbWrite = Join-Path $stbDir "stb_image_write.h"

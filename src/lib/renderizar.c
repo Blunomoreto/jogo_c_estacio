@@ -90,6 +90,19 @@ void renderizar_pentagono(Vetor2D vetor, float tamanho, Cor cor)
     glEnd();
 }
 
+void renderizar_iniciar_rotacao(float pivot_x, float pivot_y, float angulo_graus)
+{
+    glPushMatrix();
+    glTranslatef(pivot_x, pivot_y, 0.0f);
+    glRotatef(angulo_graus, 0.0f, 0.0f, 1.0f);
+    glTranslatef(-pivot_x, -pivot_y, 0.0f);
+}
+
+void renderizar_terminar_rotacao(void)
+{
+    glPopMatrix();
+}
+
 void renderizar_fundo(struct Jogo *jogo)
 {
     float deslocamento_fundo = fmodf(jogo->tempo_decorrido * 20.0f, (float)jogo->largura);
@@ -130,15 +143,21 @@ void renderizar_fundo(struct Jogo *jogo)
         }
     }
 
-    renderizar_retangulo(0.0f, ALTURA_CHAO, (float)jogo->largura, (float)jogo->altura - ALTURA_CHAO, (Cor){0.2f, 0.15f, 0.08f, 1.0f});
-
     {
-        int indice_tabua;
-        for (indice_tabua = 0; indice_tabua < 20; ++indice_tabua)
+        float altura_faixa_chao = (float)jogo->altura - ALTURA_CHAO;
+        float centro_horizontal_chao = (float)jogo->largura * 0.5f;
+        float centro_vertical_chao = ALTURA_CHAO + altura_faixa_chao * 0.5f;
+        renderizar_iniciar_rotacao(centro_horizontal_chao, centro_vertical_chao, jogo->angulo_chao);
+        renderizar_retangulo(0.0f, ALTURA_CHAO, (float)jogo->largura, altura_faixa_chao, (Cor){0.2f, 0.15f, 0.08f, 1.0f});
         {
-            float pos_x_tabua = indice_tabua * (jogo->largura / 20.0f);
-            renderizar_retangulo(pos_x_tabua, ALTURA_CHAO - 4.0f, (jogo->largura / 40.0f), 3.0f, (Cor){0.3f, 0.2f, 0.1f, 0.7f});
+            int indice_tabua;
+            for (indice_tabua = 0; indice_tabua < 20; ++indice_tabua)
+            {
+                float pos_x_tabua = indice_tabua * (jogo->largura / 20.0f);
+                renderizar_retangulo(pos_x_tabua, ALTURA_CHAO - 4.0f, (jogo->largura / 40.0f), 3.0f, (Cor){0.3f, 0.2f, 0.1f, 0.7f});
+            }
         }
+        renderizar_terminar_rotacao();
     }
 }
 
@@ -148,10 +167,18 @@ void renderizar_plataformas(struct Jogo *jogo)
     for (indice_plataforma = 0; indice_plataforma < MAXIMO_PLATAFORMAS; ++indice_plataforma)
     {
         Obstaculo *plataforma = &jogo->obstaculos[indice_plataforma];
+        float centro_x;
+        float centro_y;
+        float angulo_total;
         if (!plataforma->ativo)
             continue;
+        centro_x = plataforma->x + plataforma->largura * 0.5f;
+        centro_y = plataforma->y + plataforma->altura * 0.5f;
+        angulo_total = plataforma->angulo + jogo->angulo_global_plataformas;
+        renderizar_iniciar_rotacao(centro_x, centro_y, angulo_total);
         renderizar_retangulo(plataforma->x, plataforma->y, plataforma->largura, plataforma->altura, (Cor){0.22f, 0.28f, 0.38f, 0.82f});
         renderizar_retangulo(plataforma->x + 3.0f, plataforma->y + 3.0f, plataforma->largura - 6.0f, plataforma->altura - 6.0f, (Cor){0.35f, 0.46f, 0.62f, 0.35f});
+        renderizar_terminar_rotacao();
     }
 }
 
@@ -160,6 +187,7 @@ void renderizar_jogador(struct Jogo *jogo)
     Vetor2D posicao_jogador = jogo->jogador.pos;
     float tamanho_jogador = jogo->jogador.tamanho;
 
+    renderizar_iniciar_rotacao(posicao_jogador.x, posicao_jogador.y, jogo->angulo_visual_jogador);
     renderizar_circulo(matematica_vetor2d(posicao_jogador.x, posicao_jogador.y - tamanho_jogador * 0.4f), tamanho_jogador * 0.35f, (Cor){0.95f, 0.85f, 0.70f, 1.0f}, 12);
     renderizar_circulo(matematica_vetor2d(posicao_jogador.x - tamanho_jogador * 0.12f, posicao_jogador.y - tamanho_jogador * 0.5f), tamanho_jogador * 0.08f, (Cor){0.2f, 0.2f, 0.2f, 1.0f}, 8);
     renderizar_circulo(matematica_vetor2d(posicao_jogador.x + tamanho_jogador * 0.12f, posicao_jogador.y - tamanho_jogador * 0.5f), tamanho_jogador * 0.08f, (Cor){0.2f, 0.2f, 0.2f, 1.0f}, 8);
@@ -171,6 +199,39 @@ void renderizar_jogador(struct Jogo *jogo)
 
     if (!jogo->jogador.esta_no_chao)
         renderizar_circulo(posicao_jogador, tamanho_jogador * 0.9f, (Cor){0.3f, 0.9f, 1.0f, 0.2f}, 16);
+    renderizar_terminar_rotacao();
+}
+
+void renderizar_sobreposicao_vulkan(struct Jogo *jogo)
+{
+    float intensidade_flash_dano;
+    if (!jogo->sobreposicao_vulkan_carregada || jogo->textura_sobreposicao_vulkan == 0)
+        return;
+    intensidade_flash_dano = jogo->flash_dano;
+    if (intensidade_flash_dano < 0.0f)
+        intensidade_flash_dano = 0.0f;
+    if (intensidade_flash_dano > 1.0f)
+        intensidade_flash_dano = 1.0f;
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, jogo->textura_sobreposicao_vulkan);
+    glColor4f(1.0f, 1.0f - intensidade_flash_dano, 1.0f - intensidade_flash_dano, 0.85f);
+    glBegin(GL_QUADS);
+    {
+        float largura_sobreposicao = 220.0f;
+        float altura_sobreposicao = 60.0f;
+        float posicao_x_sobreposicao = (float)jogo->largura - largura_sobreposicao - 16.0f;
+        float posicao_y_sobreposicao = (float)jogo->altura - altura_sobreposicao - 16.0f;
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(posicao_x_sobreposicao, posicao_y_sobreposicao);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(posicao_x_sobreposicao + largura_sobreposicao, posicao_y_sobreposicao);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(posicao_x_sobreposicao + largura_sobreposicao, posicao_y_sobreposicao + altura_sobreposicao);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(posicao_x_sobreposicao, posicao_y_sobreposicao + altura_sobreposicao);
+    }
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
 }
 
 void renderizar_inimigo(struct Inimigo *inimigo)

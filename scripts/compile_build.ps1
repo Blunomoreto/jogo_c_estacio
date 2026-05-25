@@ -54,16 +54,28 @@ $sourceFiles = @(
     "lib\matematica.c", "lib\renderizar.c", "lib\desenhar.c", "lib\inimigo.c",
     "lib\particulas.c", "lib\projeteis.c", "lib\melhorias.c", "lib\cenario.c",
     "lib\interface.c", "lib\colisao.c", "lib\persistencia.c",
-    "lib\audio.c", "lib\imagem.c", "lib\imagem_stb.c", "lib\pastas.c"
+    "lib\audio.c", "lib\imagem.c", "lib\imagem_stb.c", "lib\pastas.c",
+    "lib\vulkan.c"
 ) | ForEach-Object { Join-Path $ProjectRoot $_ }
+
+$vulkanInclude = Join-Path $thirdParty "vulkan\include"
+$vulkanHeader  = Join-Path $vulkanInclude "vulkan\vulkan.h"
+$vulkanDll     = "C:\Windows\System32\vulkan-1.dll"
+if (-not (Test-Path $vulkanHeader)) {
+    throw "Vulkan headers nao encontrados em $vulkanInclude. Execute scripts\setup_libs.ps1 primeiro."
+}
+if (-not (Test-Path $vulkanDll)) {
+    throw "vulkan-1.dll nao encontrado em C:\Windows\System32. Atualize o driver da GPU."
+}
 
 Write-Host "[2/2] Compilando jogo..."
 
-$gccArgs  = @("-I$includeDir", "-I$stbInclude")
+$gccArgs  = @("-I$includeDir", "-I$stbInclude", "-I$vulkanInclude")
 if ($glutInclude) { $gccArgs += "-I$glutInclude" }
 $gccArgs += $sourceFiles
 if ($glutLib)     { $gccArgs += "-L$glutLib" }
 $gccArgs += @("-o", $outExe, "-lopengl32", "-lglu32", "-lfreeglut", "-lwinmm", "-lm")
+$gccArgs += $vulkanDll
 
 & gcc @gccArgs
 if ($LASTEXITCODE -ne 0) { throw "Compilacao falhou." }

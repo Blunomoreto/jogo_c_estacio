@@ -74,6 +74,39 @@ foreach ($d in $builtDlls) {
 
 Write-Host "FreeGLUT instalado em: $freeglutBase"
 
+$vulkanInclude = Join-Path $thirdParty "vulkan\include"
+$vulkanHeader  = Join-Path $vulkanInclude "vulkan\vulkan.h"
+if (Test-Path $vulkanHeader) {
+    Write-Host "Vulkan headers ja presentes em $vulkanInclude - pulando download."
+} else {
+    Write-Host "Baixando Vulkan-Headers (apenas headers; vulkan-1.dll ja vem com o driver)..."
+    $vulkanZip   = Join-Path $thirdParty "vulkan-headers.zip"
+    $vulkanTemp  = Join-Path $thirdParty "vulkan-temp"
+    $vulkanUrls  = @(
+        "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.3.280.zip",
+        "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.3.275.zip"
+    )
+    $vkBaixou = $false
+    foreach ($uri in $vulkanUrls) {
+        try { Invoke-WebRequest -Uri $uri -OutFile $vulkanZip -UseBasicParsing -ErrorAction Stop; $vkBaixou = $true; break } catch { }
+    }
+    if ($vkBaixou) {
+        Remove-Item -Recurse -Force $vulkanTemp -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force -Path $vulkanTemp | Out-Null
+        Expand-Archive -Path $vulkanZip -DestinationPath $vulkanTemp -Force
+        $extractedRoot = Get-ChildItem -Path $vulkanTemp -Directory | Select-Object -First 1
+        if ($extractedRoot -and (Test-Path (Join-Path $extractedRoot.FullName "include\vulkan\vulkan.h"))) {
+            New-Item -ItemType Directory -Force -Path $vulkanInclude | Out-Null
+            Copy-Item -Recurse -Force (Join-Path $extractedRoot.FullName "include\*") $vulkanInclude
+            Write-Host "Vulkan headers instalados em $vulkanInclude"
+        }
+        Remove-Item -Recurse -Force $vulkanTemp -ErrorAction SilentlyContinue
+        Remove-Item -Force $vulkanZip -ErrorAction SilentlyContinue
+    } else {
+        Write-Host "AVISO: download de Vulkan-Headers falhou. O jogo usara o fallback CPU."
+    }
+}
+
 $stbDir    = Join-Path $thirdParty "stb"
 $stbImage  = Join-Path $stbDir "stb_image.h"
 $stbWrite  = Join-Path $stbDir "stb_image_write.h"

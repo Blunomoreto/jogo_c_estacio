@@ -48,6 +48,7 @@ void cenario_criar_plataformas(Jogo *jogo)
             plataforma->altura = matematica_float_aleatorio_alcance(22.0f, 44.0f);
             plataforma->x = matematica_float_aleatorio_alcance(40.0f, (float)jogo->largura - plataforma->largura - 40.0f);
             plataforma->y = matematica_float_aleatorio_alcance(ALTURA_CHAO - 200.0f, ALTURA_CHAO - 150.0f);
+            plataforma->angulo = 0.0f;
 
             for (indice_verificacao = 0; indice_verificacao < indice_plataforma; ++indice_verificacao)
             {
@@ -129,8 +130,8 @@ void cenario_criar_onda(Jogo *jogo)
         }
 
         inimigo->centro = inimigo->eh_chefao
-                        ? matematica_vetor2d((float)jogo->largura * 0.5f, (float)jogo->altura * 0.22f)
-                        : matematica_vetor2d(matematica_float_aleatorio_alcance(120.0f, (float)jogo->largura - 120.0f), matematica_float_aleatorio_alcance((float)jogo->altura * 0.14f, (float)jogo->altura * 0.44f));
+                              ? matematica_vetor2d((float)jogo->largura * 0.5f, (float)jogo->altura * 0.22f)
+                              : matematica_vetor2d(matematica_float_aleatorio_alcance(120.0f, (float)jogo->largura - 120.0f), matematica_float_aleatorio_alcance((float)jogo->altura * 0.14f, (float)jogo->altura * 0.44f));
         inimigo->raio_orbita = inimigo->eh_chefao ? 96.0f : matematica_float_aleatorio_alcance(24.0f, 70.0f);
         inimigo->angulo = matematica_float_aleatorio_alcance(0.0f, 2.0f * (float)M_PI);
         inimigo->velocidade_angular = (inimigo->eh_chefao ? matematica_float_aleatorio_alcance(0.45f, 0.85f) : matematica_float_aleatorio_alcance(0.75f, 1.6f)) * ((indice_inimigo % 2 == 0) ? 1.0f : -1.0f) * (1.0f + jogo->onda * 0.08f);

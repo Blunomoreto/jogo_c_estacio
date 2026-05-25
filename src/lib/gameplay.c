@@ -13,10 +13,43 @@
 #include <GL/glut.h>
 #include <math.h>
 
+static void gameplay_clamp_jogador_aos_limites_tela(Jogo *jogo)
+{
+    float tamanho = jogo->jogador.tamanho;
+    if (jogo->jogador.pos.x < tamanho)
+    {
+        jogo->jogador.pos.x = tamanho;
+    }
+    if (jogo->jogador.pos.x > (float)jogo->largura - tamanho)
+    {
+        jogo->jogador.pos.x = (float)jogo->largura - tamanho;
+    }
+    if (jogo->jogador.pos.y < tamanho)
+    {
+        jogo->jogador.pos.y = tamanho;
+        if (jogo->jogador.velocidade_y < 0.0f)
+            jogo->jogador.velocidade_y = 0.0f;
+    }
+    if (jogo->jogador.pos.y > (float)jogo->altura - tamanho)
+    {
+        jogo->jogador.pos.y = (float)jogo->altura - tamanho;
+        if (jogo->jogador.velocidade_y > 0.0f)
+        {
+            if (jogo->jogador.velocidade_y > 100.0f)
+                audio_tocar_som_pulo_fim();
+            jogo->jogador.velocidade_y = 0.0f;
+            jogo->jogador.esta_no_chao = 1;
+        }
+    }
+}
+
 static void gameplay_atualizar_jogador_movimento(Jogo *jogo, float delta_tempo)
 {
     int indice_obstaculo;
     float movimento_x = 0.0f;
+    Vetor2D centro_chao;
+    float altura_faixa_chao;
+    float largura_faixa_chao;
 
     if (jogo->entrada.teclas['a'] || jogo->entrada.teclas['A'] || jogo->entrada.especiais[GLUT_KEY_LEFT])
         movimento_x -= 1.0f;
@@ -25,10 +58,7 @@ static void gameplay_atualizar_jogador_movimento(Jogo *jogo, float delta_tempo)
 
     jogo->jogador.pos.x += movimento_x * jogo->jogador.velocidade * delta_tempo;
 
-    if (jogo->jogador.pos.x < jogo->jogador.tamanho)
-        jogo->jogador.pos.x = jogo->jogador.tamanho;
-    if (jogo->jogador.pos.x > jogo->largura - jogo->jogador.tamanho)
-        jogo->jogador.pos.x = jogo->largura - jogo->jogador.tamanho;
+    gameplay_clamp_jogador_aos_limites_tela(jogo);
 
     if (jogo->entrada.teclas[' '] || jogo->entrada.teclas['w'] || jogo->entrada.teclas['W'])
     {
@@ -57,56 +87,67 @@ static void gameplay_atualizar_jogador_movimento(Jogo *jogo, float delta_tempo)
     }
 
     jogo->jogador.esta_no_chao = 0;
-    if (jogo->jogador.pos.y + jogo->jogador.tamanho >= ALTURA_CHAO)
-    {
-        if (jogo->jogador.velocidade_y > 100.0f)
-            audio_tocar_som_pulo_fim();
-        jogo->jogador.pos.y = ALTURA_CHAO - jogo->jogador.tamanho;
-        jogo->jogador.velocidade_y = 0.0f;
-        jogo->jogador.esta_no_chao = 1;
-    }
 
-    if (jogo->jogador.pos.y - jogo->jogador.tamanho <= 20.0f)
+    altura_faixa_chao = (float)jogo->altura - ALTURA_CHAO;
+    largura_faixa_chao = (float)jogo->largura;
+    centro_chao = matematica_vetor2d((float)jogo->largura * 0.5f, ALTURA_CHAO + altura_faixa_chao * 0.5f);
+
     {
-        jogo->jogador.pos.y = 20.0f + jogo->jogador.tamanho;
-        jogo->jogador.velocidade_y = 0.0f;
+        int colidiu_com_chao = 0;
+        Vetor2D nova_posicao_jogador = colisao_resolver_circulo_vs_obb(jogo->jogador.pos, jogo->jogador.tamanho,
+                                                                       centro_chao, largura_faixa_chao, altura_faixa_chao,
+                                                                       jogo->angulo_chao, &colidiu_com_chao);
+        if (colidiu_com_chao)
+        {
+            Vetor2D delta_resolucao_chao = matematica_vetor2d_subtracao(nova_posicao_jogador, jogo->jogador.pos);
+            jogo->jogador.pos = nova_posicao_jogador;
+            if (delta_resolucao_chao.y < -0.1f && jogo->jogador.velocidade_y >= 0.0f)
+            {
+                if (jogo->jogador.velocidade_y > 100.0f)
+                    audio_tocar_som_pulo_fim();
+                jogo->jogador.velocidade_y = 0.0f;
+                jogo->jogador.esta_no_chao = 1;
+            }
+            else if (delta_resolucao_chao.y > 0.1f && jogo->jogador.velocidade_y < 0.0f)
+            {
+                jogo->jogador.velocidade_y = 0.0f;
+            }
+        }
     }
 
     for (indice_obstaculo = 0; indice_obstaculo < MAXIMO_PLATAFORMAS; ++indice_obstaculo)
     {
         Obstaculo *obstaculo = &jogo->obstaculos[indice_obstaculo];
+        Vetor2D centro_obstaculo;
+        float angulo_obstaculo;
+        int colidiu_com_plataforma = 0;
+        Vetor2D nova_posicao_jogador;
+        Vetor2D delta_resolucao_plataforma;
         if (!obstaculo->ativo)
             continue;
-        if (colisao_circulo_vs_retangulo(jogo->jogador.pos, jogo->jogador.tamanho,
-                                         matematica_vetor2d(obstaculo->x, obstaculo->y),
-                                         matematica_vetor2d(obstaculo->x + obstaculo->largura, obstaculo->y + obstaculo->altura)))
+        centro_obstaculo = matematica_vetor2d(obstaculo->x + obstaculo->largura * 0.5f, obstaculo->y + obstaculo->altura * 0.5f);
+        angulo_obstaculo = obstaculo->angulo + jogo->angulo_global_plataformas;
+        nova_posicao_jogador = colisao_resolver_circulo_vs_obb(jogo->jogador.pos, jogo->jogador.tamanho,
+                                                               centro_obstaculo, obstaculo->largura, obstaculo->altura,
+                                                               angulo_obstaculo, &colidiu_com_plataforma);
+        if (!colidiu_com_plataforma)
+            continue;
+        delta_resolucao_plataforma = matematica_vetor2d_subtracao(nova_posicao_jogador, jogo->jogador.pos);
+        jogo->jogador.pos = nova_posicao_jogador;
+        if (delta_resolucao_plataforma.y < -0.1f && jogo->jogador.velocidade_y >= 0.0f)
         {
-            float centro_x = obstaculo->x + obstaculo->largura * 0.5f;
-            float centro_y = obstaculo->y + obstaculo->altura * 0.5f;
-            float diferenca_x = fabsf(jogo->jogador.pos.x - centro_x);
-            float diferenca_y = fabsf(jogo->jogador.pos.y - centro_y);
-
-            if (jogo->jogador.pos.y - jogo->jogador.tamanho < centro_y && jogo->jogador.velocidade_y >= 0.0f)
-            {
-                if (jogo->jogador.velocidade_y > 50.0f)
-                    audio_tocar_som_pulo_fim();
-                jogo->jogador.pos.y = obstaculo->y - jogo->jogador.tamanho;
-                jogo->jogador.velocidade_y = 0.0f;
-                jogo->jogador.esta_no_chao = 1;
-            }
-            else if (jogo->jogador.pos.y - jogo->jogador.tamanho >= centro_y && diferenca_x > diferenca_y)
-            {
-                if (jogo->jogador.pos.x < centro_x)
-                    jogo->jogador.pos.x = obstaculo->x - jogo->jogador.tamanho - 5.0f;
-                else
-                    jogo->jogador.pos.x = obstaculo->x + obstaculo->largura + jogo->jogador.tamanho + 5.0f;
-                if (jogo->jogador.pos.x < jogo->jogador.tamanho)
-                    jogo->jogador.pos.x = jogo->jogador.tamanho;
-                if (jogo->jogador.pos.x > jogo->largura - jogo->jogador.tamanho)
-                    jogo->jogador.pos.x = jogo->largura - jogo->jogador.tamanho;
-            }
+            if (jogo->jogador.velocidade_y > 50.0f)
+                audio_tocar_som_pulo_fim();
+            jogo->jogador.velocidade_y = 0.0f;
+            jogo->jogador.esta_no_chao = 1;
+        }
+        else if (delta_resolucao_plataforma.y > 0.1f && jogo->jogador.velocidade_y < 0.0f)
+        {
+            jogo->jogador.velocidade_y = 0.0f;
         }
     }
+
+    gameplay_clamp_jogador_aos_limites_tela(jogo);
 }
 
 static void gameplay_atirar_jogador(Jogo *jogo, float delta_tempo)

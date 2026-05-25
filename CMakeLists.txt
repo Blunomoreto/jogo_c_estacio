@@ -25,9 +25,27 @@ set(SOURCES
     src/lib/imagem.c
     src/lib/imagem_stb.c
     src/lib/pastas.c
+    src/lib/vulkan.c
 )
 
 add_executable(orbit_siege ${SOURCES})
+
+find_package(Vulkan QUIET)
+if (Vulkan_FOUND)
+    target_include_directories(orbit_siege PRIVATE ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(orbit_siege ${Vulkan_LIBRARIES})
+else()
+    set(LOCAL_VULKAN_INCLUDE "${CMAKE_SOURCE_DIR}/src/third_party/vulkan/include")
+    if (NOT EXISTS "${LOCAL_VULKAN_INCLUDE}/vulkan/vulkan.h")
+        message(FATAL_ERROR "Vulkan headers nao encontrados em ${LOCAL_VULKAN_INCLUDE}. Execute scripts\\setup_libs.ps1 primeiro.")
+    endif()
+    target_include_directories(orbit_siege PRIVATE "${LOCAL_VULKAN_INCLUDE}")
+    if (WIN32)
+        target_link_libraries(orbit_siege "C:/Windows/System32/vulkan-1.dll")
+    else()
+        target_link_libraries(orbit_siege vulkan)
+    endif()
+endif()
 
 if (WIN32)
     set(FREEGLUT_DIR "${CMAKE_SOURCE_DIR}/src/third_party/freeglut/freeglut")
